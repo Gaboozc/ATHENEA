@@ -1,0 +1,28 @@
+{
+  "appId": "com.alphadev.scopedemo",
+  "productName": "Scope demo",
+  "copyright": "Copyright © 2025 AlphaDev Studios, Gabriel Zavarse",
+  "files": [
+    "dist/**/*",
+  "electron-main.cjs",
+    "electron-preload.js"
+  ],
+  "directories": {
+    "buildResources": "src/assets/img"
+  },
+  "win": {
+    "target": "nsis",
+  "icon": "src/assets/img/logo.ico"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": true,
+    "allowToChangeInstallationDirectory": true,
+  "installerIcon": "src/assets/img/logo.ico",
+  "uninstallerIcon": "src/assets/img/logo.ico",
+    "license": "LICENSE",
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Scope demo"
+  }
+}

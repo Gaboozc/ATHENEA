@@ -1,7 +1,7 @@
-# WebApp Template with React JS
+# WireScope - Structured Cabling & Data Network Project Management
 
-
-Created by AlphaDev, this template is proprietary software designed exclusively for AlphaDev use. It helps to bootstrap multi-page web applications by integrating with React latest version, vercel deployments and Vite for bundling.
+## Overview
+WireScope is a comprehensive multi-platform application designed for managing structured cabling and data network projects. It provides real-time collaboration, offline functionality, and role-based access control for teams ranging from technicians to project managers.
 
 ### Getting stated:
 
