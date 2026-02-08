@@ -1,10 +1,12 @@
 // Import necessary components from react-router-dom and other parts of the application.
 import { Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";  // Custom hook for accessing the global state.
+import { useLanguage } from '../context/LanguageContext';
 
 export const Demo = () => {
   // Access the global state and dispatch function using the useGlobalReducer hook.
   const { store, dispatch } = useGlobalReducer()
+  const { t } = useLanguage();
 
   return (
     <div className="container">
@@ -18,16 +20,16 @@ export const Demo = () => {
               style={{ background: item.background }}> 
               
               {/* Link to the detail page of this todo. */}
-              <Link to={"/single/" + item.id}>Link to: {item.title} </Link>
+              <Link to={"/single/" + item.id}>{t('Link to:')} {item.title} </Link>
               
-              <p>Open file ./store.js to see the global store that contains and updates the list of colors</p>
+              <p>{t('Open file ./store.js to see the global store that contains and updates the list of colors')}</p>
               
               <button className="btn btn-success" 
                 onClick={() => dispatch({
                   type: "add_task", 
                   payload: { id: item.id, color: '#ffa500' }
                 })}>
-                Change Color
+                {t('Change Color')}
               </button>
             </li>
           );
@@ -36,7 +38,7 @@ export const Demo = () => {
       <br />
 
       <Link to="/">
-        <button className="btn btn-primary">Back home</button>
+        <button className="btn btn-primary">{t('Back home')}</button>
       </Link>
     </div>
   );

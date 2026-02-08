@@ -10,11 +10,11 @@ import pointsReducer from './slices/pointsSlice';
 import usersReducer from './slices/usersSlice';
 import inventoryReducer from './slices/inventorySlice';
 import productionReducer from './slices/productionSlice';
+import organizationsReducer from './slices/organizationsSlice';
 
 // Importar los slices maestros
 import {
   projectsMasterSlice,
-  floorPlansSlice,
   pointsMasterSlice,
   pointsStatusHistorySlice,
   modDocsRegistrySlice,
@@ -39,9 +39,9 @@ const persistConfig = {
     'users',
     'inventory',
     'production',
+    'organizations',
     // Slices maestros
     'projectsMaster',
-    'floorPlans',
     'pointsMaster',
     'pointsStatusHistory',
     'modDocsRegistry',
@@ -63,9 +63,9 @@ const rootReducer = combineReducers({
   users: usersReducer,
   inventory: inventoryReducer,
   production: productionReducer,
+  organizations: organizationsReducer,
   // Slices maestros
   projectsMaster: projectsMasterSlice.reducer,
-  floorPlans: floorPlansSlice.reducer,
   pointsMaster: pointsMasterSlice.reducer,
   pointsStatusHistory: pointsStatusHistorySlice.reducer,
   modDocsRegistry: modDocsRegistrySlice.reducer,

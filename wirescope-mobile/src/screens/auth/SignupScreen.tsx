@@ -75,7 +75,7 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.content}>
           <View style={styles.header}>
             <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join WireScope today</Text>
+            <Text style={styles.subtitle}>Join ATHENEA today</Text>
           </View>
 
           <View style={styles.form}>

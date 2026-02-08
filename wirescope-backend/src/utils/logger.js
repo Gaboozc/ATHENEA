@@ -34,7 +34,7 @@ const logger = winston.createLogger({
   level: config.logging.level,
   format: logFormat,
   defaultMeta: {
-    service: 'wirescope-api'
+    service: 'ATHENEA-api'
   },
   transports: [
     // Write all logs with level 'error' and below to error.log

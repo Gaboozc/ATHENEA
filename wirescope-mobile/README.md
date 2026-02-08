@@ -1,11 +1,11 @@
-# WireScope Mobile App
+# ATHENEA Mobile App
 
-React Native mobile application for structured cabling and data network project management.
+React Native mobile application for tactical engineering and data network project management.
 
 ## 📱 Features
 
 - **Authentication**: Login, signup, and password reset
-- **Project Management**: View and manage structured cabling projects
+- **Project Management**: View and manage tactical engineering projects
 - **Floor Plans**: Interactive floor plan viewer with cable point management
 - **Materials**: Cable and hardware inventory management
 - **Offline Support**: Offline-first design with data synchronization
@@ -24,7 +24,7 @@ React Native mobile application for structured cabling and data network project 
 
 1. Navigate to the mobile app directory:
 ```bash
-cd wirescope-mobile
+cd ATHENEA-mobile
 ```
 
 2. Install dependencies:
@@ -83,7 +83,7 @@ src/
 
 ## 🌐 API Integration
 
-The mobile app connects to the WireScope backend API for:
+The mobile app connects to the ATHENEA backend API for:
 - User authentication
 - Project data synchronization
 - File uploads and downloads
@@ -152,10 +152,10 @@ npx react-native run-ios --configuration Release
 
 ## 🔗 Related Projects
 
-- [WireScope Backend](../wirescope-backend/) - Node.js API server
-- [WireScope Desktop](../wirescope-desktop/) - Electron desktop app
-- [WireScope Docs](../docs/) - Project documentation
+- [ATHENEA Backend](../ATHENEA-backend/) - Node.js API server
+- [ATHENEA Desktop](../ATHENEA-desktop/) - Electron desktop app
+- [ATHENEA Docs](../docs/) - Project documentation
 
 ## 📄 License
 
-This project is part of the WireScope application suite.
+This project is part of the ATHENEA application suite.

@@ -1,7 +1,7 @@
 {
-  "name": "wirescope-mobile",
+  "name": "ATHENEA-mobile",
   "version": "1.0.0",
-  "description": "WireScope Mobile App - Structured cabling and network project management",
+  "description": "ATHENEA Mobile App - tactical engineering and network project management",
   "main": "index.js",
   "scripts": {
     "android": "react-native run-android",
@@ -16,7 +16,7 @@
     "reset-cache": "npx react-native start --reset-cache",
     "pod-install": "cd ios && pod install && cd ..",
     "build:android": "cd android && ./gradlew assembleRelease",
-    "build:ios": "cd ios && xcodebuild -workspace WireScope.xcworkspace -scheme WireScope -configuration Release archive"
+    "build:ios": "cd ios && xcodebuild -workspace ATHENEA.xcworkspace -scheme ATHENEA -configuration Release archive"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",

@@ -1,52 +1,69 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const initialProjects = [
+const buildSeedProjects = () => [
   {
     id: '1',
-    name: 'Office Building A',
-    description: 'Network infrastructure for 5-floor office building',
-    clientName: 'TechCorp Inc.',
-    siteAddress: '123 Main St, New York, NY 10001',
+    name: 'ATHENEA Engine Evolution',
+    description: 'Core priority intelligence and governance upgrades.',
+    clientName: 'ATHENEA Core',
+    siteAddress: 'Command Layer',
+    orgId: 'org-1',
     status: 'in-progress',
-    startDate: '2025-01-15',
-    completionPercentage: 65,
-    totalPoints: 150,
-    completedPoints: 98,
-    floorplans: [],
-    pmId: '2', // Asignado a PM 1
+    startDate: '2026-02-01',
+    endDate: '',
+    maintenancePlan: '',
+    completionPercentage: 45,
+    totalPoints: 100,
+    completedPoints: 45,
+    tasks: ['Scale dynamic pools', 'Refine role-based weights', 'Implement audit logs'],
+    pmId: '2',
   },
   {
     id: '2',
-    name: 'Warehouse Data Center',
-    description: 'Complete data center cabling and infrastructure',
-    clientName: 'Global Logistics Ltd.',
-    siteAddress: '456 Industrial Pkwy, Chicago, IL 60601',
-    status: 'planning',
-    startDate: '2025-02-01',
-    completionPercentage: 20,
-    totalPoints: 200,
-    completedPoints: 40,
-    pmId: '3', // Asignado a PM 2
+    name: 'Tactical Dashboard UI/UX',
+    description: 'Precision layout and command-grade interaction polish.',
+    clientName: 'ATHENEA Experience',
+    siteAddress: 'Ops Interface',
+    orgId: 'org-1',
+    status: 'completed',
+    startDate: '2026-02-05',
+    endDate: '2026-02-28',
+    maintenancePlan: '',
+    completionPercentage: 100,
+    totalPoints: 80,
+    completedPoints: 80,
+    tasks: ['Apply premium palette', 'Design high-density cards', 'Mobile responsiveness'],
+    pmId: '3',
   },
   {
     id: '3',
-    name: 'Hospital Network Upgrade',
-    description: 'Hospital-wide network upgrade with fiber optics',
-    clientName: 'City General Hospital',
-    siteAddress: '789 Medical Dr, Los Angeles, CA 90001',
-    status: 'completed',
-    startDate: '2024-10-01',
+    name: 'Supabase Neural Bridge',
+    description: 'Data persistence backbone and integration scaffolding.',
+    clientName: 'ATHENEA Systems',
+    siteAddress: 'Data Layer',
+    orgId: 'org-1',
+    status: 'maintenance',
+    startDate: '2026-01-15',
+    endDate: '',
+    maintenancePlan: 'Monthly maintenance cadence',
     completionPercentage: 100,
-    totalPoints: 300,
-    completedPoints: 300,
-    pmId: '2', // Asignado a PM 1
+    totalPoints: 60,
+    completedPoints: 60,
+    tasks: ['Baseline schema design', 'Auth bypass logic', 'Client initialization'],
+    pmId: '2',
   },
 ];
+
+const LEGACY_PROJECTS = new Set([
+  'Office Building A',
+  'Warehouse Data Center',
+  'Hospital Network Upgrade'
+]);
 
 const projectsSlice = createSlice({
   name: 'projects',
   initialState: {
-    projects: initialProjects,
+    projects: buildSeedProjects(),
     currentProject: null,
     isLoading: false,
   },
@@ -58,27 +75,36 @@ const projectsSlice = createSlice({
       const newProject = {
         ...action.payload,
         id: Date.now().toString(),
+        orgId: action.payload.orgId || 'org-1',
         status: 'planning',
         completionPercentage: 0,
         totalPoints: 0,
         completedPoints: 0,
-        floorplans: [],
+        endDate: action.payload.endDate || '',
+        maintenancePlan: action.payload.maintenancePlan || '',
       };
       state.projects.unshift(newProject);
     },
     updateProject: (state, action) => {
       const index = state.projects.findIndex((p) => p.id === action.payload.id);
       if (index !== -1) {
-        // If updating floorplans, merge arrays
-        if (action.payload.floorplans) {
-          state.projects[index].floorplans = action.payload.floorplans;
-        }
         state.projects[index] = { ...state.projects[index], ...action.payload };
       }
     },
     deleteProject: (state, action) => {
       state.projects = state.projects.filter((p) => p.id !== action.payload);
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase('persist/REHYDRATE', (state, action) => {
+      const incoming = action.payload?.projects?.projects;
+      if (!incoming || incoming.length === 0) return;
+
+      const hasOnlyLegacy = incoming.every((project) => LEGACY_PROJECTS.has(project.name));
+      if (hasOnlyLegacy) {
+        state.projects = buildSeedProjects();
+      }
+    });
   },
 });
 

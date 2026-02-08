@@ -6,6 +6,8 @@ import { router } from "./routes";  // Import the router configuration
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from './store/index';
+import { TasksProvider } from './context/TasksContext';
+import { LanguageProvider } from './context/LanguageContext';
 
 const Main = () => {
     return (
@@ -13,8 +15,12 @@ const Main = () => {
             {/* Provide Redux state to all components */}
             <Provider store={store}>
                 <PersistGate loading={null} persistor={persistor}>
-                    {/* Set up routing for the application */} 
-                    <RouterProvider router={router} />
+                    <LanguageProvider>
+                        <TasksProvider>
+                            {/* Set up routing for the application */} 
+                            <RouterProvider router={router} />
+                        </TasksProvider>
+                    </LanguageProvider>
                 </PersistGate>
             </Provider>
         </React.StrictMode>

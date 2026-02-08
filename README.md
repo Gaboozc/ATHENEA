@@ -1,7 +1,7 @@
-# WireScope - Structured Cabling & Data Network Project Management
+# ATHENEA - tactical engineering & Data Network Project Management
 
 ## Overview
-WireScope is a comprehensive multi-platform application designed for managing structured cabling and data network projects. It provides real-time collaboration, offline functionality, and role-based access control for teams ranging from technicians to project managers.
+ATHENEA is a comprehensive multi-platform application designed for managing tactical engineering and data network projects. It provides real-time collaboration, offline functionality, and role-based access control for teams ranging from technicians to project managers.
 
 ### Getting stated:
 

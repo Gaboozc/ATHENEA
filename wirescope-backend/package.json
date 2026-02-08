@@ -1,7 +1,7 @@
 {
-  "name": "wirescope-backend",
+  "name": "ATHENEA-backend",
   "version": "1.0.0",
-  "description": "WireScope Backend API for structured cabling and data network project management",
+  "description": "ATHENEA Backend API for tactical engineering and data network project management",
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
@@ -17,13 +17,13 @@
     "docs": "swagger-jsdoc -d swaggerDef.js src/routes/*.js -o swagger.json"
   },
   "keywords": [
-    "structured-cabling",
+    "structured-infrastructure",
     "network-management",
     "project-management",
     "api",
     "nodejs"
   ],
-  "author": "WireScope Development Team",
+  "author": "ATHENEA Development Team",
   "license": "PROPRIETARY",
   "dependencies": {
     "express": "^4.18.2",
@@ -70,6 +70,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/wirescope/wirescope-backend.git"
+    "url": "https://github.com/ATHENEA/ATHENEA-backend.git"
   }
 }

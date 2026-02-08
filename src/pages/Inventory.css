@@ -27,11 +27,11 @@
 
 .view-selector {
   padding: 10px 16px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid #27272a;
   border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
-  background: white;
+  background: #000000;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -42,7 +42,7 @@
 }
 
 .project-filter {
-  background: #f7fafc;
+  background: #000000;
   padding: 16px;
   border-radius: 8px;
   margin-bottom: 24px;
@@ -58,7 +58,7 @@
 
 .project-filter select {
   padding: 8px 12px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid #27272a;
   border-radius: 6px;
   font-size: 14px;
 }
@@ -71,7 +71,7 @@
 }
 
 .stat-card {
-  background: white;
+  background: #000000;
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.07);
@@ -94,7 +94,7 @@
 .inventory-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: #000000;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.07);
   overflow: hidden;
@@ -108,7 +108,7 @@
 }
 
 .inventory-table th {
-  background: #f7fafc;
+  background: #000000;
   color: #4a5568;
   font-weight: 600;
 }
@@ -215,7 +215,7 @@
 }
 
 .modal {
-  background: #fff;
+  background: #000000;
   border-radius: 16px;
   padding: 36px 32px;
   min-width: 340px;
@@ -252,7 +252,7 @@
 .transfer-form select {
   width: 100%;
   padding: 10px 14px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid #27272a;
   border-radius: 6px;
   font-size: 16px;
   font-family: inherit;
@@ -283,8 +283,8 @@
 .btn-cancel {
   flex: 1;
   padding: 12px;
-  background: white;
-  border: 2px solid #e2e8f0;
+  background: #000000;
+  border: 2px solid #27272a;
   border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
@@ -295,7 +295,7 @@
 
 .btn-cancel:hover {
   border-color: #cbd5e0;
-  background: #f7fafc;
+  background: #000000;
 }
 
 @media (max-width: 768px) {

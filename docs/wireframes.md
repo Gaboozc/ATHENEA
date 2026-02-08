@@ -1,8 +1,8 @@
-# WireScope UI/UX Wireframes and Design System
+# ATHENEA UI/UX Wireframes and Design System
 
 ## Design Philosophy
 
-WireScope follows a **mobile-first, accessibility-focused** design approach that prioritizes usability in field conditions while maintaining professional aesthetics for office environments.
+ATHENEA follows a **mobile-first, accessibility-focused** design approach that prioritizes usability in field conditions while maintaining professional aesthetics for office environments.
 
 ### Core Principles
 1. **Field-First Design**: Optimized for outdoor/construction site usage
@@ -77,7 +77,7 @@ WireScope follows a **mobile-first, accessibility-focused** design approach that
 #### Login Screen
 ```
 ┌─────────────────────────────┐
-│        WireScope Logo       │
+│        ATHENEA Logo       │
 │                             │
 │  ┌─────────────────────────┐│
 │  │      Email Address      ││
@@ -502,7 +502,7 @@ WireScope follows a **mobile-first, accessibility-focused** design approach that
 ### 1. Executive Dashboard (Project Manager)
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│ WireScope | Executive Dashboard              [🔔3] [👤 John Manager] [⚙️] │
+│ ATHENEA | Executive Dashboard              [🔔3] [👤 John Manager] [⚙️] │
 ├─────────────────────────────────────────────────────────────────────────┤
 │ 📊 Portfolio Overview                                     📅 Oct 17, 2025 │
 │                                                                         │
@@ -533,7 +533,7 @@ WireScope follows a **mobile-first, accessibility-focused** design approach that
 ### 2. Project Management Interface
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│ WireScope | Office Building Network                     [👤] [📋] [⚙️]   │
+│ ATHENEA | Office Building Network                     [👤] [📋] [⚙️]   │
 ├─────────────────────────────────────────────────────────────────────────┤
 │ 🏢 Tech Corp Inc. | Started: Oct 1, 2025 | Due: Dec 15, 2025 | 65% ████│
 │                                                                         │

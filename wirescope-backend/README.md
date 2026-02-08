@@ -1,6 +1,6 @@
-# WireScope Backend
+# ATHENEA Backend
 
-Node.js/Express API server for the WireScope structured cabling management application.
+Node.js/Express API server for the ATHENEA tactical engineering management application.
 
 ## Features
 

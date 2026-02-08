@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 pngToIco([
-  path.join(__dirname, 'src/assets/img/logo256.png')
+  path.join(__dirname, 'src/assets/img/Athena-logo.png')
 ])
 .then(buf => {
   fs.writeFileSync(path.join(__dirname, 'src/assets/img/logo.ico'), buf);

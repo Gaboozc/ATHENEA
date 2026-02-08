@@ -1,10 +1,10 @@
-# WireScope API Documentation
+# ATHENEA API Documentation
 
 ## API Overview
 
-The WireScope API follows REST principles with JWT-based authentication and role-based access control. All endpoints return JSON responses and use standard HTTP status codes.
+The ATHENEA API follows REST principles with JWT-based authentication and role-based access control. All endpoints return JSON responses and use standard HTTP status codes.
 
-**Base URL**: `https://api.wirescope.com/v1`
+**Base URL**: `https://api.ATHENEA.com/v1`
 
 ## Authentication
 
@@ -234,7 +234,7 @@ Content-Type: application/json
   "response": {
     "id": 1,
     "name": "Office Building Network Installation",
-    "description": "Complete structured cabling for 10-floor office building",
+    "description": "Complete tactical engineering for 10-floor office building",
     "client": {
       "id": 5,
       "company_name": "Tech Corp Inc.",
@@ -287,7 +287,7 @@ Content-Type: application/json
         "id": 1,
         "project_id": 1,
         "file_name": "floor-1-plan.pdf",
-        "file_url": "https://s3.amazonaws.com/wirescope/floor-plans/floor-1-plan.pdf",
+        "file_url": "https://s3.amazonaws.com/ATHENEA/floor-plans/floor-1-plan.pdf",
         "version": 2,
         "is_current": true,
         "labels": [
@@ -325,7 +325,7 @@ Content-Type: application/json
   "response": {
     "success": true,
     "floor_plan_id": 1,
-    "file_url": "https://s3.amazonaws.com/wirescope/floor-plans/floor-1-plan.pdf",
+    "file_url": "https://s3.amazonaws.com/ATHENEA/floor-plans/floor-1-plan.pdf",
     "message": "Floor plan uploaded successfully"
   }
 }
@@ -449,7 +449,7 @@ Content-Type: application/json
     "result": "pass",
     "notes": "All tests passed within specifications",
     "photos": [
-      "https://s3.amazonaws.com/wirescope/photos/cert-1-photo1.jpg"
+      "https://s3.amazonaws.com/ATHENEA/photos/cert-1-photo1.jpg"
     ],
     "test_results": {
       "continuity": "pass",
@@ -785,4 +785,4 @@ API endpoints are rate limited based on user role:
 }
 ```
 
-This API documentation provides comprehensive coverage of all WireScope endpoints with detailed request/response examples.
+This API documentation provides comprehensive coverage of all ATHENEA endpoints with detailed request/response examples.

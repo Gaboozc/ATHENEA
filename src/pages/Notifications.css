@@ -1,0 +1,67 @@
+.notifications-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 32px 20px 48px;
+  background: #0b0b0b;
+  min-height: 100vh;
+  color: #c9cdd2;
+}
+
+.notifications-header h1 {
+  margin: 0 0 6px;
+  color: #d4af37;
+  font-size: 32px;
+}
+
+.notifications-header p {
+  margin: 0 0 24px;
+  color: #c9cdd2;
+}
+
+.notifications-card {
+  background: #0f2235;
+  border: 1px solid #27272a;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.notifications-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.notification-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: #0b0b0b;
+}
+
+.notification-title {
+  display: block;
+  color: #c9cdd2;
+  font-weight: 600;
+}
+
+.notification-meta {
+  display: block;
+  font-size: 12px;
+  color: #9aa3ad;
+  margin-top: 4px;
+}
+
+.notification-score {
+  font-size: 12px;
+  color: #1ec9ff;
+}
+
+.notifications-empty {
+  color: #9aa3ad;
+}

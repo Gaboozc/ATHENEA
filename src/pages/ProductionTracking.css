@@ -49,7 +49,7 @@
 }
 
 .stat-card {
-  background: white;
+  background: #000000;
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -102,7 +102,7 @@
   flex-wrap: wrap;
   margin-bottom: 24px;
   padding: 20px;
-  background: white;
+  background: #000000;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -124,11 +124,11 @@
 
 .filter-group select {
   padding: 10px 12px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid #27272a;
   border-radius: 8px;
   font-size: 14px;
   color: #2d3748;
-  background: white;
+  background: #000000;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -141,7 +141,7 @@
 
 /* Table */
 .production-table-wrapper {
-  background: white;
+  background: #000000;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -178,7 +178,7 @@
 }
 
 .production-table tbody tr:hover {
-  background: #f7fafc;
+  background: #000000;
 }
 
 .production-table tbody tr:last-child td {
@@ -234,7 +234,7 @@
 }
 
 .status-pending {
-  background: #edf2f7;
+  background: #000000;
   color: #718096;
   border-color: #cbd5e0;
 }
@@ -267,7 +267,7 @@
 }
 
 .priority-low {
-  background: #edf2f7;
+  background: #000000;
   color: #718096;
 }
 
@@ -381,7 +381,7 @@
 }
 
 .modal {
-  background: white;
+  background: #000000;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   max-width: 800px;
@@ -415,7 +415,7 @@
   width: 36px;
   height: 36px;
   border: none;
-  background: #f7fafc;
+  background: #000000;
   border-radius: 8px;
   font-size: 24px;
   color: #718096;
@@ -433,7 +433,7 @@
 
 .modal-task-info {
   padding: 20px 24px;
-  background: #f7fafc;
+  background: #000000;
   border-bottom: 1px solid #e2e8f0;
 }
 
@@ -480,7 +480,7 @@
 .form-group select,
 .form-group textarea {
   padding: 10px 12px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid #27272a;
   border-radius: 8px;
   font-size: 14px;
   color: #2d3748;
@@ -539,7 +539,7 @@
 }
 
 .btn-cancel {
-  background: #f7fafc;
+  background: #000000;
   color: #4a5568;
 }
 

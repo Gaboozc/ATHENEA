@@ -17,8 +17,8 @@ const config = {
   database: {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT) || 5432,
-    name: process.env.DB_NAME || 'wirescope_dev',
-    user: process.env.DB_USER || 'wirescope_user',
+    name: process.env.DB_NAME || 'ATHENEA_dev',
+    user: process.env.DB_USER || 'ATHENEA_user',
     password: process.env.DB_PASSWORD || 'password',
     ssl: process.env.DB_SSL === 'true',
     pool: {
@@ -57,7 +57,7 @@ const config = {
     secret: process.env.JWT_SECRET || 'fallback-secret-key',
     expiration: process.env.JWT_EXPIRATION || '24h',
     refreshExpiration: process.env.JWT_REFRESH_EXPIRATION || '7d',
-    issuer: 'wirescope-api',
+    issuer: 'ATHENEA-api',
     algorithm: 'HS256'
   },
 
@@ -67,7 +67,7 @@ const config = {
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     region: process.env.AWS_REGION || 'us-east-1',
     s3: {
-      bucket: process.env.AWS_S3_BUCKET || 'wirescope-files',
+      bucket: process.env.AWS_S3_BUCKET || 'ATHENEA-files',
       cloudFrontUrl: process.env.AWS_CLOUDFRONT_URL,
     }
   },
@@ -93,7 +93,7 @@ const config = {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD,
     },
-    from: process.env.EMAIL_FROM || 'noreply@wirescope.com',
+    from: process.env.EMAIL_FROM || 'noreply@ATHENEA.com',
   },
 
   // Application URLs
@@ -125,7 +125,7 @@ const config = {
   // Logging configuration
   logging: {
     level: process.env.LOG_LEVEL || 'info',
-    filename: 'logs/wirescope.log',
+    filename: 'logs/ATHENEA.log',
     maxsize: 5242880, // 5MB
     maxFiles: 5,
     colorize: false,

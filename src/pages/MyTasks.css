@@ -1,0 +1,138 @@
+.mytasks-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 20px 48px;
+  background: #0b0b0b;
+  min-height: 100vh;
+  color: #c9cdd2;
+}
+
+.mytasks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 12px;
+}
+
+.mytasks-header h1 {
+  margin: 0 0 6px;
+  color: #d4af37;
+  font-size: 32px;
+}
+
+.mytasks-header p {
+  margin: 0;
+  color: #c9cdd2;
+}
+
+.mytasks-count {
+  border: 1px solid #d4af37;
+  color: #d4af37;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mytasks-list {
+  display: grid;
+  gap: 16px;
+}
+
+.mytasks-card {
+  background: #0f2235;
+  border: 1px solid #27272a;
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: grid;
+  gap: 12px;
+}
+
+.mytasks-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.mytasks-card-header h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  color: #c9cdd2;
+}
+
+.mytasks-project {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #9aa3ad;
+}
+
+.mytasks-status {
+  border: 1px solid #27272a;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #1ec9ff;
+}
+
+.mytasks-desc {
+  margin: 0;
+  font-size: 13px;
+  color: #c9cdd2;
+}
+
+.mytasks-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mytasks-pill {
+  border: 1px solid #27272a;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #c9cdd2;
+  background: #0b0b0b;
+}
+
+.mytasks-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mytasks-action {
+  border: 1px solid #27272a;
+  background: #0b0b0b;
+  color: #c9cdd2;
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.mytasks-action:hover {
+  border-color: #1ec9ff;
+  color: #1ec9ff;
+}
+
+.mytasks-action.is-active {
+  border-color: #1ec9ff;
+  color: #1ec9ff;
+}
+
+.mytasks-empty {
+  border: 1px solid #27272a;
+  border-radius: 16px;
+  background: #0f2235;
+  padding: 18px;
+  color: #9aa3ad;
+}

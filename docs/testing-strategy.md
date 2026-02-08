@@ -1,8 +1,8 @@
-# WireScope Testing Strategy
+# ATHENEA Testing Strategy
 
 ## Testing Philosophy
 
-WireScope follows a comprehensive testing strategy designed to ensure reliability, security, and performance across all components of the system. Our testing approach includes multiple layers from unit tests to end-to-end testing.
+ATHENEA follows a comprehensive testing strategy designed to ensure reliability, security, and performance across all components of the system. Our testing approach includes multiple layers from unit tests to end-to-end testing.
 
 ## Testing Pyramid
 
@@ -81,7 +81,7 @@ WireScope follows a comprehensive testing strategy designed to ensure reliabilit
 ### Test Database
 ```sql
 -- Separate test database
-CREATE DATABASE wirescope_test;
+CREATE DATABASE ATHENEA_test;
 -- Automated cleanup between tests
 -- Isolated test data fixtures
 ```
@@ -393,4 +393,4 @@ jobs:
 - Connection establishment: <100ms
 - Concurrent connections: 50+
 
-This comprehensive testing strategy ensures WireScope maintains high quality, security, and performance standards throughout development and production.
+This comprehensive testing strategy ensures ATHENEA maintains high quality, security, and performance standards throughout development and production.

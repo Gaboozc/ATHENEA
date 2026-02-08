@@ -1,4 +1,4 @@
-# WireScope Development Timeline & Milestones
+# ATHENEA Development Timeline & Milestones
 
 ## Project Overview
 **Duration**: 16 weeks (4 months)  
@@ -353,4 +353,4 @@ UI/UX Designer (1)           - User interface and experience design
 - **Error Reduction**: 50% reduction in data entry errors
 - **Client Satisfaction**: >4.5/5 rating
 
-This timeline provides a comprehensive roadmap for developing the WireScope application with clear milestones, deliverables, and success metrics.
+This timeline provides a comprehensive roadmap for developing the ATHENEA application with clear milestones, deliverables, and success metrics.

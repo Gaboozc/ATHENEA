@@ -1,7 +1,7 @@
 {
-  "appId": "com.alphadev.scopedemo",
-  "productName": "Scope demo",
-  "copyright": "Copyright © 2025 AlphaDev Studios, Gabriel Zavarse",
+  "appId": "com.athenea.terminal",
+  "productName": "ATHENEA",
+  "copyright": "Copyright © 2025 ATHENEA",
   "files": [
     "dist/**/*",
   "electron-main.cjs",
@@ -23,6 +23,6 @@
     "license": "LICENSE",
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "shortcutName": "Scope demo"
+    "shortcutName": "ATHENEA"
   }
 }

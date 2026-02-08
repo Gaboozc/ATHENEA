@@ -140,7 +140,7 @@ if (process.env.ENABLE_SWAGGER_DOCS === 'true' && process.env.NODE_ENV !== 'prod
   
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
     explorer: true,
-    customSiteTitle: 'WireScope API Documentation',
+    customSiteTitle: 'ATHENEA API Documentation',
     customCss: '.swagger-ui .topbar { display: none }'
   }));
 }
@@ -194,7 +194,7 @@ module.exports = { app, server };
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   server.listen(PORT, () => {
-    logger.info(`🚀 WireScope API Server is running on port ${PORT}`);
+    logger.info(`🚀 ATHENEA API Server is running on port ${PORT}`);
     logger.info(`📖 Environment: ${process.env.NODE_ENV || 'development'}`);
     if (process.env.ENABLE_SWAGGER_DOCS === 'true') {
       logger.info(`📚 API Documentation available at http://localhost:${PORT}/api-docs`);

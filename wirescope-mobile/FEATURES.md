@@ -1,17 +1,17 @@
-# WireScope Mobile - Complete Features & Visual Guide
+# ATHENEA Mobile - Complete Features & Visual Guide
 
 ## 🎨 App Preview & Features
 
 ### 📱 What the App Looks Like
 
-The WireScope mobile app is a professional React Native application for managing structured cabling projects. Here's what you'll see:
+The ATHENEA mobile app is a professional React Native application for managing tactical engineering projects. Here's what you'll see:
 
 ## 🖼️ Visual Structure
 
 ### 1. **Login Screen** (First Screen)
 ```
 ┌─────────────────────────┐
-│  🏢 WireScope Logo      │
+│  🏢 ATHENEA Logo      │
 │  Cable Management       │
 │                         │
 │  ┌──────────────────┐  │
@@ -322,7 +322,7 @@ npx expo start
 ## 📸 What You'll See
 
 When you run the app:
-1. **Splash screen** with WireScope logo
+1. **Splash screen** with ATHENEA logo
 2. **Login screen** (mock login: any email/password works)
 3. **Bottom tab navigator** with 5 tabs
 4. **Projects list** with 3 sample projects

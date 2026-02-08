@@ -3,17 +3,17 @@ export * from './validation';
 
 // Constants
 export const APP_CONFIG = {
-  API_BASE_URL: __DEV__ ? 'http://localhost:3000/api' : 'https://api.wirescope.com',
-  WEBSOCKET_URL: __DEV__ ? 'ws://localhost:3001' : 'wss://ws.wirescope.com',
+  API_BASE_URL: __DEV__ ? 'http://localhost:3000/api' : 'https://api.ATHENEA.com',
+  WEBSOCKET_URL: __DEV__ ? 'ws://localhost:3001' : 'wss://ws.ATHENEA.com',
   AUTH0_DOMAIN: 'your-auth0-domain.auth0.com',
   AUTH0_CLIENT_ID: 'your-auth0-client-id',
 } as const;
 
 export const STORAGE_KEYS = {
-  AUTH_TOKEN: '@wirescope/auth_token',
-  REFRESH_TOKEN: '@wirescope/refresh_token',
-  USER_PROFILE: '@wirescope/user_profile',
-  OFFLINE_DATA: '@wirescope/offline_data',
+  AUTH_TOKEN: '@ATHENEA/auth_token',
+  REFRESH_TOKEN: '@ATHENEA/refresh_token',
+  USER_PROFILE: '@ATHENEA/user_profile',
+  OFFLINE_DATA: '@ATHENEA/offline_data',
 } as const;
 
 export const POINT_TYPES = [

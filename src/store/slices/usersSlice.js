@@ -4,14 +4,14 @@ const initialUsers = [
   {
     id: '1',
     name: 'Super Admin (Owner)',
-    email: 'owner@wirescope.com',
+    email: 'owner@ATHENEA.com',
     role: 'super-admin',
     active: true,
   },
   {
     id: '2',
     name: 'PM - John Doe',
-    email: 'pm1@wirescope.com',
+    email: 'pm1@ATHENEA.com',
     role: 'pm',
     active: true,
     // PM manages projects 1 and 3
@@ -19,7 +19,7 @@ const initialUsers = [
   {
     id: '3',
     name: 'PM - Jane Smith',
-    email: 'pm2@wirescope.com',
+    email: 'pm2@ATHENEA.com',
     role: 'pm',
     active: true,
     // PM manages project 2
@@ -27,7 +27,7 @@ const initialUsers = [
   {
     id: '4',
     name: 'Supervisor One',
-    email: 'supervisor@wirescope.com',
+    email: 'supervisor@ATHENEA.com',
     role: 'supervisor',
     active: true,
     projectId: '1',
@@ -35,7 +35,7 @@ const initialUsers = [
   {
     id: '5',
     name: 'Lead Tech John',
-    email: 'leadtech@wirescope.com',
+    email: 'leadtech@ATHENEA.com',
     role: 'lead-technician',
     active: true,
     projectId: '2',
@@ -44,7 +44,7 @@ const initialUsers = [
   {
     id: '6',
     name: 'Technician A',
-    email: 'tech@wirescope.com',
+    email: 'tech@ATHENEA.com',
     role: 'technician',
     active: true,
     projectId: '2',
@@ -53,7 +53,7 @@ const initialUsers = [
   {
     id: '7',
     name: 'Technician B',
-    email: 'techb@wirescope.com',
+    email: 'techb@ATHENEA.com',
     role: 'technician',
     active: true,
     projectId: '2',

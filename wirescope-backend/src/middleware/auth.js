@@ -109,8 +109,8 @@ const authMiddleware = async (req, res, next) => {
     const user = {
       id: decoded.sub || decoded.userId,
       email: decoded.email,
-      role: decoded.role || decoded['https://wirescope.com/role'],
-      permissions: decoded.permissions || decoded['https://wirescope.com/permissions'] || [],
+      role: decoded.role || decoded['https://ATHENEA.com/role'],
+      permissions: decoded.permissions || decoded['https://ATHENEA.com/permissions'] || [],
       exp: decoded.exp,
       iat: decoded.iat
     };
@@ -315,8 +315,8 @@ const optionalAuth = async (req, res, next) => {
       req.user = {
         id: decoded.sub || decoded.userId,
         email: decoded.email,
-        role: decoded.role || decoded['https://wirescope.com/role'],
-        permissions: decoded.permissions || decoded['https://wirescope.com/permissions'] || []
+        role: decoded.role || decoded['https://ATHENEA.com/role'],
+        permissions: decoded.permissions || decoded['https://ATHENEA.com/permissions'] || []
       };
     } catch (tokenError) {
       // Token is invalid, but that's okay for optional auth

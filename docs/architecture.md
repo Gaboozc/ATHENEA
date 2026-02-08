@@ -1,8 +1,8 @@
-# WireScope Technical Architecture
+# ATHENEA Technical Architecture
 
 ## System Architecture Overview
 
-WireScope follows a microservices architecture with separate frontend applications for mobile and desktop, communicating with a unified backend API. The system is designed for scalability, reliability, and offline-first functionality.
+ATHENEA follows a microservices architecture with separate frontend applications for mobile and desktop, communicating with a unified backend API. The system is designed for scalability, reliability, and offline-first functionality.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -229,4 +229,4 @@ Notifications (id, user_id, type, content, read_at, created_at)
 - Easy distribution and updates
 - Rich native integrations
 
-This architecture provides a robust foundation for the WireScope application, ensuring scalability, reliability, and maintainability as the system grows.
+This architecture provides a robust foundation for the ATHENEA application, ensuring scalability, reliability, and maintainability as the system grows.

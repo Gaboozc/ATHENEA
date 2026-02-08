@@ -1,8 +1,8 @@
-# WireScope Deployment Guide
+# ATHENEA Deployment Guide
 
 ## Overview
 
-This guide covers the deployment process for WireScope across development, staging, and production environments. The application uses a containerized microservices architecture with automated CI/CD pipelines.
+This guide covers the deployment process for ATHENEA across development, staging, and production environments. The application uses a containerized microservices architecture with automated CI/CD pipelines.
 
 ## Infrastructure Architecture
 
@@ -89,15 +89,15 @@ WORKDIR /app
 RUN apk update && apk upgrade && apk add --no-cache dumb-init
 
 # Create non-root user
-RUN addgroup -g 1001 -S wirescope && \
-    adduser -S wirescope -u 1001
+RUN addgroup -g 1001 -S ATHENEA && \
+    adduser -S ATHENEA -u 1001
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY . .
 
 # Set ownership and permissions
-RUN chown -R wirescope:wirescope /app
-USER wirescope
+RUN chown -R ATHENEA:ATHENEA /app
+USER ATHENEA
 
 EXPOSE 3000
 
@@ -113,7 +113,7 @@ version: '3.8'
 services:
   api:
     build: 
-      context: ./wirescope-backend
+      context: ./ATHENEA-backend
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
@@ -125,14 +125,14 @@ services:
       - postgres
       - redis
     volumes:
-      - ./wirescope-backend:/app
+      - ./ATHENEA-backend:/app
       - /app/node_modules
 
   postgres:
     image: postgres:14-alpine
     environment:
-      - POSTGRES_DB=wirescope_dev
-      - POSTGRES_USER=wirescope_user
+      - POSTGRES_DB=ATHENEA_dev
+      - POSTGRES_USER=ATHENEA_user
       - POSTGRES_PASSWORD=dev_password
     ports:
       - "5432:5432"
@@ -171,15 +171,15 @@ volumes:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: wirescope
+  name: ATHENEA
   labels:
-    name: wirescope
+    name: ATHENEA
 ---
 apiVersion: v1
 kind: ResourceQuota
 metadata:
-  name: wirescope-quota
-  namespace: wirescope
+  name: ATHENEA-quota
+  namespace: ATHENEA
 spec:
   hard:
     requests.cpu: "4"
@@ -194,18 +194,18 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: wirescope-config
-  namespace: wirescope
+  name: ATHENEA-config
+  namespace: ATHENEA
 data:
   NODE_ENV: "production"
   API_VERSION: "v1"
-  DB_HOST: "wirescope-postgres.c1234567890.us-east-1.rds.amazonaws.com"
+  DB_HOST: "ATHENEA-postgres.c1234567890.us-east-1.rds.amazonaws.com"
   DB_PORT: "5432"
-  DB_NAME: "wirescope_prod"
-  REDIS_HOST: "wirescope-redis.abc123.cache.amazonaws.com"
+  DB_NAME: "ATHENEA_prod"
+  REDIS_HOST: "ATHENEA-redis.abc123.cache.amazonaws.com"
   REDIS_PORT: "6379"
   AWS_REGION: "us-east-1"
-  AWS_S3_BUCKET: "wirescope-prod-files"
+  AWS_S3_BUCKET: "ATHENEA-prod-files"
 ```
 
 ### Secret Configuration
@@ -213,11 +213,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: wirescope-secrets
-  namespace: wirescope
+  name: ATHENEA-secrets
+  namespace: ATHENEA
 type: Opaque
 stringData:
-  DB_USER: "wirescope_user"
+  DB_USER: "ATHENEA_user"
   DB_PASSWORD: "secure_production_password"
   JWT_SECRET: "super_secure_jwt_secret_key"
   AUTH0_CLIENT_SECRET: "auth0_client_secret"
@@ -230,23 +230,23 @@ stringData:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: wirescope-api
-  namespace: wirescope
+  name: ATHENEA-api
+  namespace: ATHENEA
   labels:
-    app: wirescope-api
+    app: ATHENEA-api
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: wirescope-api
+      app: ATHENEA-api
   template:
     metadata:
       labels:
-        app: wirescope-api
+        app: ATHENEA-api
     spec:
       containers:
       - name: api
-        image: your-registry/wirescope-api:latest
+        image: your-registry/ATHENEA-api:latest
         ports:
         - containerPort: 3000
         env:
@@ -254,9 +254,9 @@ spec:
           value: "3000"
         envFrom:
         - configMapRef:
-            name: wirescope-config
+            name: ATHENEA-config
         - secretRef:
-            name: wirescope-secrets
+            name: ATHENEA-secrets
         resources:
           requests:
             memory: "256Mi"
@@ -290,11 +290,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: wirescope-api-service
-  namespace: wirescope
+  name: ATHENEA-api-service
+  namespace: ATHENEA
 spec:
   selector:
-    app: wirescope-api
+    app: ATHENEA-api
   ports:
   - protocol: TCP
     port: 80
@@ -304,8 +304,8 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: wirescope-ingress
-  namespace: wirescope
+  name: ATHENEA-ingress
+  namespace: ATHENEA
   annotations:
     kubernetes.io/ingress.class: "alb"
     alb.ingress.kubernetes.io/scheme: "internet-facing"
@@ -314,14 +314,14 @@ metadata:
     alb.ingress.kubernetes.io/ssl-policy: "ELBSecurityPolicy-TLS-1-2-2017-01"
 spec:
   rules:
-  - host: api.wirescope.com
+  - host: api.ATHENEA.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: wirescope-api-service
+            name: ATHENEA-api-service
             port:
               number: 80
 ```
@@ -338,8 +338,8 @@ on:
   
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: wirescope-api
-  EKS_CLUSTER_NAME: wirescope-prod
+  ECR_REPOSITORY: ATHENEA-api
+  EKS_CLUSTER_NAME: ATHENEA-prod
 
 jobs:
   test:
@@ -412,12 +412,12 @@ jobs:
       run: |
         sed -i "s|<IMAGE>|$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG|g" k8s/deployment.yaml
         kubectl apply -f k8s/
-        kubectl rollout status deployment/wirescope-api -n wirescope --timeout=300s
+        kubectl rollout status deployment/ATHENEA-api -n ATHENEA --timeout=300s
         
     - name: Run deployment tests
       run: |
-        kubectl get pods -n wirescope
-        kubectl logs -l app=wirescope-api -n wirescope --tail=50
+        kubectl get pods -n ATHENEA
+        kubectl logs -l app=ATHENEA-api -n ATHENEA --tail=50
 ```
 
 ## Database Migration Strategy
@@ -428,27 +428,27 @@ jobs:
 npm run migration:create add_new_table
 
 # Run migrations in staging
-kubectl exec -it deployment/wirescope-api -n wirescope-staging -- npm run db:migrate
+kubectl exec -it deployment/ATHENEA-api -n ATHENEA-staging -- npm run db:migrate
 
 # Backup production database
-aws rds create-db-snapshot --db-instance-identifier wirescope-prod --db-snapshot-identifier wirescope-backup-$(date +%Y%m%d)
+aws rds create-db-snapshot --db-instance-identifier ATHENEA-prod --db-snapshot-identifier ATHENEA-backup-$(date +%Y%m%d)
 
 # Run migrations in production
-kubectl exec -it deployment/wirescope-api -n wirescope -- npm run db:migrate
+kubectl exec -it deployment/ATHENEA-api -n ATHENEA -- npm run db:migrate
 ```
 
 ### Rollback Strategy
 ```bash
 # Rollback application deployment
-kubectl rollout undo deployment/wirescope-api -n wirescope
+kubectl rollout undo deployment/ATHENEA-api -n ATHENEA
 
 # Rollback database if needed
-kubectl exec -it deployment/wirescope-api -n wirescope -- npm run db:rollback
+kubectl exec -it deployment/ATHENEA-api -n ATHENEA -- npm run db:rollback
 
 # Restore from snapshot (if critical)
 aws rds restore-db-instance-from-db-snapshot \
-  --db-instance-identifier wirescope-prod-restored \
-  --db-snapshot-identifier wirescope-backup-20231017
+  --db-instance-identifier ATHENEA-prod-restored \
+  --db-snapshot-identifier ATHENEA-backup-20231017
 ```
 
 ## Mobile App Deployment
@@ -456,25 +456,25 @@ aws rds restore-db-instance-from-db-snapshot \
 ### iOS App Store
 ```bash
 # Build for production
-cd wirescope-mobile
+cd ATHENEA-mobile
 npx react-native run-ios --configuration Release
 
 # Archive and upload to App Store Connect
-xcodebuild -workspace ios/WireScope.xcworkspace \
-           -scheme WireScope \
+xcodebuild -workspace ios/ATHENEA.xcworkspace \
+           -scheme ATHENEA \
            -configuration Release \
-           -archivePath ./build/WireScope.xcarchive \
+           -archivePath ./build/ATHENEA.xcarchive \
            archive
 
 # Upload to App Store
 xcodebuild -exportArchive \
-           -archivePath ./build/WireScope.xcarchive \
+           -archivePath ./build/ATHENEA.xcarchive \
            -exportPath ./build/ \
            -exportOptionsPlist ExportOptions.plist
 
 altool --upload-app \
        --type ios \
-       --file ./build/WireScope.ipa \
+       --file ./build/ATHENEA.ipa \
        --username your-apple-id \
        --password @keychain:altool
 ```
@@ -482,14 +482,14 @@ altool --upload-app \
 ### Google Play Store
 ```bash
 # Build Android APK/AAB
-cd wirescope-mobile/android
+cd ATHENEA-mobile/android
 ./gradlew assembleRelease
 
 # Sign the APK
 jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
-          -keystore wirescope-release-key.keystore \
+          -keystore ATHENEA-release-key.keystore \
           app/build/outputs/apk/release/app-release-unsigned.apk \
-          wirescope
+          ATHENEA
 
 # Upload to Google Play Console (automated via fastlane)
 fastlane supply --aab app/build/outputs/bundle/release/app-release.aab
@@ -508,13 +508,13 @@ data:
     global:
       scrape_interval: 15s
     scrape_configs:
-    - job_name: 'wirescope-api'
+    - job_name: 'ATHENEA-api'
       kubernetes_sd_configs:
       - role: pod
       relabel_configs:
       - source_labels: [__meta_kubernetes_pod_label_app]
         action: keep
-        regex: wirescope-api
+        regex: ATHENEA-api
 ```
 
 ### Grafana Dashboards
@@ -526,7 +526,7 @@ data:
 ### Alerting Rules
 ```yaml
 groups:
-- name: wirescope-alerts
+- name: ATHENEA-alerts
   rules:
   - alert: HighErrorRate
     expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
@@ -580,4 +580,4 @@ groups:
 - Documentation updates
 - Team training and runbooks
 
-This deployment guide provides a comprehensive foundation for deploying and maintaining WireScope in production environments with high availability, security, and observability.
+This deployment guide provides a comprehensive foundation for deploying and maintaining ATHENEA in production environments with high availability, security, and observability.

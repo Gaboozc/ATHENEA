@@ -1,12 +1,12 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "WireScope API",
+    "title": "ATHENEA API",
     "version": "1.0.0",
-    "description": "API for structured cabling and data network project management",
+    "description": "API for tactical engineering and data network project management",
     "contact": {
-      "name": "WireScope Development Team",
-      "email": "dev@wirescope.com"
+      "name": "ATHENEA Development Team",
+      "email": "dev@ATHENEA.com"
     },
     "license": {
       "name": "Proprietary"
@@ -18,7 +18,7 @@
       "description": "Development server"
     },
     {
-      "url": "https://api.wirescope.com/v1",
+      "url": "https://api.ATHENEA.com/v1",
       "description": "Production server"
     }
   ],

@@ -1,0 +1,65 @@
+.sidebar {
+  width: 240px;
+  min-height: 100vh;
+  background: #0b0b0b;
+  color: #c9cdd2;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #27272a;
+  font-family: "Consolas", "Courier New", monospace;
+}
+
+.sidebar-header {
+  padding: 20px 18px 12px;
+  border-bottom: 1px solid #27272a;
+}
+
+.sidebar-title {
+  display: block;
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: #d4af37;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.sidebar-subtitle {
+  display: block;
+  font-size: 12px;
+  color: #9aa3ad;
+  margin-top: 6px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 12px;
+}
+
+.sidebar-link {
+  text-decoration: none;
+  color: #c9cdd2;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-link:hover {
+  background: rgba(30, 201, 255, 0.08);
+  border-color: rgba(30, 201, 255, 0.3);
+  color: #1ec9ff;
+}
+
+.sidebar-link.is-active {
+  background: rgba(30, 201, 255, 0.18);
+  border-color: #1ec9ff;
+  color: #1ec9ff;
+  box-shadow: inset 3px 0 0 #1ec9ff;
+}
+
+.sidebar-link-text {
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}

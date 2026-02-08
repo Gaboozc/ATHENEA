@@ -1,12 +1,14 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { updatePoint, deletePoint } from '../store/slices/pointsSlice';
+import { useLanguage } from '../context/LanguageContext';
 import './PointDetails.css';
 
 export const PointDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t } = useLanguage();
   
   const point = useSelector((state) => 
     state.points.points.find((p) => p.id === id)
@@ -15,8 +17,8 @@ export const PointDetails = () => {
   if (!point) {
     return (
       <div className="not-found">
-        <h2>Point not found</h2>
-        <button onClick={() => navigate(-1)}>Go Back</button>
+        <h2>{t('Point not found')}</h2>
+        <button onClick={() => navigate(-1)}>{t('Go Back')}</button>
       </div>
     );
   }
@@ -44,7 +46,7 @@ export const PointDetails = () => {
   };
 
   const handleDelete = () => {
-    if (confirm('Are you sure you want to delete this point?')) {
+    if (confirm(t('Are you sure you want to delete this point?'))) {
       dispatch(deletePoint(id));
       navigate(-1);
     }
@@ -54,10 +56,10 @@ export const PointDetails = () => {
     <div className="point-details-container">
       <div className="point-header">
         <button className="back-btn" onClick={() => navigate(-1)}>
-          ← Back to Floor Plan
+          ← {t('Back')}
         </button>
         <button className="btn-danger" onClick={handleDelete}>
-          🗑️ Delete Point
+          🗑️ {t('Delete Point')}
         </button>
       </div>
 
@@ -80,26 +82,26 @@ export const PointDetails = () => {
 
         <div className="point-info-grid">
           <div className="info-section">
-            <h3>📋 General Information</h3>
+            <h3>📋 {t('General Information')}</h3>
             <div className="info-items">
               <div className="info-row">
-                <span className="label">Point Number:</span>
+                <span className="label">{t('Point Number:')}</span>
                 <span className="value">{point.pointNumber}</span>
               </div>
               <div className="info-row">
-                <span className="label">Type:</span>
+                <span className="label">{t('Type:')}</span>
                 <span className="value" style={{ color: getTypeColor(point.type) }}>
                   {point.type.charAt(0).toUpperCase() + point.type.slice(1)}
                 </span>
               </div>
               <div className="info-row">
-                <span className="label">Category:</span>
+                <span className="label">{t('Category:')}</span>
                 <span className="value">
                   {point.category.charAt(0).toUpperCase() + point.category.slice(1)}
                 </span>
               </div>
               <div className="info-row">
-                <span className="label">Status:</span>
+                <span className="label">{t('Status:')}</span>
                 <span className="value" style={{ color: getStatusColor(point.status) }}>
                   {point.status.split('-').map(w => 
                     w.charAt(0).toUpperCase() + w.slice(1)
@@ -110,14 +112,14 @@ export const PointDetails = () => {
           </div>
 
           <div className="info-section">
-            <h3>📍 Location</h3>
+            <h3>📍 {t('Location')}</h3>
             <div className="info-items">
               <div className="info-row">
-                <span className="label">X Coordinate:</span>
+                <span className="label">{t('X Coordinate:')}</span>
                 <span className="value">{Math.round(point.x)}</span>
               </div>
               <div className="info-row">
-                <span className="label">Y Coordinate:</span>
+                <span className="label">{t('Y Coordinate:')}</span>
                 <span className="value">{Math.round(point.y)}</span>
               </div>
             </div>
@@ -126,34 +128,34 @@ export const PointDetails = () => {
 
         {point.description && (
           <div className="description-section">
-            <h3>📝 Description</h3>
+            <h3>📝 {t('Description')}</h3>
             <p>{point.description}</p>
           </div>
         )}
 
         <div className="status-actions">
-          <h3>🔄 Update Status</h3>
+          <h3>🔄 {t('Update Status')}</h3>
           <div className="status-buttons">
             <button
               className={`status-btn ${point.status === 'pending' ? 'active' : ''}`}
               style={{ borderColor: '#ed8936' }}
               onClick={() => handleStatusChange('pending')}
             >
-              ⏳ Pending
+              ⏳ {t('Pending')}
             </button>
             <button
               className={`status-btn ${point.status === 'in-progress' ? 'active' : ''}`}
               style={{ borderColor: '#4299e1' }}
               onClick={() => handleStatusChange('in-progress')}
             >
-              🔨 In Progress
+              🔨 {t('In Progress')}
             </button>
             <button
               className={`status-btn ${point.status === 'completed' ? 'active' : ''}`}
               style={{ borderColor: '#48bb78' }}
               onClick={() => handleStatusChange('completed')}
             >
-              ✅ Completed
+              ✅ {t('Completed')}
             </button>
           </div>
         </div>

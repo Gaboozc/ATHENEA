@@ -1,4 +1,93 @@
-# WireScope Database Schema
+# ATHENEA Database Schema
+
+## Phase 2 Draft (ATHENEA Core)
+
+```sql
+CREATE TABLE organizations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    invite_code TEXT NOT NULL UNIQUE,
+    domain_restriction TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE memberships (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    role TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('active', 'invited')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE workstreams (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    code TEXT NOT NULL UNIQUE,
+    label TEXT NOT NULL,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    role_access JSONB NOT NULL DEFAULT '[]'::jsonb,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE projects (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT,
+    status TEXT NOT NULL DEFAULT 'planning',
+    client_name TEXT NOT NULL,
+    site_address TEXT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE,
+    maintenance_plan TEXT,
+    cancelled_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE tasks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    status TEXT NOT NULL DEFAULT 'Active',
+    level TEXT NOT NULL DEFAULT 'Backlog',
+    total_score INT NOT NULL DEFAULT 0,
+    workstream_ids UUID[] NOT NULL DEFAULT '{}',
+    factors JSONB NOT NULL DEFAULT '{}'::jsonb,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE tasks_workstreams (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    workstream_id UUID NOT NULL REFERENCES workstreams(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(task_id, workstream_id)
+);
+
+CREATE TABLE field_reports (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    category TEXT,
+    priority TEXT,
+    status TEXT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
 
 ## Entity Relationship Diagram (ERD)
 
@@ -544,4 +633,4 @@ ALTER TABLE projects ADD CONSTRAINT check_completion_percentage
     CHECK (completion_percentage >= 0 AND completion_percentage <= 100);
 ```
 
-This database schema provides a robust foundation for the WireScope application, supporting all the required functionality while maintaining data integrity and performance.
+This database schema provides a robust foundation for the ATHENEA application, supporting all the required functionality while maintaining data integrity and performance.

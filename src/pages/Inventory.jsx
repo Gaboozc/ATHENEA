@@ -2,6 +2,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addInventoryItem, updateInventoryItem, deleteInventoryItem, transferToProject } from '../store/slices/inventorySlice';
+import { useLanguage } from '../context/LanguageContext';
 import './Inventory.css';
 
 const CATEGORIES = [
@@ -17,6 +18,7 @@ export const Inventory = () => {
   const navigate = useNavigate();
   const { items } = useSelector((state) => state.inventory);
   const { projects } = useSelector((state) => state.projects);
+  const { t } = useLanguage();
   
   const [showModal, setShowModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
@@ -115,7 +117,7 @@ export const Inventory = () => {
   return (
     <div className="inventory-container">
       <div className="inventory-header">
-        <h1>Inventory Management</h1>
+        <h1>{t('Inventory Management')}</h1>
         <div className="header-actions">
           <select
             className="view-selector"
@@ -127,23 +129,23 @@ export const Inventory = () => {
               }
             }}
           >
-            <option value="warehouse">📦 Warehouse</option>
-            <option value="project">🏗️ Project Inventory</option>
+            <option value="warehouse">📦 {t('Warehouse')}</option>
+            <option value="project">🏗️ {t('Project Inventory')}</option>
           </select>
           <button className="btn-primary" onClick={openAddModal}>
-            ➕ Add Item
+            ➕ {t('Add Item')}
           </button>
         </div>
       </div>
 
       {viewMode === 'project' && (
         <div className="project-filter">
-          <label>Filter by Project:</label>
+          <label>{t('Filter by Project:')}</label>
           <select
             value={selectedProjectFilter}
             onChange={(e) => setSelectedProjectFilter(e.target.value)}
           >
-            <option value="">All Projects</option>
+            <option value="">{t('All Projects')}</option>
             {projects.map(p => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
@@ -154,28 +156,28 @@ export const Inventory = () => {
       <div className="inventory-stats">
         <div className="stat-card">
           <h3>{warehouseItems.length}</h3>
-          <p>Warehouse Items</p>
+          <p>{t('Warehouse Items')}</p>
         </div>
         <div className="stat-card">
           <h3>{projectItems.length}</h3>
-          <p>Project Items</p>
+          <p>{t('Project Items')}</p>
         </div>
         <div className="stat-card">
           <h3>{warehouseItems.filter(i => i.quantity <= i.minStock).length}</h3>
-          <p>Low Stock Alerts</p>
+          <p>{t('Low Stock Alerts')}</p>
         </div>
       </div>
 
       <table className="inventory-table">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Quantity</th>
-            <th>Unit</th>
-            {viewMode === 'project' && <th>Project</th>}
-            {viewMode === 'warehouse' && <th>Min Stock</th>}
-            <th>Actions</th>
+            <th>{t('Name')}</th>
+            <th>{t('Category')}</th>
+            <th>{t('Quantity')}</th>
+            <th>{t('Unit')}</th>
+            {viewMode === 'project' && <th>{t('Project')}</th>}
+            {viewMode === 'warehouse' && <th>{t('Min Stock')}</th>}
+            <th>{t('Actions')}</th>
           </tr>
         </thead>
         <tbody>
@@ -186,17 +188,17 @@ export const Inventory = () => {
               <td><strong>{item.quantity}</strong></td>
               <td>{item.unit}</td>
               {viewMode === 'project' && (
-                <td>{projects.find(p => p.id === item.projectId)?.name || 'N/A'}</td>
+                <td>{projects.find(p => p.id === item.projectId)?.name || t('N/A')}</td>
               )}
               {viewMode === 'warehouse' && <td>{item.minStock}</td>}
               <td>
-                <button className="btn-edit" onClick={() => openEditModal(item)}>Edit</button>
+                <button className="btn-edit" onClick={() => openEditModal(item)}>{t('Edit')}</button>
                 {viewMode === 'warehouse' && (
                   <button className="btn-transfer" onClick={() => openTransferModal(item)}>
-                    Transfer
+                    {t('Transfer')}
                   </button>
                 )}
-                <button className="btn-delete" onClick={() => handleDelete(item.id)}>Delete</button>
+                <button className="btn-delete" onClick={() => handleDelete(item.id)}>{t('Delete')}</button>
               </td>
             </tr>
           ))}
@@ -207,10 +209,10 @@ export const Inventory = () => {
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <h2>{editMode ? 'Edit Item' : 'Add Inventory Item'}</h2>
+            <h2>{editMode ? t('Edit Item') : t('Add Inventory Item')}</h2>
             <form onSubmit={handleSubmit} className="inventory-form">
               <div className="form-group">
-                <label>Name *</label>
+                <label>{t('Name')} *</label>
                 <input
                   type="text"
                   value={form.name}
@@ -220,7 +222,7 @@ export const Inventory = () => {
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Category</label>
+                  <label>{t('Category')}</label>
                   <select
                     value={form.category}
                     onChange={e => setForm({ ...form, category: e.target.value })}
@@ -229,7 +231,7 @@ export const Inventory = () => {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Unit</label>
+                  <label>{t('Unit')}</label>
                   <input
                     type="text"
                     value={form.unit}
@@ -239,7 +241,7 @@ export const Inventory = () => {
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Quantity *</label>
+                  <label>{t('Quantity')} *</label>
                   <input
                     type="number"
                     value={form.quantity}
@@ -250,7 +252,7 @@ export const Inventory = () => {
                 </div>
                 {form.location === 'warehouse' && (
                   <div className="form-group">
-                    <label>Min Stock</label>
+                    <label>{t('Min Stock')}</label>
                     <input
                       type="number"
                       value={form.minStock}
@@ -262,10 +264,10 @@ export const Inventory = () => {
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn-cancel" onClick={() => setShowModal(false)}>
-                  Cancel
+                  {t('Cancel')}
                 </button>
                 <button type="submit" className="btn-primary">
-                  {editMode ? 'Update' : 'Add'}
+                  {editMode ? t('Update') : t('Add')}
                 </button>
               </div>
             </form>
@@ -277,25 +279,25 @@ export const Inventory = () => {
       {showTransferModal && selectedItem && (
         <div className="modal-overlay" onClick={() => setShowTransferModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <h2>Transfer to Project</h2>
+            <h2>{t('Transfer to Project')}</h2>
             <p><strong>{selectedItem.name}</strong></p>
-            <p>Available: {selectedItem.quantity} {selectedItem.unit}</p>
+            <p>{t('Available:')} {selectedItem.quantity} {selectedItem.unit}</p>
             <form onSubmit={handleTransfer} className="transfer-form">
               <div className="form-group">
-                <label>Select Project *</label>
+                <label>{t('Select Project')} *</label>
                 <select
                   value={transferProjectId}
                   onChange={e => setTransferProjectId(e.target.value)}
                   required
                 >
-                  <option value="">Choose...</option>
+                  <option value="">{t('Choose...')}</option>
                   {projects.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
               </div>
               <div className="form-group">
-                <label>Quantity to Transfer *</label>
+                <label>{t('Quantity to Transfer')} *</label>
                 <input
                   type="number"
                   value={transferQty}
@@ -307,9 +309,9 @@ export const Inventory = () => {
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn-cancel" onClick={() => setShowTransferModal(false)}>
-                  Cancel
+                  {t('Cancel')}
                 </button>
-                <button type="submit" className="btn-primary">Transfer</button>
+                <button type="submit" className="btn-primary">{t('Transfer')}</button>
               </div>
             </form>
           </div>

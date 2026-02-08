@@ -1,4 +1,4 @@
-# 🔌 WireScope - Cable Management System (Web Version)
+# 🔌 ATHENEA - Tactical Engineering System (Web Version)
 
 ## 🚀 Demo 100% Funcional
 
@@ -17,7 +17,7 @@ Sistema completo de gestión de cables e infraestructura de red con todas las fu
 
 **Prueba:**
 ```
-Email: demo@wirescope.com
+Email: demo@ATHENEA.com
 Password: 123456
 (O cualquier combinación)
 ```

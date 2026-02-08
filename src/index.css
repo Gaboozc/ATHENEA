@@ -16,9 +16,34 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #f5f7fa;
-  color: #2d3748;
+  background: #0b0b0b;
+  color: #c9cdd2;
   position: relative;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0b0b0b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #0f2235;
+  border-radius: 999px;
+  border: 2px solid #0b0b0b;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  border-color: #1ec9ff;
+}
+
+* {
+  scrollbar-color: #0f2235 #0b0b0b;
+  scrollbar-width: thin;
 }
 
 /* Prevenir duplicación de contenido */
@@ -30,6 +55,16 @@ body::after {
 #root {
   position: relative;
   display: block;
+}
+
+.app-shell {
+  display: block;
+  min-height: calc(100vh - 64px);
+}
+
+.app-content {
+  width: 100%;
+  min-width: 0;
 }
 
 /* Footer fijo al final */

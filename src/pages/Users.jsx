@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { addUser, updateUser, deleteUser, setSelectedUser } from '../store/slices/usersSlice';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { hasPermission } from '../utils/permissions';
+import { useLanguage } from '../context/LanguageContext';
 import './Users.css';
 
 const ROLES = [
@@ -17,6 +18,7 @@ export const Users = () => {
   const dispatch = useDispatch();
   const { users, selectedUser } = useSelector((state) => state.users);
   const { user: currentUser, role: currentRole } = useCurrentUser();
+  const { t } = useLanguage();
   const [showModal, setShowModal] = useState(false);
   const { projects } = useSelector((state) => state.projects);
   const [form, setForm] = useState({ name: '', email: '', role: 'technician', projectId: '', groupId: '' });
@@ -150,7 +152,7 @@ export const Users = () => {
     if (isPM && userData.projectId) {
       const proj = projects.find(p => p.id === userData.projectId);
       if (!proj || proj.pmId !== currentUser.id) {
-        alert('You can only assign users to your own projects.');
+        alert(t('You can only assign users to your own projects.'));
         return;
       }
     }
@@ -180,17 +182,17 @@ export const Users = () => {
     
     // Prevent deleting Super Admin
     if (userToDelete?.role === 'super-admin') {
-      alert('Cannot delete Super Admin.');
+      alert(t('Cannot delete Super Admin.'));
       return;
     }
     
     // Supervisors cannot delete PMs or other Super Admins
     if (isSupervisor && ['pm', 'super-admin'].includes(userToDelete?.role)) {
-      alert('You do not have permission to delete this user.');
+      alert(t('You do not have permission to delete this user.'));
       return;
     }
     
-    if (window.confirm('Delete this user?')) {
+    if (window.confirm(t('Delete this user?'))) {
       dispatch(deleteUser(id));
     }
   };
@@ -259,14 +261,14 @@ export const Users = () => {
     <div className="users-container">
       <div className="users-header">
         <div>
-          <h1>{(isSuperAdmin || isPM) ? '👥 Users & Project Management' : '👥 Team Groups & Assignment'}</h1>
+          <h1>{(isSuperAdmin || isPM) ? t('👥 Users & Project Management') : t('👥 Team Groups & Assignment')}</h1>
           <p style={{ color: '#718096', fontSize: '14px', marginTop: '4px' }}>
-            {isSuperAdmin && 'Manage all users across all projects and assign PMs.'}
-            {isPM && 'Manage users in your assigned projects.'}
-            {isSupervisor && 'Create groups and assign team members.'}
+            {isSuperAdmin && t('Manage all users across all projects and assign PMs.')}
+            {isPM && t('Manage users in your assigned projects.')}
+            {isSupervisor && t('Create groups and assign team members.')}
           </p>
         </div>
-        <button className="btn-primary" onClick={openAddModal}>➕ Add User</button>
+        <button className="btn-primary" onClick={openAddModal}>➕ {t('Add User')}</button>
       </div>
 
       {/* Statistics Cards */}
@@ -277,7 +279,7 @@ export const Users = () => {
           </div>
           <div className="stat-content">
             <div className="stat-value">{stats.total}</div>
-            <div className="stat-label">Total Users</div>
+            <div className="stat-label">{t('Total Users')}</div>
           </div>
         </div>
         <div className="stat-card">
@@ -286,7 +288,7 @@ export const Users = () => {
           </div>
           <div className="stat-content">
             <div className="stat-value">{stats.active}</div>
-            <div className="stat-label">Active</div>
+            <div className="stat-label">{t('Active')}</div>
           </div>
         </div>
         <div className="stat-card">
@@ -295,7 +297,7 @@ export const Users = () => {
           </div>
           <div className="stat-content">
             <div className="stat-value">{stats.inactive}</div>
-            <div className="stat-label">Inactive</div>
+            <div className="stat-label">{t('Inactive')}</div>
           </div>
         </div>
         {ROLES.slice(0, 3).map(role => (
@@ -348,10 +350,10 @@ export const Users = () => {
               marginBottom: 24
             }}>
               <h3 style={{ marginBottom: 16, color: '#c53030', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span>⚠️</span> Pending Lead Technician Approvals ({pendingLeadTechs.length})
+                <span>⚠️</span> {t('Pending Lead Technician Approvals')} ({pendingLeadTechs.length})
               </h3>
               <p style={{ fontSize: 14, color: '#742a2a', marginBottom: 16 }}>
-                The following technicians have been proposed as Lead Technicians by supervisors. Review and approve or reject.
+                {t('The following technicians have been proposed as Lead Technicians by supervisors. Review and approve or reject.')}
               </p>
               <div style={{ display: 'grid', gap: 12 }}>
                 {pendingLeadTechs.map(user => {
@@ -369,7 +371,7 @@ export const Users = () => {
                       <div>
                         <strong style={{ fontSize: 16, color: '#2d3748' }}>{user.name}</strong>
                         <div style={{ fontSize: 13, color: '#718096', marginTop: 4 }}>
-                          {user.email} • Project: {project?.name || 'N/A'} • Group: {user.groupId || 'N/A'}
+                          {user.email} • {t('Project:')} {project?.name || t('N/A')} • {t('Group:')} {user.groupId || t('N/A')}
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 8 }}>
@@ -386,7 +388,7 @@ export const Users = () => {
                             fontSize: 14
                           }}
                         >
-                          ✅ Approve
+                          ✅ {t('Approve')}
                         </button>
                         <button
                           onClick={() => handleReject(user.id)}
@@ -401,7 +403,7 @@ export const Users = () => {
                             fontSize: 14
                           }}
                         >
-                          ❌ Reject
+                          ❌ {t('Reject')}
                         </button>
                       </div>
                     </div>
@@ -420,7 +422,7 @@ export const Users = () => {
             <span className="search-icon">🔍</span>
             <input
               type="text"
-              placeholder="Search by name, email, or group..."
+              placeholder={t('Search by name, email, or group...')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
@@ -431,19 +433,19 @@ export const Users = () => {
           </div>
           
           <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)} className="filter-select">
-            <option value="all">All Roles</option>
+            <option value="all">{t('All Roles')}</option>
             {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
           </select>
           
           <select value={filterProject} onChange={(e) => setFilterProject(e.target.value)} className="filter-select">
-            <option value="all">All Projects</option>
+            <option value="all">{t('All Projects')}</option>
             {visibleProjects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
           
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="filter-select">
-            <option value="all">All Status</option>
-            <option value="active">Active Only</option>
-            <option value="inactive">Inactive Only</option>
+            <option value="all">{t('All Status')}</option>
+            <option value="active">{t('Active Only')}</option>
+            <option value="inactive">{t('Inactive Only')}</option>
           </select>
         </div>
 
@@ -453,28 +455,28 @@ export const Users = () => {
               <button 
                 className={viewMode === 'list' ? 'btn-view-active' : 'btn-view'}
                 onClick={() => setViewMode('list')}
-                title="List View"
+                title={t('List View')}
               >
                 📋
               </button>
               <button 
                 className={viewMode === 'cards' ? 'btn-view-active' : 'btn-view'}
                 onClick={() => setViewMode('cards')}
-                title="Cards View"
+                title={t('Cards View')}
               >
                 🃏
               </button>
               <button 
                 className={viewMode === 'groups' ? 'btn-view-active' : 'btn-view'}
                 onClick={() => setViewMode('groups')}
-                title="Groups View"
+                title={t('Groups View')}
               >
                 👥
               </button>
             </>
           )}
-          <button className="btn-export" onClick={exportToCSV} title="Export to CSV">
-            📥 Export
+          <button className="btn-export" onClick={exportToCSV} title={t('Export to CSV')}>
+            📥 {t('Export')}
           </button>
         </div>
       </div>
@@ -482,10 +484,10 @@ export const Users = () => {
       {/* Bulk Actions */}
       {selectedUsers.length > 0 && (
         <div className="bulk-actions">
-          <span className="bulk-count">{selectedUsers.length} selected</span>
-          <button className="btn-bulk" onClick={handleBulkActivate}>✅ Activate</button>
-          <button className="btn-bulk" onClick={handleBulkDeactivate}>❌ Deactivate</button>
-          <button className="btn-bulk" onClick={() => setSelectedUsers([])}>Clear</button>
+          <span className="bulk-count">{selectedUsers.length} {t('selected')}</span>
+          <button className="btn-bulk" onClick={handleBulkActivate}>✅ {t('Activate')}</button>
+          <button className="btn-bulk" onClick={handleBulkDeactivate}>❌ {t('Deactivate')}</button>
+          <button className="btn-bulk" onClick={() => setSelectedUsers([])}>{t('Clear')}</button>
         </div>
       )}
 
@@ -502,20 +504,20 @@ export const Users = () => {
                     onChange={toggleSelectAll}
                   />
                 </th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Project</th>
-                <th>Group</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{t('Name')}</th>
+                <th>{t('Email')}</th>
+                <th>{t('Role')}</th>
+                <th>{t('Project')}</th>
+                <th>{t('Group')}</th>
+                <th>{t('Status')}</th>
+                <th>{t('Actions')}</th>
               </tr>
             </thead>
             <tbody>
               {filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>
-                    No users found. Try adjusting your filters.
+                    {t('No users found. Try adjusting your filters.')}
                   </td>
                 </tr>
               ) : (
@@ -540,7 +542,7 @@ export const Users = () => {
                           fontSize: 11,
                           fontWeight: 600
                         }}>
-                          ⚠️ PENDING APPROVAL
+                          ⚠️ {t('Pending Approval')}
                         </span>
                       )}
                     </td>
@@ -554,12 +556,12 @@ export const Users = () => {
                     <td>{user.groupId || '-'}</td>
                     <td>
                       <span className={`status-badge ${user.active ? 'status-active' : 'status-inactive'}`}>
-                        {user.active ? '✅ Active' : '❌ Inactive'}
+                        {user.active ? `✅ ${t('Active')}` : `❌ ${t('Inactive')}`}
                       </span>
                     </td>
                     <td className="action-buttons">
-                      <button className="btn-edit" onClick={() => openEditModal(user)} title="Edit">✏️</button>
-                      <button className="btn-delete" onClick={() => handleDelete(user.id)} title="Delete">🗑️</button>
+                      <button className="btn-edit" onClick={() => openEditModal(user)} title={t('Edit')}>✏️</button>
+                      <button className="btn-delete" onClick={() => handleDelete(user.id)} title={t('Delete')}>🗑️</button>
                     </td>
                   </tr>
                 ))
@@ -574,7 +576,7 @@ export const Users = () => {
         <div className="users-cards-grid">
           {filteredUsers.length === 0 ? (
             <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: '#718096' }}>
-              No users found. Try adjusting your filters.
+              {t('No users found. Try adjusting your filters.')}
             </div>
           ) : (
             filteredUsers.map(user => (
@@ -596,32 +598,32 @@ export const Users = () => {
                 </div>
                 <div className="user-card-body">
                   <div className="user-card-row">
-                    <span className="label">Role:</span>
+                    <span className="label">{t('Role:')}</span>
                     <span className={`role-badge role-${user.role}`}>
                       {ROLES.find(r => r.value === user.role)?.label}
                     </span>
                   </div>
                   <div className="user-card-row">
-                    <span className="label">Project:</span>
+                    <span className="label">{t('Project:')}</span>
                     <span>{projects.find(p => p.id === user.projectId)?.name || '-'}</span>
                   </div>
                   <div className="user-card-row">
-                    <span className="label">Group:</span>
+                    <span className="label">{t('Group:')}</span>
                     <span>{user.groupId || '-'}</span>
                   </div>
                   <div className="user-card-row">
-                    <span className="label">Status:</span>
+                    <span className="label">{t('Status:')}</span>
                     <span className={`status-badge ${user.active ? 'status-active' : 'status-inactive'}`}>
-                      {user.active ? '✅ Active' : '❌ Inactive'}
+                      {user.active ? `✅ ${t('Active')}` : `❌ ${t('Inactive')}`}
                     </span>
                   </div>
                 </div>
                 <div className="user-card-actions">
                   <button className="btn-edit" onClick={() => openEditModal(user)}>
-                    ✏️ Edit
+                    ✏️ {t('Edit')}
                   </button>
                   <button className="btn-delete" onClick={() => handleDelete(user.id)}>
-                    🗑️ Delete
+                    🗑️ {t('Delete')}
                   </button>
                 </div>
               </div>
@@ -634,17 +636,17 @@ export const Users = () => {
       {isSupervisor && viewMode === 'list' && (
         <>
           <div style={{ marginBottom: '16px', padding: '12px', background: '#e6fffa', borderRadius: '8px', border: '1px solid #48bb78' }}>
-            <strong>Supervisor View:</strong> Create groups, assign Lead Techs, and distribute technicians into groups.
+            <strong>{t('Supervisor View:')}</strong> {t('Create groups, assign Lead Techs, and distribute technicians into groups.')}
           </div>
           <table className="users-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Project</th>
-                <th>Group</th>
-                <th>Actions</th>
+                <th>{t('Name')}</th>
+                <th>{t('Email')}</th>
+                <th>{t('Role')}</th>
+                <th>{t('Project')}</th>
+                <th>{t('Group')}</th>
+                <th>{t('Actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -656,7 +658,7 @@ export const Users = () => {
                   <td>{projects.find(p => p.id === user.projectId)?.name || '-'}</td>
                   <td>{user.groupId || '-'}</td>
                   <td>
-                    <button className="btn-edit" onClick={() => openEditModal(user)}>Assign Group</button>
+                    <button className="btn-edit" onClick={() => openEditModal(user)}>{t('Assign Group')}</button>
                   </td>
                 </tr>
               ))}
@@ -669,7 +671,7 @@ export const Users = () => {
       {(isSuperAdmin || isPM) && viewMode === 'groups' && (
         <>
           <div style={{ marginBottom: '16px', padding: '12px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #667eea' }}>
-            <strong>{isSuperAdmin ? 'Super Admin' : 'PM'} Groups View:</strong> Overview of {isSuperAdmin ? 'all' : 'your'} teams organized by project and group. Monitor team structure and assignments.
+            <strong>{isSuperAdmin ? t('Super Admin') : t('PM')} {t('Groups View:')}</strong> {t('Overview of')} {isSuperAdmin ? t('all') : t('your')} {t('teams organized by project and group. Monitor team structure and assignments.')}
           </div>
           {projects
             .filter(project => {
@@ -685,22 +687,22 @@ export const Users = () => {
                 {Object.entries(groups).map(([groupId, group]) => (
                   <div key={groupId} style={{ marginBottom: '16px', padding: '12px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                     <h4 style={{ marginBottom: '8px' }}>
-                      👥 Group {groupId === 'unassigned' ? '(Unassigned)' : groupId}
+                      👥 {t('Group')} {groupId === 'unassigned' ? t('(Unassigned)') : groupId}
                     </h4>
                     {group.leadTech && (
                       <div style={{ marginBottom: '8px', padding: '8px', background: '#e6fffa', borderRadius: '6px' }}>
-                        <strong>👨‍💼 Lead Tech:</strong> {group.leadTech.name} ({group.leadTech.email})
+                        <strong>👨‍💼 {t('Lead Tech:')}</strong> {group.leadTech.name} ({group.leadTech.email})
                         <button 
                           className="btn-edit" 
                           onClick={() => openEditModal(group.leadTech)}
                           style={{ marginLeft: '8px', fontSize: '12px' }}
                         >
-                          Edit
+                          {t('Edit')}
                         </button>
                       </div>
                     )}
                     <div style={{ marginLeft: '16px' }}>
-                      <strong>Technicians:</strong>
+                      <strong>{t('Technicians:')}</strong>
                       {group.technicians.length > 0 ? (
                         <ul style={{ marginTop: '4px' }}>
                           {group.technicians.map(tech => (
@@ -711,13 +713,13 @@ export const Users = () => {
                                 onClick={() => openEditModal(tech)}
                                 style={{ marginLeft: '8px', fontSize: '12px' }}
                               >
-                                Edit
+                                {t('Edit')}
                               </button>
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <p style={{ color: '#718096', marginTop: '4px' }}>No technicians assigned</p>
+                        <p style={{ color: '#718096', marginTop: '4px' }}>{t('No technicians assigned')}</p>
                       )}
                     </div>
                   </div>
@@ -732,7 +734,7 @@ export const Users = () => {
       {isSupervisor && viewMode === 'groups' && (
         <>
           <div style={{ marginBottom: '16px', padding: '12px', background: '#e6fffa', borderRadius: '8px', border: '1px solid #48bb78' }}>
-            <strong>Supervisor Groups View:</strong> Organize teams by project and group. Assign Lead Techs and technicians.
+            <strong>{t('Supervisor Groups View:')}</strong> {t('Organize teams by project and group. Assign Lead Techs and technicians.')}
           </div>
           {projects.map(project => {
             const groups = getGroupsByProject(project.id);
@@ -742,15 +744,15 @@ export const Users = () => {
                 {Object.entries(groups).map(([groupId, group]) => (
                   <div key={groupId} style={{ marginBottom: '16px', padding: '12px', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                     <h4 style={{ marginBottom: '8px' }}>
-                      👥 Group {groupId === 'unassigned' ? '(Unassigned)' : groupId}
+                      👥 {t('Group')} {groupId === 'unassigned' ? t('(Unassigned)') : groupId}
                     </h4>
                     {group.leadTech && (
                       <div style={{ marginBottom: '8px', padding: '8px', background: '#e6fffa', borderRadius: '6px' }}>
-                        <strong>👨‍💼 Lead Tech:</strong> {group.leadTech.name} ({group.leadTech.email})
+                        <strong>👨‍💼 {t('Lead Tech:')}</strong> {group.leadTech.name} ({group.leadTech.email})
                       </div>
                     )}
                     <div style={{ marginLeft: '16px' }}>
-                      <strong>Technicians:</strong>
+                      <strong>{t('Technicians:')}</strong>
                       {group.technicians.length > 0 ? (
                         <ul style={{ marginTop: '4px' }}>
                           {group.technicians.map(tech => (
@@ -758,7 +760,7 @@ export const Users = () => {
                           ))}
                         </ul>
                       ) : (
-                        <p style={{ color: '#718096', marginTop: '4px' }}>No technicians assigned</p>
+                        <p style={{ color: '#718096', marginTop: '4px' }}>{t('No technicians assigned')}</p>
                       )}
                     </div>
                   </div>
@@ -772,38 +774,38 @@ export const Users = () => {
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <h2>{editMode ? 'Edit User' : 'Add User'}</h2>
+            <h2>{editMode ? t('Edit User') : t('Add User')}</h2>
             <form onSubmit={handleSubmit} className="user-form">
               <div className="form-group">
-                <label>Name</label>
+                <label>{t('Name')}</label>
                 <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
               </div>
               <div className="form-group">
-                <label>Email</label>
+                <label>{t('Email')}</label>
                 <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
               </div>
               <div className="form-group">
-                <label>Role</label>
+                <label>{t('Role')}</label>
                 <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
                   {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </select>
               </div>
               <div className="form-group">
-                <label>Project Assignment</label>
+                <label>{t('Project Assignment')}</label>
                 <select
                   value={form.projectId}
                   onChange={e => setForm({ ...form, projectId: e.target.value })}
                   required={form.role !== 'super-admin'}
                   disabled={visibleProjects.length === 0}
                 >
-                  <option value="">{visibleProjects.length ? 'Select Project' : 'No projects available'}</option>
+                  <option value="">{visibleProjects.length ? t('Select Project') : t('No projects available')}</option>
                   {visibleProjects.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
                 {form.role === 'super-admin' && (
                   <small style={{ color: '#718096' }}>
-                    Optional for Admin — assign if you want to scope admin actions to a project.
+                    {t('Optional for Admin — assign if you want to scope admin actions to a project.')}
                   </small>
                 )}
               </div>
@@ -811,23 +813,23 @@ export const Users = () => {
               {/* Group Assignment - Solo para Lead Tech y Technician */}
               {(form.role === 'lead-technician' || form.role === 'technician') && (
                 <div className="form-group">
-                  <label>Group ID {form.role === 'lead-technician' ? '(Lead will manage this group)' : '(Assign to group)'}</label>
+                  <label>{t('Group ID')} {form.role === 'lead-technician' ? t('(Lead will manage this group)') : t('(Assign to group)')}</label>
                   <input 
                     type="text" 
                     value={form.groupId} 
                     onChange={e => setForm({ ...form, groupId: e.target.value })}
-                    placeholder="e.g., Group-A, Team-1"
+                    placeholder={t('e.g., Group-A, Team-1')}
                   />
                   <small style={{ color: '#718096' }}>
                     {form.role === 'lead-technician' 
-                      ? 'This Lead Tech will distribute tasks to technicians in this group.'
-                      : 'Assign this technician to a group for task distribution.'}
+                      ? t('This Lead Tech will distribute tasks to technicians in this group.')
+                      : t('Assign this technician to a group for task distribution.')}
                   </small>
                 </div>
               )}
               <div className="modal-actions">
-                <button type="button" className="btn-cancel" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn-primary">{editMode ? 'Update' : 'Add'}</button>
+                <button type="button" className="btn-cancel" onClick={() => setShowModal(false)}>{t('Cancel')}</button>
+                <button type="submit" className="btn-primary">{editMode ? t('Update') : t('Add')}</button>
               </div>
             </form>
           </div>

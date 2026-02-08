@@ -1,0 +1,275 @@
+.gatekeeper-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 2000;
+}
+
+.gatekeeper-modal {
+  width: min(720px, 100%);
+  background: #0f2235;
+  border: 1px solid #27272a;
+  border-radius: 16px;
+  color: #c9cdd2;
+  font-family: "Consolas", "Courier New", monospace;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+}
+
+.gatekeeper-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.gatekeeper-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #d4af37;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.gatekeeper-header p {
+  margin: 6px 0 0;
+  color: #c9cdd2;
+  font-size: 12px;
+}
+
+.gatekeeper-close {
+  background: transparent;
+  border: 1px solid #27272a;
+  color: #c9cdd2;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.gatekeeper-step {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.gatekeeper-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: #c9cdd2;
+}
+
+.gatekeeper-field input,
+.gatekeeper-field textarea {
+  background: #0b0b0b;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #c9cdd2;
+  font-family: inherit;
+}
+
+.gatekeeper-hint {
+  margin: 0;
+  color: #c9cdd2;
+  font-size: 12px;
+}
+
+.gatekeeper-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.gatekeeper-projects {
+  display: grid;
+  gap: 10px;
+}
+
+.gatekeeper-project {
+  text-align: left;
+  background: #0b0b0b;
+  border: 1px solid #27272a;
+  color: #c9cdd2;
+  padding: 12px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+}
+
+.gatekeeper-project.is-active {
+  border-color: #1ec9ff;
+  box-shadow: 0 0 0 1px rgba(30, 201, 255, 0.35);
+}
+
+.gatekeeper-project-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #d4af37;
+}
+
+.gatekeeper-project-meta {
+  font-size: 12px;
+  color: #9aa3ad;
+}
+
+.gatekeeper-empty {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  background: #0b0b0b;
+}
+
+.gatekeeper-tag {
+  background: #0b0b0b;
+  border: 1px solid #27272a;
+  color: #c9cdd2;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.gatekeeper-tag.is-active {
+  background: rgba(30, 201, 255, 0.2);
+  border-color: #1ec9ff;
+  color: #1ec9ff;
+}
+
+.gatekeeper-score {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  background: rgba(30, 201, 255, 0.08);
+}
+
+.gatekeeper-score-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #c9cdd2;
+  margin-bottom: 6px;
+}
+
+.gatekeeper-score-value {
+  font-size: 18px;
+  color: #1ec9ff;
+  font-weight: 700;
+}
+
+.gatekeeper-sliders {
+  display: grid;
+  gap: 12px;
+}
+
+.gatekeeper-slider {
+  display: grid;
+  grid-template-columns: 140px 1fr 32px;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: #c9cdd2;
+}
+
+.gatekeeper-slider input[type="range"] {
+  accent-color: #1ec9ff;
+}
+
+.gatekeeper-slider-value {
+  text-align: right;
+}
+
+.gatekeeper-checks {
+  display: grid;
+  gap: 10px;
+}
+
+.gatekeeper-check {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #27272a;
+  background: #0b0b0b;
+  font-size: 13px;
+  color: #c9cdd2;
+}
+
+.gatekeeper-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: #1ec9ff;
+}
+
+.gatekeeper-check-text {
+  line-height: 1.4;
+}
+
+
+.gatekeeper-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.gatekeeper-status {
+  margin-right: auto;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.gatekeeper-status.success {
+  color: #1ec9ff;
+  border-color: rgba(30, 201, 255, 0.5);
+  background: rgba(30, 201, 255, 0.12);
+}
+
+.gatekeeper-status.error {
+  color: #ffb4b4;
+  border-color: rgba(255, 120, 120, 0.5);
+  background: rgba(255, 120, 120, 0.1);
+}
+
+.gatekeeper-primary,
+.gatekeeper-secondary {
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid #27272a;
+  font-family: inherit;
+}
+
+.gatekeeper-primary {
+  background: #1ec9ff;
+  color: #0b0b0b;
+  font-weight: 700;
+}
+
+.gatekeeper-secondary {
+  background: transparent;
+  color: #c9cdd2;
+}
+
+.gatekeeper-primary:disabled,
+.gatekeeper-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

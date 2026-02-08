@@ -10,7 +10,7 @@ export const loginUser = createAsyncThunk(
         user: {
     id: '1',
     name: 'Super Admin (Owner)',
-    email: 'owner@wirescope.com',
+    email: 'owner@ATHENEA.com',
     role: 'super-admin',
   },
       token: 'mock-token-' + Date.now(),

@@ -1,4 +1,4 @@
-// Slices maestros para el Spreadsheet Maestro WireScope
+// Slices maestros para el Spreadsheet Maestro ATHENEA
 // Cada slice representa una hoja lógica del sistema de gestión de proyectos.
 // Puedes separar cada slice en su propio archivo si lo prefieres para mayor escalabilidad.
 //
@@ -46,36 +46,7 @@ export const projectsMasterSlice = createSlice({
   },
 });
 
-// --- HOJA 2: FLOOR_PLANS ---
-const initialFloorPlans = [
-  {
-    id: 'FP-001',
-    projectId: 'P-001',
-    building: 'Edificio A',
-    floor: '15',
-    pdfUrl: '', // base64 o url
-    version: 'v3',
-    lastUpdate: '2024-05-20',
-    active: true,
-  },
-];
-
-export const floorPlansSlice = createSlice({
-  name: 'floorPlans',
-  initialState: { floorPlans: initialFloorPlans },
-  reducers: {
-    addFloorPlan: (state, action) => { state.floorPlans.push(action.payload); },
-    updateFloorPlan: (state, action) => {
-      const idx = state.floorPlans.findIndex(f => f.id === action.payload.id);
-      if (idx !== -1) state.floorPlans[idx] = { ...state.floorPlans[idx], ...action.payload };
-    },
-    deleteFloorPlan: (state, action) => {
-      state.floorPlans = state.floorPlans.filter(f => f.id !== action.payload);
-    },
-  },
-});
-
-// --- HOJA 3: POINTS_MASTER ---
+// --- HOJA 2: POINTS_MASTER ---
 const initialPoints = [
   {
     id: 'PT-001',

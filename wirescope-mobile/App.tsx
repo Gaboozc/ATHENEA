@@ -1,6 +1,6 @@
 /**
- * WireScope Mobile App
- * Structured Cabling & Data Network Project Management
+ * ATHENEA Mobile App
+ * tactical engineering & Data Network Project Management
  */
 
 import React from 'react';

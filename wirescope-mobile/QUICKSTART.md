@@ -1,8 +1,8 @@
-# ✅ WireScope Mobile - COMPLETED! 🎉
+# ✅ ATHENEA Mobile - COMPLETED! 🎉
 
 ## What I Just Built For You
 
-A **complete, production-ready** React Native mobile app for structured cabling management.
+A **complete, production-ready** React Native mobile app for tactical engineering management.
 
 ---
 
@@ -10,7 +10,7 @@ A **complete, production-ready** React Native mobile app for structured cabling 
 
 ### **Option 1: If You Have Native Setup (android/ios folders)**
 ```powershell
-cd wirescope-mobile
+cd ATHENEA-mobile
 npm start
 ```
 Then in another terminal:
@@ -22,7 +22,7 @@ npm run ios
 
 ### **Option 2: Quick Preview with Expo (Recommended)**
 ```powershell
-cd wirescope-mobile
+cd ATHENEA-mobile
 npx expo install
 npx expo start
 ```
@@ -175,7 +175,7 @@ Scan the QR code with Expo Go app on your phone.
 
 ### 📁 Project Structure
 ```
-wirescope-mobile/
+ATHENEA-mobile/
 ├── src/
 │   ├── assets/images/
 │   │   ├── logo.png (1024x1024 SVG - app icon)

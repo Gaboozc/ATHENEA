@@ -1,4 +1,4 @@
-# 🚀 WireScope - Guía de Inicio Rápido
+# 🚀 ATHENEA - Guía de Inicio Rápido
 
 ## ✅ Estado Actual
 **Todas las funcionalidades solicitadas están implementadas y funcionando.**
@@ -61,10 +61,10 @@ El servidor de desarrollo está corriendo en: **http://localhost:3000/**
 5. Prueba editar o eliminar
 
 **Usuarios Pre-cargados:**
-- admin@wirescope.com (Admin)
-- sarah.super@wirescope.com (Supervisor)
-- john.lead@wirescope.com (Lead Technician)
-- mike.tech@wirescope.com (Technician)
+- admin@ATHENEA.com (Admin)
+- sarah.super@ATHENEA.com (Supervisor)
+- john.lead@ATHENEA.com (Lead Technician)
+- mike.tech@ATHENEA.com (Technician)
 
 ---
 
@@ -326,19 +326,19 @@ Todos los módulos son responsive:
 Para probar la aplicación, usa cualquiera de estos usuarios:
 
 **Admin:**
-- Email: admin@wirescope.com
+- Email: admin@ATHENEA.com
 - Password: (cualquiera, el login es demo)
 
 **Supervisor:**
-- Email: sarah.super@wirescope.com
+- Email: sarah.super@ATHENEA.com
 - Password: (cualquiera)
 
 **Lead Technician:**
-- Email: john.lead@wirescope.com
+- Email: john.lead@ATHENEA.com
 - Password: (cualquiera)
 
 **Technician:**
-- Email: mike.tech@wirescope.com
+- Email: mike.tech@ATHENEA.com
 - Password: (cualquiera)
 
 ---
@@ -373,6 +373,6 @@ Ahora que todos los módulos están completos, podrías:
 
 ---
 
-**¡Disfruta tu aplicación WireScope completamente funcional! 🎉**
+**¡Disfruta tu aplicación ATHENEA completamente funcional! 🎉**
 
 *Si encuentras algún problema o necesitas más funcionalidades, no dudes en solicitarlo.*

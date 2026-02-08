@@ -6,10 +6,11 @@ import { useSelector } from 'react-redux';
  */
 export const useCurrentUser = () => {
   const { user: realUser, demoUser, demoRole } = useSelector((state) => state.auth);
+  const roleOverride = localStorage.getItem('athenea-role-override');
   
   // Si hay un usuario demo activo, usarlo
   const currentUser = demoUser || realUser;
-  const currentRole = demoRole || currentUser?.role || 'technician';
+  const currentRole = roleOverride || demoRole || currentUser?.role || 'technician';
   
   return {
     user: currentUser,

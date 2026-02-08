@@ -1,6 +1,6 @@
-# WireScope Mobile - UI Components Documentation
+# ATHENEA Mobile - UI Components Documentation
 
-This document describes the comprehensive UI component system built for the WireScope mobile application.
+This document describes the comprehensive UI component system built for the ATHENEA mobile application.
 
 ## 📋 Component Architecture
 
@@ -13,7 +13,7 @@ Core, reusable UI elements that form the foundation of the design system.
 Structural components for organizing content and providing consistent layouts.
 
 ### 🏢 Business Components (`/src/components/business/`)
-Domain-specific components tailored to WireScope's structured cabling functionality.
+Domain-specific components tailored to ATHENEA's tactical engineering functionality.
 
 ---
 
@@ -477,7 +477,7 @@ const LoginForm = () => {
 
 ## 🚀 Next Steps
 
-The UI component system provides a solid foundation for building the WireScope mobile application. The next development phases should focus on:
+The UI component system provides a solid foundation for building the ATHENEA mobile application. The next development phases should focus on:
 
 1. **API Integration**: Connect components to backend services
 2. **Advanced Interactions**: Implement drag-and-drop, gestures, animations  
@@ -486,4 +486,4 @@ The UI component system provides a solid foundation for building the WireScope m
 5. **Documentation**: Generate Storybook documentation
 6. **Performance**: Optimize rendering and memory usage
 
-This component system ensures consistency, maintainability, and scalability as the WireScope mobile application continues to evolve.
+This component system ensures consistency, maintainability, and scalability as the ATHENEA mobile application continues to evolve.

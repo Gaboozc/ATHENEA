@@ -55,8 +55,8 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     >
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>WireScope</Text>
-          <Text style={styles.subtitle}>Structured Cabling Management</Text>
+          <Text style={styles.title}>ATHENEA</Text>
+          <Text style={styles.subtitle}>tactical engineering Management</Text>
         </View>
 
         <View style={styles.form}>

@@ -19,7 +19,6 @@ export const PERMISSIONS = {
       assignRoles: true, approveLeadAssignment: true, assignLeadTech: true, assignToPM: true, movePersonnel: true
     },
     inventory: { viewAll: true, viewProject: true, approveRequests: true, transfer: true },
-    floorplans: { view: true, upload: true, edit: true, delete: true, movePoints: true },
     modDocs: { create: true, approve: true, overrideSupervisor: true },
     points: {
       viewAll: true, viewGroup: true, viewOwn: true,
@@ -45,7 +44,6 @@ export const PERMISSIONS = {
       assignRoles: true, approveLeadAssignment: true, assignLeadTech: true, viewGroupInfo: true
     },
     inventory: { viewAll: true, viewProject: true, approveRequests: true, transfer: true },
-    floorplans: { view: true, upload: true, edit: true, delete: true, movePoints: true },
     modDocs: { create: true, approve: true, overrideSupervisor: true },
     points: {
       viewAll: true, viewGroup: true, viewOwn: true,
@@ -68,7 +66,6 @@ export const PERMISSIONS = {
     },
     users: { viewAll: true, createPM: false, createSupervisor: false, createLeadTech: true, createTech: true, assignRoles: true },
     inventory: { viewAll: true, viewProject: true, approveRequests: true, transfer: true },
-    floorplans: { view: true, upload: true, edit: true, delete: false, movePoints: true },
     modDocs: { create: true, approve: false /* can be enabled by PM via config */ },
     points: {
       viewAll: true /* of assigned projects */, viewGroup: true, viewOwn: true,
@@ -88,7 +85,6 @@ export const PERMISSIONS = {
     projects: { viewAll: false, viewAssigned: true, create: false, edit: false, delete: false, configure: false },
     users: { viewAll: false, viewTeam: false, viewGroup: true },
     inventory: { viewAll: false, viewProject: true, approveRequests: true /* team only */, transfer: false },
-    floorplans: { view: true, upload: false, edit: false, delete: false, movePoints: false },
     modDocs: { create: false, approve: false },
     points: {
       viewAll: false, viewGroup: true, viewOwn: true,
@@ -108,7 +104,6 @@ export const PERMISSIONS = {
     projects: { viewAll: false, viewAssigned: false, create: false, edit: false, delete: false, configure: false },
     users: { viewAll: false, viewTeam: false, viewGroup: false },
     inventory: { viewAll: false, viewProject: false, approveRequests: false, transfer: false },
-    floorplans: { view: false, upload: false, edit: false, delete: false, movePoints: false },
     modDocs: { create: false, approve: false },
     points: {
       viewAll: false, viewGroup: false, viewOwn: true,
