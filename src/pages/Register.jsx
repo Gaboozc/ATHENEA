@@ -125,6 +125,11 @@ const PLAN_ICONS = {
   )
 };
 
+const FREE_COMPANY_ALLOWLIST = [
+  'AlphaDev studios',
+  'FenixGroup Agency'
+];
+
 export const Register = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -174,35 +179,12 @@ export const Register = () => {
     }));
   };
 
-  const handleCompanyInfoNext = (e) => {
-    e.preventDefault();
-    if (!firstName.trim() || !lastName.trim() || !companyName.trim() || !companyEmail.trim() || !companyPassword.trim()) {
-      setError(t('Please fill all required fields'));
-      return;
-    }
-    setError('');
-    setCompanyStep(2);
-  };
+  const isFreeCompany = (name) =>
+    FREE_COMPANY_ALLOWLIST.some((company) => company.toLowerCase() === name.trim().toLowerCase());
 
-  const handlePlanNext = () => {
-    if (!selectedPlan) {
-      setError(t('Please select a plan'));
-      return;
-    }
-    setError('');
-    setCompanyStep(3);
-  };
-
-  const handleCompanyRegister = async (e) => {
-    e.preventDefault();
+  const finalizeCompanyRegistration = async (planId) => {
     setIsLoading(true);
     setError('');
-
-    if (!cardNumber.trim() || !cardExpiry.trim() || !cardCvc.trim() || !billingName.trim()) {
-      setError(t('Please fill all payment fields'));
-      setIsLoading(false);
-      return;
-    }
 
     try {
       const userPayload = {
@@ -216,10 +198,10 @@ export const Register = () => {
       if (result.type === 'auth/login/fulfilled') {
         ensureUserInDirectory(result.payload.user);
 
-        const selectedPlanOption = PLAN_OPTIONS.find(p => p.id === selectedPlan) || PLAN_OPTIONS[0];
-        const limits = getPlanLimits(selectedPlan);
+        const selectedPlanOption = PLAN_OPTIONS.find(p => p.id === planId) || PLAN_OPTIONS[0];
+        const limits = getPlanLimits(planId);
         const orgId = `org-${Date.now()}`;
-        
+
         dispatch(
           addOrganization({
             id: orgId,
@@ -227,9 +209,9 @@ export const Register = () => {
             inviteCode: buildInviteCode(),
             brandColor: '#1ec9ff',
             logoUrl: '',
-            planId: selectedPlan,
-            planType: selectedPlan,
-            plan_type: selectedPlan,
+            planId,
+            planType: planId,
+            plan_type: planId,
             workerLimit: limits.workers ?? null,
             worker_limit: limits.workers ?? null,
             planPrice: selectedPlanOption.price,
@@ -257,6 +239,40 @@ export const Register = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCompanyInfoNext = async (e) => {
+    e.preventDefault();
+    if (!firstName.trim() || !lastName.trim() || !companyName.trim() || !companyEmail.trim() || !companyPassword.trim()) {
+      setError(t('Please fill all required fields'));
+      return;
+    }
+    if (isFreeCompany(companyName)) {
+      setSelectedPlan('enterprise');
+      await finalizeCompanyRegistration('enterprise');
+      return;
+    }
+    setError('');
+    setCompanyStep(2);
+  };
+
+  const handlePlanNext = () => {
+    if (!selectedPlan) {
+      setError(t('Please select a plan'));
+      return;
+    }
+    setError('');
+    setCompanyStep(3);
+  };
+
+  const handleCompanyRegister = async (e) => {
+    e.preventDefault();
+    if (!cardNumber.trim() || !cardExpiry.trim() || !cardCvc.trim() || !billingName.trim()) {
+      setError(t('Please fill all payment fields'));
+      return;
+    }
+
+    await finalizeCompanyRegistration(selectedPlan || 'starter');
   };
 
   const handleUserRegister = async (e) => {
