@@ -258,6 +258,123 @@
   background: #0f2235;
 }
 
+.lead-center {
+  margin-top: 24px;
+  border: 1px solid #1ec9ff;
+  border-radius: 16px;
+  padding: 20px;
+  background: rgba(15, 34, 53, 0.65);
+  box-shadow: 0 0 18px rgba(30, 201, 255, 0.15);
+}
+
+.lead-center-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.lead-center-header h2 {
+  margin: 0;
+  color: #1ec9ff;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.lead-center-header span {
+  border: 1px solid #1ec9ff;
+  color: #1ec9ff;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.lead-center-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.lead-center-card {
+  border: 1px solid #27272a;
+  border-radius: 14px;
+  padding: 14px;
+  background: #0b0b0b;
+}
+
+.lead-center-title {
+  font-weight: 700;
+  color: #d4af37;
+  margin-bottom: 6px;
+}
+
+.lead-center-meta {
+  font-size: 12px;
+  color: #9aa3ad;
+  margin-bottom: 10px;
+}
+
+.lead-center-projects {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.lead-center-projects li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: #c9cdd2;
+}
+
+.lead-center-status {
+  color: #1ec9ff;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.6px;
+}
+
+.lead-center-empty {
+  font-size: 12px;
+  color: #9aa3ad;
+}
+
+.active-project-summary {
+  font-size: 11px;
+  color: #9aa3ad;
+  margin-top: 6px;
+}
+
+.active-project-lead {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #c9cdd2;
+}
+
+.active-project-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid #1ec9ff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #1ec9ff;
+  background: #0b0b0b;
+}
+
+.active-project-card.is-lead {
+  border-color: #1ec9ff;
+  box-shadow: 0 0 0 2px rgba(30, 201, 255, 0.2);
+}
+
 .active-projects-header {
   display: flex;
   justify-content: space-between;
@@ -303,6 +420,16 @@
   border-radius: 12px;
   padding: 12px 14px;
   background: #0b0b0b;
+}
+
+.active-project-card.is-clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.active-project-card.is-clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 2px rgba(30, 201, 255, 0.18);
 }
 
 .active-project-title {

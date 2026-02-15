@@ -3,16 +3,18 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 // Mock login (accepts any credentials)
 export const loginUser = createAsyncThunk(
   'auth/login',
-  async ({ email, password }) => {
+  async ({ email, password, name, role }) => {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
+    const normalizedEmail = email || 'user@auth.local';
+    const displayName = name || normalizedEmail.split('@')[0];
     return {
-        user: {
-    id: '1',
-    name: 'Super Admin (Owner)',
-    email: 'owner@ATHENEA.com',
-    role: 'super-admin',
-  },
+      user: {
+        id: normalizedEmail,
+        name: displayName,
+        email: normalizedEmail,
+        role: role || 'admin'
+      },
       token: 'mock-token-' + Date.now(),
     };
   }

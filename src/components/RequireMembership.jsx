@@ -32,6 +32,13 @@ export const RequireMembership = ({ children }) => {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
+  const registrationComplete =
+    localStorage.getItem('athenea.registration.complete') === 'true' ||
+    localStorage.getItem('athenea.onboarding.complete') === 'true';
+  if (!registrationComplete) {
+    return <Navigate to="/login" replace />;
+  }
+
   if (activeMemberships.length === 0) {
     return <Navigate to="/awaiting-command" replace />;
   }

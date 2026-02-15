@@ -8,6 +8,8 @@ const buildSeedProjects = () => [
     clientName: 'ATHENEA Core',
     siteAddress: 'Command Layer',
     orgId: 'org-1',
+    workstreamId: 'ws-logistics',
+    workstreamName: 'Logistica',
     status: 'in-progress',
     startDate: '2026-02-01',
     endDate: '',
@@ -25,6 +27,8 @@ const buildSeedProjects = () => [
     clientName: 'ATHENEA Experience',
     siteAddress: 'Ops Interface',
     orgId: 'org-1',
+    workstreamId: 'ws-safety',
+    workstreamName: 'Seguridad',
     status: 'completed',
     startDate: '2026-02-05',
     endDate: '2026-02-28',
@@ -42,6 +46,8 @@ const buildSeedProjects = () => [
     clientName: 'ATHENEA Systems',
     siteAddress: 'Data Layer',
     orgId: 'org-1',
+    workstreamId: 'ws-logistics',
+    workstreamName: 'Logistica',
     status: 'maintenance',
     startDate: '2026-01-15',
     endDate: '',
@@ -76,6 +82,8 @@ const projectsSlice = createSlice({
         ...action.payload,
         id: Date.now().toString(),
         orgId: action.payload.orgId || 'org-1',
+        workstreamId: action.payload.workstreamId || 'ws-logistics',
+        workstreamName: action.payload.workstreamName || 'Logistica',
         status: 'planning',
         completionPercentage: 0,
         totalPoints: 0,
@@ -103,7 +111,14 @@ const projectsSlice = createSlice({
       const hasOnlyLegacy = incoming.every((project) => LEGACY_PROJECTS.has(project.name));
       if (hasOnlyLegacy) {
         state.projects = buildSeedProjects();
+        return;
       }
+
+      state.projects = incoming.map((project) => ({
+        ...project,
+        workstreamId: project.workstreamId || 'ws-logistics',
+        workstreamName: project.workstreamName || 'Logistica'
+      }));
     });
   },
 });

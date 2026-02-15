@@ -65,6 +65,38 @@
   width: 170px;
 }
 
+.project-create-button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.workstream-filter {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.workstream-filter-label {
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #9aa3ad;
+  margin-bottom: 6px;
+}
+
+.workstream-filter select {
+  min-width: 220px;
+  background: #0f2235;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #c9cdd2;
+  font-size: 14px;
+  font-family: inherit;
+}
+
 .project-create-button .task-button-text {
   transform: translateX(20px);
 }
@@ -376,6 +408,16 @@
   text-transform: uppercase;
   letter-spacing: 0.6px;
   cursor: pointer;
+}
+
+.project-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.workstream-hint {
+  font-size: 12px;
+  color: #9aa3ad;
 }
 
 .project-action.project-cancel {

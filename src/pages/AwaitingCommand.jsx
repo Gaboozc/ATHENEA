@@ -79,6 +79,8 @@ export const AwaitingCommand = () => {
       }
     }
     dispatch(setCurrentOrg(org.id));
+    localStorage.setItem('athenea.onboarding.complete', 'true');
+    localStorage.removeItem('athenea.onboarding.mode');
     navigate('/dashboard');
   };
 

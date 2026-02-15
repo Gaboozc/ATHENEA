@@ -10,7 +10,10 @@ export const MyTasks = () => {
   const { t } = useLanguage();
 
   const myTasks = useMemo(
-    () => tasks.filter((task) => task.assigneeId === user?.id),
+    () =>
+      tasks.filter(
+        (task) => task.assigneeId === user?.id && task.status !== 'pending_approval'
+      ),
     [tasks, user?.id]
   );
 

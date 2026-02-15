@@ -1,7 +1,10 @@
 // Normalize roles (alias)
 export const normalizeRole = (role) => {
-  if (role === 'admin') return 'super-admin'; // Admin is now Super Admin
-  return role;
+  const roleKey = String(role || '').toLowerCase();
+  if (roleKey === 'admin') return 'super-admin';
+  if (roleKey === 'manager') return 'pm';
+  if (roleKey === 'worker') return 'technician';
+  return roleKey;
 };
 
 // Define granular permissions per role according to the provided matrix

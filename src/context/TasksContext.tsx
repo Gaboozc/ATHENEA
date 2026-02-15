@@ -23,6 +23,14 @@ export type GatekeeperTask = {
     source?: string;
     category?: string;
     priority?: string;
+    failedQuestion?: string;
+    failedAnswer?: string;
+    answer?: string;
+    photos?: string[];
+    workerNote?: string;
+    resolutionNote?: string;
+    resolvedBy?: string;
+    resolvedAt?: string;
     questionValueSum?: number;
     questionValues?: {
       id: string;
@@ -37,6 +45,7 @@ type TasksContextValue = {
   tasks: GatekeeperTask[];
   addTask: (task: GatekeeperTask) => void;
   updateTaskStatus: (id: string, status: string) => void;
+  resolveTask: (id: string, resolvedBy?: string, resolutionNote?: string) => void;
   updateTaskAssignment: (id: string, assigneeId: string | null, teamId?: string) => void;
   clearAssignmentsForUser: (userId: string) => void;
   deleteTask: (id: string) => void;
@@ -79,6 +88,26 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
     );
   };
 
+  const resolveTask = (id: string, resolvedBy?: string, resolutionNote?: string) => {
+    const resolvedAt = new Date().toISOString();
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === id
+          ? {
+              ...task,
+              status: 'resolved',
+              metadata: {
+                ...task.metadata,
+                resolvedBy: resolvedBy || task.metadata?.resolvedBy || 'system',
+                resolvedAt,
+                resolutionNote: resolutionNote || task.metadata?.resolutionNote
+              }
+            }
+          : task
+      )
+    );
+  };
+
   const updateTaskAssignment = (id: string, assigneeId: string | null, teamId?: string) => {
     setTasks((prev) =>
       prev.map((task) =>
@@ -115,6 +144,7 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
       tasks: scopedTasks,
       addTask,
       updateTaskStatus,
+      resolveTask,
       updateTaskAssignment,
       clearAssignmentsForUser,
       deleteTask

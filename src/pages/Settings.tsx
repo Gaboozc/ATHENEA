@@ -11,6 +11,7 @@ import {
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { useTasks } from "../context/TasksContext";
 import { updateUser } from "../store/slices/usersSlice";
+import { getPlanLimits } from "../utils/planLimits";
 
 const INVITES_STORAGE_KEY = "athenea.invites";
 const ACCESS_DENIED_KEY = "athenea.accessDenied";
@@ -42,12 +43,23 @@ export const Settings = () => {
   const { users } = useSelector((state: any) => state.users);
 
   const currentOrg = organizations.find((org: any) => org.id === currentOrgId);
+  const planId = currentOrg?.planId || currentOrg?.plan;
+  const planLimits = getPlanLimits(planId);
+  const planName = planLimits.label;
+  const planPrice = currentOrg?.planPrice ?? planLimits.price;
+  const memberCount = memberships.filter((entry: any) => entry.orgId === currentOrgId).length;
+  const fallbackMemberCount = users.filter((entry: any) => entry.orgId === currentOrgId).length;
+  const resolvedMemberCount = memberCount || fallbackMemberCount;
+  const workerLimit = currentOrg?.workerLimit ?? planLimits.workers;
+  const workerLimitReached =
+    workerLimit !== null && workerLimit !== undefined && resolvedMemberCount >= workerLimit;
   const membership = memberships.find(
     (entry: any) => entry.userId === user?.id && entry.orgId === currentOrgId
   );
-  const isAdmin = role === "super-admin" || membership?.role === "Manager";
+  const roleKey = (role || "").toLowerCase();
+  const isAdmin = roleKey === "admin" || roleKey === "super-admin";
   const profileUser = users.find((entry: any) => entry.id === user?.id) || user;
-  const assignedRole = membership?.role || role || "-";
+  const assignedRole = role || membership?.role || "-";
 
   const myTeams = useMemo(() => {
     if (!user?.id || !currentOrgId) return [];
@@ -60,7 +72,7 @@ export const Settings = () => {
       (team: any) => team.orgId === currentOrgId && teamIds.includes(team.id)
     );
     return teams
-      .map((team: any) => team.name)
+      .map((team: any) => team.label || team.name)
       .filter(Boolean)
       .sort((a: string, b: string) => a.localeCompare(b));
   }, [currentOrgId, teamMemberships, user?.id, workstreams]);
@@ -279,6 +291,22 @@ export const Settings = () => {
 
       {isAdmin && (
         <section className="settings-card">
+          <h2>{t("Billing")}</h2>
+          <div className="settings-list">
+            <div className="settings-row settings-row-compact">
+              <span>{t("Current Plan")}</span>
+              <strong>{planName}</strong>
+            </div>
+            <div className="settings-row settings-row-compact">
+              <span>{t("Fixed Monthly Total")}</span>
+              <strong>${planPrice}</strong>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {isAdmin && (
+        <section className="settings-card">
           <h2>{t("Security & Roster")}</h2>
           <div className="settings-section">
             <h3>{t("Invite System")}</h3>
@@ -303,11 +331,16 @@ export const Settings = () => {
                 type="button"
                 className="settings-action"
                 onClick={handleCreateInvite}
-                disabled={!inviteEmail.trim() || !currentOrgId}
+                disabled={!inviteEmail.trim() || !currentOrgId || workerLimitReached}
               >
                 {t("Send Invite")}
               </button>
             </div>
+            {workerLimitReached && (
+              <div className="settings-empty">
+                {t("Upgrade to add more workers.")}
+              </div>
+            )}
             <div className="settings-invite-list">
               {invites
                 .filter((invite) => invite.orgId === currentOrgId)

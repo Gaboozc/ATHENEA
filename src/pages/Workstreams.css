@@ -42,6 +42,76 @@
   gap: 12px;
 }
 
+.workstream-card.is-clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.workstream-card.is-clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 2px rgba(30, 201, 255, 0.18);
+}
+
+.workstream-card.workstream-create {
+  border-style: dashed;
+}
+
+.workstream-label {
+  display: grid;
+  gap: 8px;
+}
+
+.workstream-label input {
+  background: #0b0b0b;
+  color: #c9cdd2;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.workstream-label select {
+  background: #0b0b0b;
+  color: #c9cdd2;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.workstream-edit {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+}
+
+.workstream-edit input {
+  background: #0b0b0b;
+  color: #c9cdd2;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.workstream-edit button {
+  background: #0b0b0b;
+  border: 1px solid #27272a;
+  color: #c9cdd2;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.workstream-edit button:hover {
+  border-color: #1ec9ff;
+  color: #1ec9ff;
+}
+
 .workstream-title {
   display: flex;
   justify-content: space-between;
@@ -85,10 +155,48 @@
   color: #9aa3ad;
 }
 
+.workstream-lead {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: #c9cdd2;
+}
+
 .workstream-roles {
   margin-top: 16px;
   padding-top: 12px;
   border-top: 1px solid #27272a;
+}
+
+.workstream-rules {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #27272a;
+}
+
+.workstream-rules-list {
+  display: grid;
+  gap: 10px;
+}
+
+.workstream-rule {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: #c9cdd2;
+  background: #0b0b0b;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.workstream-rule input {
+  width: 16px;
+  height: 16px;
+  accent-color: #1ec9ff;
 }
 
 .workstream-roles-label {
@@ -180,6 +288,23 @@
   font-family: inherit;
 }
 
+.workstream-projects {
+  align-self: flex-start;
+  border: 1px solid #1ec9ff;
+  background: #0b0b0b;
+  color: #1ec9ff;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  cursor: pointer;
+}
+
+.workstream-projects:hover {
+  box-shadow: 0 0 0 2px rgba(30, 201, 255, 0.2);
+}
+
 .workstream-add {
   background: #0b0b0b;
   border: 1px solid #27272a;
@@ -199,6 +324,13 @@
 .workstream-add:hover:not(:disabled) {
   border-color: #1ec9ff;
   color: #1ec9ff;
+}
+
+.workstreams-upgrade {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #f59e0b;
+  text-align: center;
 }
 
 .workstream-roster-list {

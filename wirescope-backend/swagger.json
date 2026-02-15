@@ -78,6 +78,94 @@
           }
         }
       },
+      "Workstream": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Workstream identifier"
+          },
+          "org_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Organization identifier"
+          },
+          "lead_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Assigned lead user identifier"
+          },
+          "code": {
+            "type": "string",
+            "description": "Unique workstream code"
+          },
+          "label": {
+            "type": "string",
+            "description": "Workstream label"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Workstream active state"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Project identifier"
+          },
+          "org_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Organization identifier"
+          },
+          "workstream_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Parent workstream identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Project name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Project description"
+          },
+          "status": {
+            "type": "string",
+            "description": "Project status"
+          },
+          "client_name": {
+            "type": "string",
+            "description": "Client name"
+          },
+          "site_address": {
+            "type": "string",
+            "description": "Site address"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "Error": {
         "type": "object",
         "properties": {

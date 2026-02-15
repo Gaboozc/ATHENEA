@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useTasks } from '../context/TasksContext';
 import { hasPermission } from '../utils/permissions';
@@ -10,15 +10,17 @@ import './Projects.css';
 
 export const Projects = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { projects } = useSelector((state) => state.projects);
-  const { currentOrgId } = useSelector((state) => state.organizations);
+  const { currentOrgId, workstreams } = useSelector((state) => state.organizations);
   const { tasks } = useTasks();
   const { user: currentUser, role: currentRole } = useCurrentUser();
   const { t } = useLanguage();
   const { teamMemberships } = useSelector((state) => state.organizations);
   const [showCancelled, setShowCancelled] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedWorkstreamId, setSelectedWorkstreamId] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -28,11 +30,13 @@ export const Projects = () => {
     startDate: '',
     endDate: '',
     maintenancePlan: '',
-    isSubscription: false
+    isSubscription: false,
+    workstreamId: ''
   });
   const [errors, setErrors] = useState({});
 
-  const isAdmin = currentRole === 'Admin' || currentRole === 'admin' || currentRole === 'super-admin';
+  const roleKey = String(currentRole || '').toLowerCase();
+  const isAdmin = roleKey === 'admin' || roleKey === 'super-admin' || roleKey === 'manager';
 
   const teamIds = useMemo(() => {
     if (!currentUser?.id || !currentOrgId) return [];
@@ -40,6 +44,51 @@ export const Projects = () => {
       .filter((entry) => entry.orgId === currentOrgId && entry.userId === currentUser.id)
       .map((entry) => entry.teamId);
   }, [currentOrgId, currentUser?.id, teamMemberships]);
+
+  const orgWorkstreams = useMemo(() => {
+    if (!currentOrgId) return [];
+    return workstreams.filter(
+      (stream) => stream.orgId === currentOrgId && stream.enabled
+    );
+  }, [currentOrgId, workstreams]);
+
+  useEffect(() => {
+    if (orgWorkstreams.length === 0) {
+      setSelectedWorkstreamId('');
+      return;
+    }
+    setSelectedWorkstreamId((prev) => {
+      if (!prev || !orgWorkstreams.some((stream) => stream.id === prev)) {
+        return orgWorkstreams[0].id;
+      }
+      return prev;
+    });
+  }, [orgWorkstreams]);
+
+  useEffect(() => {
+    const param = new URLSearchParams(location.search).get('workstream');
+    if (!param) return;
+    if (orgWorkstreams.some((stream) => stream.id === param)) {
+      setSelectedWorkstreamId(param);
+    }
+  }, [location.search, orgWorkstreams]);
+
+  const selectedWorkstream = orgWorkstreams.find(
+    (stream) => stream.id === selectedWorkstreamId
+  );
+  const isLeadForSelected =
+    Boolean(selectedWorkstream?.leadId) && selectedWorkstream?.leadId === currentUser?.id;
+  const canCreateProject =
+    hasPermission(currentRole, 'projects', 'create') && (isAdmin || isLeadForSelected);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const openCreate = params.get('create') === '1';
+    if (!openCreate) return;
+    if (!selectedWorkstreamId || !canCreateProject) return;
+    setShowCreateModal(true);
+  }, [location.search, selectedWorkstreamId, canCreateProject]);
+
 
   const visibleTasks = useMemo(() => {
     if (isAdmin) return tasks;
@@ -62,13 +111,10 @@ export const Projects = () => {
   const filteredProjects = projects.filter(project => {
     if (!currentOrgId) return false;
     if (project.orgId && project.orgId !== currentOrgId) return false;
+    if (!selectedWorkstreamId) return false;
+    if (project.workstreamId !== selectedWorkstreamId) return false;
     // Super Admin ve todos los proyectos
     if (isAdmin) return true;
-    
-    // PM solo ve sus proyectos asignados
-    if (currentRole === 'pm') {
-      return project.pmId === currentUser.id;
-    }
     
     // Otros roles ven proyectos con tareas asignadas
     return visibleProjectIds.has(project.id);
@@ -114,9 +160,9 @@ export const Projects = () => {
     }
   };
 
-  const canCreateProject = hasPermission(currentRole, 'projects', 'create');
   const handleCancelProject = (event, projectId) => {
     event.stopPropagation();
+    if (!isAdmin && !isLeadForSelected) return;
     dispatch(updateProject({
       id: projectId,
       status: 'cancelled',
@@ -126,6 +172,7 @@ export const Projects = () => {
 
   const handleRestoreProject = (event, projectId) => {
     event.stopPropagation();
+    if (!isAdmin && !isLeadForSelected) return;
     dispatch(updateProject({
       id: projectId,
       status: 'planning',
@@ -136,6 +183,7 @@ export const Projects = () => {
 
   const handleDeleteProject = (event, projectId) => {
     event.stopPropagation();
+    if (!isAdmin && !isLeadForSelected) return;
     dispatch(deleteProject(projectId));
   };
 
@@ -150,7 +198,8 @@ export const Projects = () => {
       startDate: '',
       endDate: '',
       maintenancePlan: '',
-      isSubscription: false
+      isSubscription: false,
+      workstreamId: selectedWorkstreamId || ''
     });
     setShowCreateModal(true);
   };
@@ -172,6 +221,7 @@ export const Projects = () => {
     if (!formData.clientName.trim()) nextErrors.clientName = t('Client name is required');
     if (!formData.siteAddress.trim()) nextErrors.siteAddress = t('Site address is required');
     if (!formData.startDate) nextErrors.startDate = t('Start date is required');
+    if (!formData.workstreamId) nextErrors.workstreamId = t('Workstream is required');
     return nextErrors;
   };
 
@@ -183,6 +233,9 @@ export const Projects = () => {
       return;
     }
 
+    const activeWorkstream = orgWorkstreams.find(
+      (stream) => stream.id === formData.workstreamId
+    );
     const payload = {
       name: formData.name,
       description: formData.description,
@@ -192,6 +245,8 @@ export const Projects = () => {
       startDate: formData.startDate,
       endDate: formData.endDate,
       maintenancePlan: formData.isSubscription ? formData.maintenancePlan : '',
+      workstreamId: formData.workstreamId,
+      workstreamName: activeWorkstream?.label || '',
       orgId: currentOrgId,
       ...(currentRole === 'pm' && currentUser?.id ? { pmId: currentUser.id } : {})
     };
@@ -214,6 +269,7 @@ export const Projects = () => {
           type="button"
           className="navbar-task-button project-create-button"
           onClick={openCreateModal}
+          disabled={!selectedWorkstreamId || !canCreateProject}
         >
           <span className="task-button-text">{t('New Project')}</span>
           <span className="task-button-icon" aria-hidden="true">
@@ -230,6 +286,38 @@ export const Projects = () => {
               <line y2={12} y1={12} x2={19} x1={5} />
             </svg>
           </span>
+        </button>
+      </div>
+      {!canCreateProject && selectedWorkstreamId && (
+        <div className="workstream-filter">
+          <span className="workstream-hint">{t('Only the Workstream Lead or Admin can manage projects here.')}</span>
+        </div>
+      )}
+
+      <div className="workstream-filter">
+        <div>
+          <div className="workstream-filter-label">{t('Workstream')}</div>
+          <select
+            value={selectedWorkstreamId}
+            onChange={(event) => setSelectedWorkstreamId(event.target.value)}
+            disabled={orgWorkstreams.length === 0}
+          >
+            {orgWorkstreams.length === 0 && (
+              <option value="">{t('No workstreams configured yet.')}</option>
+            )}
+            {orgWorkstreams.map((stream) => (
+              <option key={stream.id} value={stream.id}>
+                {stream.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button
+          type="button"
+          className="tactical-button"
+          onClick={() => navigate('/workstreams')}
+        >
+          {t('Manage Workstreams')}
         </button>
       </div>
 
@@ -300,6 +388,12 @@ export const Projects = () => {
             )}
 
             <div className="project-info">
+              {project.workstreamName && (
+                <div className="info-item">
+                  <span className="info-label">{t('Workstream:')}</span>
+                  <span className="info-value">{project.workstreamName}</span>
+                </div>
+              )}
               <div className="info-item">
                 <span className="info-label">{t('Client:')}</span>
                 <span className="info-value">{project.clientName}</span>
@@ -350,6 +444,7 @@ export const Projects = () => {
                 type="button"
                 className="project-action project-cancel"
                 onClick={(event) => handleCancelProject(event, project.id)}
+                disabled={!isAdmin && !isLeadForSelected}
               >
                 {t('Cancel')}
               </button>
@@ -405,6 +500,7 @@ export const Projects = () => {
                       type="button"
                       className="project-action project-restore"
                       onClick={(event) => handleRestoreProject(event, project.id)}
+                      disabled={!isAdmin && !isLeadForSelected}
                     >
                       {t('Restore')}
                     </button>
@@ -412,6 +508,7 @@ export const Projects = () => {
                       type="button"
                       className="project-action project-delete"
                       onClick={(event) => handleDeleteProject(event, project.id)}
+                      disabled={!isAdmin && !isLeadForSelected}
                     >
                       {t('Delete')}
                     </button>
@@ -425,7 +522,11 @@ export const Projects = () => {
 
       {activeProjects.length === 0 && (
         <div className="empty-state">
-          <p>{t('No projects yet')}</p>
+          <p>
+            {orgWorkstreams.length === 0
+              ? t('No workstreams configured yet.')
+              : t('No projects yet')}
+          </p>
         </div>
       )}
 
@@ -444,6 +545,25 @@ export const Projects = () => {
             </div>
 
             <form onSubmit={handleCreateSubmit} className="project-create-form">
+              <label>
+                {t('Workstream *')}
+                <select
+                  name="workstreamId"
+                  value={formData.workstreamId}
+                  onChange={handleFormChange}
+                  className={errors.workstreamId ? 'is-error' : ''}
+                >
+                  <option value="">{t('Select a workstream')}</option>
+                  {orgWorkstreams.map((stream) => (
+                    <option key={stream.id} value={stream.id}>
+                      {stream.label}
+                    </option>
+                  ))}
+                </select>
+                {errors.workstreamId && (
+                  <span className="form-error">{errors.workstreamId}</span>
+                )}
+              </label>
               <label>
                 {t('Project Name *')}
                 <input

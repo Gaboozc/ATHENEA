@@ -153,6 +153,13 @@
   color: #9aa3ad;
 }
 
+.fleet-route {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .fleet-backlog-list {
   display: grid;
   gap: 16px;

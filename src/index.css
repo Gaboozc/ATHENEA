@@ -21,6 +21,10 @@ body {
   position: relative;
 }
 
+body.auth-lock-scroll {
+  overflow: hidden;
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;

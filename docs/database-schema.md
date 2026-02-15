@@ -2,6 +2,8 @@
 
 ## Phase 2 Draft (ATHENEA Core)
 
+Hierarchy enforced: organizations own workstreams, and projects must belong to a single workstream.
+
 ```sql
 CREATE TABLE organizations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -25,6 +27,7 @@ CREATE TABLE memberships (
 CREATE TABLE workstreams (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    lead_id UUID REFERENCES users(id) ON DELETE SET NULL,
     code TEXT NOT NULL UNIQUE,
     label TEXT NOT NULL,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
@@ -37,6 +40,7 @@ CREATE TABLE workstreams (
 CREATE TABLE projects (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    workstream_id UUID NOT NULL REFERENCES workstreams(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     description TEXT,
     status TEXT NOT NULL DEFAULT 'planning',
@@ -207,6 +211,7 @@ CREATE TABLE clients (
 CREATE TABLE projects (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    workstream_id UUID REFERENCES workstreams(id) ON DELETE SET NULL,
     description TEXT,
     client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL,
     project_manager_id INTEGER REFERENCES users(id) ON DELETE SET NULL,

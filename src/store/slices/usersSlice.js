@@ -59,6 +59,30 @@ const initialUsers = [
     projectId: '2',
     groupId: 'Group-A',
   },
+  {
+    id: '8',
+    name: 'Carlos Manager',
+    email: 'carlos.manager@ATHENEA.com',
+    role: 'lead',
+    active: true,
+    orgId: 'org-1',
+  },
+  {
+    id: '9',
+    name: 'Juan Operador',
+    email: 'juan.operador@ATHENEA.com',
+    role: 'worker',
+    active: true,
+    orgId: 'org-1',
+  },
+  {
+    id: '10',
+    name: 'Maria Tecnico',
+    email: 'maria.tecnico@ATHENEA.com',
+    role: 'worker',
+    active: true,
+    orgId: 'org-1',
+  },
 ];
 
 const usersSlice = createSlice({

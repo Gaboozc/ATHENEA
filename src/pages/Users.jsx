@@ -17,6 +17,9 @@ const ROLES = [
 export const Users = () => {
   const dispatch = useDispatch();
   const { users, selectedUser } = useSelector((state) => state.users);
+  const { organizations, memberships, currentOrgId } = useSelector(
+    (state) => state.organizations
+  );
   const { user: currentUser, role: currentRole } = useCurrentUser();
   const { t } = useLanguage();
   const [showModal, setShowModal] = useState(false);
@@ -29,6 +32,16 @@ export const Users = () => {
   const [filterProject, setFilterProject] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedUsers, setSelectedUsers] = useState([]);
+
+  const currentOrg = organizations.find((org) => org.id === currentOrgId);
+  const workerLimit = currentOrg?.workerLimit;
+  const membershipCount = memberships.filter(
+    (entry) => entry.orgId === currentOrgId
+  ).length;
+  const fallbackCount = users.filter((entry) => entry.orgId === currentOrgId).length;
+  const memberCount = membershipCount || fallbackCount;
+  const workerLimitReached =
+    typeof workerLimit === 'number' && workerLimit > 0 && memberCount >= workerLimit;
   
   // Determinar vista según rol
   const isSuperAdmin = currentRole === 'super-admin';
@@ -268,7 +281,14 @@ export const Users = () => {
             {isSupervisor && t('Create groups and assign team members.')}
           </p>
         </div>
-        <button className="btn-primary" onClick={openAddModal}>➕ {t('Add User')}</button>
+        <button
+          className="btn-primary"
+          onClick={openAddModal}
+          disabled={workerLimitReached}
+          title={workerLimitReached ? t('Upgrade Required') : ''}
+        >
+          ➕ {t('Add User')}
+        </button>
       </div>
 
       {/* Statistics Cards */}

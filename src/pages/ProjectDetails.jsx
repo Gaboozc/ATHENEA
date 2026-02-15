@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTasks } from '../context/TasksContext';
 import { updateProject } from '../store/slices/projectsSlice';
 import { useLanguage } from '../context/LanguageContext';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import './ProjectDetails.css';
 
 const PRIORITY_LEVELS = [
@@ -21,8 +22,10 @@ export const ProjectDetails = () => {
   const project = useSelector((state) =>
     state.projects.projects.find((item) => item.id === id)
   );
+  const { workstreams, currentOrgId } = useSelector((state) => state.organizations);
   const { tasks, addTask, updateTaskStatus, deleteTask } = useTasks();
   const { t } = useLanguage();
+  const { user, role } = useCurrentUser();
   const [search, setSearch] = useState('');
   const [removedLegacyTitles, setRemovedLegacyTitles] = useState([]);
   const [deletedTasks, setDeletedTasks] = useState([]);
@@ -38,6 +41,13 @@ export const ProjectDetails = () => {
     isSubscription: Boolean(project?.maintenancePlan)
   }));
   const isCancelled = project?.status === 'cancelled';
+  const roleKey = String(role || '').toLowerCase();
+  const isAdmin = roleKey === 'admin' || roleKey === 'super-admin' || roleKey === 'manager';
+  const projectWorkstream = workstreams.find(
+    (stream) => stream.orgId === currentOrgId && stream.id === project?.workstreamId
+  );
+  const isLead = projectWorkstream?.leadId && projectWorkstream.leadId === user?.id;
+  const canManageProject = isAdmin || isLead;
 
   if (!project) {
     return (
@@ -130,7 +140,7 @@ export const ProjectDetails = () => {
       status: 'Completed',
       title,
       description: '',
-      workstreams: [],
+      workstreams: project.workstreamId ? [project.workstreamId] : [],
       factors: {
         blocking: 0,
         urgency: 0,
@@ -158,7 +168,7 @@ export const ProjectDetails = () => {
       status: 'In Progress',
       title,
       description: '',
-      workstreams: [],
+      workstreams: project.workstreamId ? [project.workstreamId] : [],
       factors: {
         blocking: 0,
         urgency: 0,
@@ -229,6 +239,7 @@ export const ProjectDetails = () => {
   };
 
   const saveProjectSettings = () => {
+    if (!canManageProject) return;
     dispatch(updateProject({
       id: project.id,
       status: formState.status,
@@ -252,6 +263,7 @@ export const ProjectDetails = () => {
             className="tactical-button"
             type="button"
             onClick={() => setShowSettings((prev) => !prev)}
+            disabled={!canManageProject}
           >
             {t('Settings')}
           </button>
@@ -269,6 +281,11 @@ export const ProjectDetails = () => {
       <div className="project-title-block">
         <h1>{project.name}</h1>
         <p>{project.description}</p>
+        {project.workstreamName && (
+          <span className="project-status is-muted">
+            {t('Workstream')}: {project.workstreamName}
+          </span>
+        )}
       </div>
 
       {showSettings && (

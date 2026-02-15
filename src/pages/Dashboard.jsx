@@ -1,5 +1,6 @@
 import "./Dashboard.css";
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTasks } from "../context/TasksContext";
 import { useLanguage } from '../context/LanguageContext';
@@ -14,13 +15,16 @@ const PRIORITY_BUCKETS = [
 ];
 
 export const Dashboard = () => {
+  const navigate = useNavigate();
   const { projects } = useSelector((state) => state.projects);
-  const { currentOrgId, teamMemberships } = useSelector((state) => state.organizations);
+  const { currentOrgId, teamMemberships, workstreams } = useSelector((state) => state.organizations);
+  const { users } = useSelector((state) => state.users);
   const { tasks } = useTasks();
   const { t } = useLanguage();
   const { user, role } = useCurrentUser();
 
-  const isAdmin = role === 'Admin' || role === 'admin' || role === 'super-admin';
+  const roleKey = String(role || '').toLowerCase();
+  const isAdmin = roleKey === 'admin' || roleKey === 'super-admin' || roleKey === 'manager';
 
   const teamIds = useMemo(() => {
     if (!user?.id || !currentOrgId) return [];
@@ -53,10 +57,46 @@ export const Dashboard = () => {
   const orgProjects = projects.filter(
     (project) => project.status !== 'cancelled' && project.orgId === currentOrgId
   );
+  const orgWorkstreams = workstreams.filter(
+    (stream) => stream.orgId === currentOrgId && stream.enabled
+  );
   const visibleProjectIds = new Set(visibleTasks.map((task) => task.projectId));
   const activeProjects = isAdmin
     ? orgProjects
     : orgProjects.filter((project) => visibleProjectIds.has(project.id));
+  const leadById = useMemo(() => {
+    return users.reduce((acc, entry) => {
+      acc[entry.id] = entry;
+      return acc;
+    }, {});
+  }, [users]);
+  const projectsByWorkstream = orgWorkstreams.map((stream) => {
+    const streamProjects = activeProjects.filter(
+      (project) => project.workstreamId === stream.id
+    );
+    const activeCount = streamProjects.filter(
+      (project) => project.status !== 'completed'
+    ).length;
+    const completedCount = streamProjects.filter(
+      (project) => project.status === 'completed'
+    ).length;
+    return {
+      ...stream,
+      projects: streamProjects,
+      activeCount,
+      completedCount
+    };
+  });
+  const leadStreams = projectsByWorkstream.filter(
+    (stream) => stream.leadId && stream.leadId === user?.id
+  );
+
+  const getInitials = (name = '') => {
+    const parts = name.trim().split(' ').filter(Boolean);
+    if (parts.length === 0) return 'NA';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  };
 
   return (
     <div className="dashboard-container">
@@ -145,28 +185,90 @@ export const Dashboard = () => {
         )}
       </section>
 
+      {leadStreams.length > 0 && (
+        <section className="lead-center">
+          <div className="lead-center-header">
+            <h2>{t('Lead Command Center')}</h2>
+            <span>{leadStreams.length}</span>
+          </div>
+          <div className="lead-center-grid">
+            {leadStreams.map((stream) => (
+              <div key={stream.id} className="lead-center-card">
+                <div className="lead-center-title">{stream.label}</div>
+                <div className="lead-center-meta">
+                  {stream.activeCount} {t('Active Projects Short')} / {stream.completedCount} {t('Completed Short')}
+                </div>
+                {stream.projects.length === 0 ? (
+                  <div className="lead-center-empty">{t('No projects yet')}</div>
+                ) : (
+                  <ul className="lead-center-projects">
+                    {stream.projects.map((project) => (
+                      <li key={project.id}>
+                        <span>{project.name}</span>
+                        <span className="lead-center-status">{project.status}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="active-projects">
         <div className="active-projects-header">
-          <h2>{t('Active Projects')}</h2>
-          <span>{activeProjects.length}</span>
+          <h2>{t('Active Workstreams')}</h2>
+          <span>{orgWorkstreams.length}</span>
         </div>
-        {activeProjects.length === 0 ? (
-          <div className="active-projects-empty">{t('No active projects.')}</div>
+        {projectsByWorkstream.length === 0 ? (
+          <div className="active-projects-empty">{t('No workstreams configured yet.')}</div>
         ) : (
           <ul className="active-projects-list">
-            {activeProjects.map((project) => (
-              <li key={project.id} className="active-project-card">
+            {projectsByWorkstream.map((stream) => (
+              <li
+                key={stream.id}
+                className={`active-project-card${
+                  stream.leadId && stream.leadId === user?.id ? ' is-lead' : ''
+                }${
+                  isAdmin || stream.leadId === user?.id ? ' is-clickable' : ''
+                }`}
+                onClick={() => {
+                  if (isAdmin || stream.leadId === user?.id) {
+                    navigate(`/workstreams/${stream.id}`);
+                  }
+                }}
+              >
                 <div>
-                  <span className="active-project-title">{project.name}</span>
-                  <span className="active-project-client">{project.clientName}</span>
+                  <span className="active-project-title">{stream.label}</span>
+                  <span className="active-project-client">
+                    {t('Projects')}: {stream.projects.length}
+                  </span>
+                  <div className="active-project-summary">
+                    {stream.activeCount} {t('Active Projects Short')} / {stream.completedCount} {t('Completed Short')}
+                  </div>
                 </div>
                 <div className="active-project-meta">
-                  <span className="active-project-status">{project.status}</span>
+                  <span className="active-project-status">
+                    {stream.projects.length > 0 ? t('Active') : t('Empty')}
+                  </span>
                   <span className="active-project-date">
-                    {project.endDate
-                      ? new Date(project.endDate).toLocaleDateString()
+                    {stream.projects[0]?.endDate
+                      ? new Date(stream.projects[0].endDate).toLocaleDateString()
                       : 'TBD'}
                   </span>
+                  <div className="active-project-lead">
+                    <span className="active-project-avatar">
+                      {stream.leadId && leadById[stream.leadId]
+                        ? getInitials(leadById[stream.leadId].name)
+                        : 'NA'}
+                    </span>
+                    <span>
+                      {stream.leadId && leadById[stream.leadId]
+                        ? leadById[stream.leadId].name
+                        : t('No lead assigned')}
+                    </span>
+                  </div>
                 </div>
               </li>
             ))}

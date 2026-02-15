@@ -1,14 +1,107 @@
+.navbar {
+  overflow-x: auto;
+}
+
 .navbar-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  margin-left: 0;
+  margin-right: 0;
+  justify-content: flex-start;
+}
+
+.navbar-actions a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid #1ec9ff;
+  border-bottom-width: 4px;
+  background: #0b0b0b;
+  color: #1ec9ff;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  overflow: hidden;
+  outline: none;
+  white-space: nowrap;
+  transition: filter 0.3s ease, border-color 0.3s ease, color 0.3s ease, opacity 0.2s ease;
+}
+
+.navbar-actions a:hover {
+  filter: brightness(1.5);
+  border-top-width: 4px;
+  border-bottom-width: 1px;
+}
+
+.navbar-actions a:active {
+  opacity: 0.75;
+}
+
+.navbar-actions a.is-active {
+  border-color: #d4af37;
+  color: #d4af37;
+}
+
+.navbar-actions a .navbar-button-glow {
+  position: absolute;
+  left: 0;
+  top: -150%;
+  width: 320px;
+  height: 5px;
+  border-radius: 999px;
+  background: #1ec9ff;
+  opacity: 0.5;
+  box-shadow: 0 0 10px 10px rgba(0, 0, 0, 0.3);
+  transition: top 0.5s ease;
+}
+
+.navbar-actions a:hover .navbar-button-glow {
+  top: 150%;
+}
+
+.navbar-main {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 24px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  flex: 0 1 auto;
+  margin-left: 4px;
+}
+
+.navbar-task-group {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.navbar-right-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .navbar-inner {
   width: 100%;
-  max-width: none;
-  padding-left: 24px;
-  padding-right: 24px;
+  max-width: none !important;
+  padding-left: 8px;
+  padding-right: 16px;
+  flex-wrap: nowrap;
+  justify-content: flex-start !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
 
 .navbar-button {
@@ -16,19 +109,20 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 8px 14px;
+  gap: 4px;
+  padding: 6px 10px;
   border-radius: 10px;
   border: 1px solid #1ec9ff;
   border-bottom-width: 4px;
   background: #0b0b0b;
   color: #1ec9ff;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
   overflow: hidden;
   outline: none;
+  white-space: nowrap;
   transition: filter 0.3s ease, border-color 0.3s ease, color 0.3s ease, opacity 0.2s ease;
 }
 
@@ -66,8 +160,8 @@
 }
 
 .navbar-button-icon {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   fill: currentColor;
 }
 
@@ -80,6 +174,23 @@
   opacity: 0.55;
   border-color: #3f3f46;
   color: #9aa3ad;
+}
+
+.navbar-role-toggle {
+  border: 1px solid #27272a;
+  background: #0b0b0b;
+  color: #c9cdd2;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.navbar-role-toggle:hover {
+  border-color: #1ec9ff;
+  color: #1ec9ff;
 }
 
 .navbar-tenant {
@@ -112,8 +223,8 @@
 }
 
 .navbar-icon-button {
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -144,15 +255,15 @@
 .lang-switch {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 4px;
 }
 
 .lang-flag {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 18px;
+  width: 22px;
+  height: 14px;
   border-radius: 4px;
   overflow: hidden;
   border: 1px solid #27272a;
@@ -167,8 +278,8 @@
 .lang-switch-control {
   display: inline-flex;
   position: relative;
-  width: 120px;
-  height: 28px;
+  width: 100px;
+  height: 26px;
 }
 
 .lang-switch-control input {
@@ -207,8 +318,8 @@
 
 .lang-switch-track::after {
   content: attr(data-off);
-  width: 58px;
-  height: 20px;
+  width: 48px;
+  height: 18px;
   background: #0b0b0b;
   border-radius: 26px;
   position: absolute;
@@ -218,8 +329,8 @@
   text-align: center;
   transition: all 0.3s ease;
   box-shadow: 0 0 6px -2px #111;
-  padding: 4px 0;
-  font-size: 11px;
+  padding: 3px 0;
+  font-size: 10px;
   font-weight: 700;
   color: #d4af37;
 }
@@ -231,7 +342,7 @@
 
 .lang-switch-control input:checked + .lang-switch-track::after {
   content: attr(data-on);
-  left: 60px;
+  left: 50px;
   background: #0b0b0b;
   color: #fff;
 }
@@ -250,7 +361,7 @@
   --main-color: #1ec9ff;
   position: relative;
   width: 150px;
-  height: 40px;
+  height: 38px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -315,13 +426,15 @@
 }
 
 .navbar-pill {
+  display: inline-flex;
+  align-items: center;
   text-decoration: none;
 }
 
 .navbar-pill-button {
   --stone-50: #c9cdd2;
   --stone-800: #0f2235;
-  --gold-400: #d4af37;
+  --cyan-400: #1ec9ff;
   font-family: "Consolas", "Courier New", monospace;
   cursor: pointer;
   position: relative;
@@ -335,18 +448,19 @@
   outline: 2px solid transparent;
   outline-offset: 6px;
   color: var(--stone-50);
+  min-height: 34px;
 }
 
 .navbar-pill.is-active .navbar-pill-button {
-  color: var(--gold-400);
+  color: var(--cyan-400);
 }
 
 .navbar-pill-button:active {
-  outline-color: var(--gold-400);
+  outline-color: var(--cyan-400);
 }
 
 .navbar-pill-button:focus-visible {
-  outline-color: var(--gold-400);
+  outline-color: var(--cyan-400);
   outline-style: dashed;
 }
 
@@ -358,7 +472,7 @@
   max-height: 90px;
   aspect-ratio: 1;
   margin: auto;
-  background: var(--gold-400);
+  background: var(--cyan-400);
   clip-path: polygon(
     100% 50%,
     91.48% 56.57%,
@@ -412,16 +526,16 @@
 .navbar-pill-button > div {
   padding: 2px;
   border-radius: 1rem;
-  background-color: var(--gold-400);
+  background-color: var(--cyan-400);
   transform: translate(-4px, -4px);
   transition: all 150ms ease;
   box-shadow:
-    0.5px 0.5px 0 0 var(--gold-400),
-    1px 1px 0 0 var(--gold-400),
-    1.5px 1.5px 0 0 var(--gold-400),
-    2px 2px 0 0 var(--gold-400),
-    2.5px 2.5px 0 0 var(--gold-400),
-    3px 3px 0 0 var(--gold-400),
+    0.5px 0.5px 0 0 var(--cyan-400),
+    1px 1px 0 0 var(--cyan-400),
+    1.5px 1.5px 0 0 var(--cyan-400),
+    2px 2px 0 0 var(--cyan-400),
+    2.5px 2.5px 0 0 var(--cyan-400),
+    3px 3px 0 0 var(--cyan-400),
     0 0 0 2px var(--stone-800),
     0.5px 0.5px 0 2px var(--stone-800),
     1px 1px 0 2px var(--stone-800),
@@ -445,12 +559,12 @@
 .navbar-pill:hover .navbar-pill-button > div {
   transform: translate(0, 0);
   box-shadow:
-    0 0 0 0 var(--gold-400),
-    0 0 0 0 var(--gold-400),
-    0 0 0 0 var(--gold-400),
-    0 0 0 0 var(--gold-400),
-    0 0 0 0 var(--gold-400),
-    0 0 0 0 var(--gold-400),
+    0 0 0 0 var(--cyan-400),
+    0 0 0 0 var(--cyan-400),
+    0 0 0 0 var(--cyan-400),
+    0 0 0 0 var(--cyan-400),
+    0 0 0 0 var(--cyan-400),
+    0 0 0 0 var(--cyan-400),
     0 0 0 2px var(--stone-800),
     0 0 0 2px var(--stone-800),
     0 0 0 2px var(--stone-800),
@@ -524,3 +638,4 @@
     background-position: 8px 0, 12px 4px;
   }
 }
+
