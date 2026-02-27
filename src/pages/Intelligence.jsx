@@ -23,22 +23,12 @@ export const Intelligence = () => {
   const { tasks } = useTasks();
   const { t } = useLanguage();
   const { projects } = useSelector((state) => state.projects);
-  const { currentOrgId, workstreams } = useSelector((state) => state.organizations);
+  const { workstreams } = useSelector((state) => state.organizations);
 
-  const hasWorkstreams = useMemo(() => {
-    if (!currentOrgId) return false;
-    return workstreams.some((stream) => stream.orgId === currentOrgId);
-  }, [currentOrgId, workstreams]);
+  const hasWorkstreams = workstreams.length > 0;
 
-  const scopedProjects = useMemo(
-    () =>
-      projects.filter((project) =>
-        currentOrgId
-          ? !project.orgId || project.orgId === currentOrgId
-          : false
-      ),
-    [currentOrgId, projects]
-  );
+  const scopedProjects = projects;
+  
   const systemHealth = useMemo(() => getSystemHealth(tasks), [tasks]);
   const priorityMetrics = useMemo(() => getPriorityDistribution(tasks), [tasks]);
   const projectHealth = useMemo(

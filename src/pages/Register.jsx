@@ -155,8 +155,8 @@ export const Register = () => {
   const [billingName, setBillingName] = useState('');
 
   // User fields
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [userFirstName, setUserFirstName] = useState('');
+  const [userLastName, setUserLastName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [userPassword, setUserPassword] = useState('');
   const [inviteCode, setInviteCode] = useState('');
@@ -280,7 +280,7 @@ export const Register = () => {
     setIsLoading(true);
     setError('');
 
-    if (!firstName.trim() || !lastName.trim() || !userEmail.trim() || !userPassword.trim()) {
+    if (!userFirstName.trim() || !userLastName.trim() || !userEmail.trim() || !userPassword.trim()) {
       setError(t('Please fill all required fields'));
       setIsLoading(false);
       return;
@@ -290,7 +290,7 @@ export const Register = () => {
       const payload = {
         email: userEmail.trim(),
         password: userPassword,
-        name: `${firstName.trim()} ${lastName.trim()}`.trim(),
+        name: `${userFirstName.trim()} ${userLastName.trim()}`.trim(),
         role: 'worker'
       };
 
@@ -349,25 +349,25 @@ export const Register = () => {
           {registrationType === 'company' && companyStep === 1 && (
             <form onSubmit={handleCompanyInfoNext} className="register-form">
               <div className="form-group">
-                <label htmlFor="firstName">{t('First Name')} *</label>
+                <label htmlFor="userFirstName">{t('First Name')} *</label>
                 <input
-                  id="firstName"
+                  id="userFirstName"
                   type="text"
                   placeholder={t('Enter your name')}
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  value={userFirstName}
+                  onChange={(e) => setUserFirstName(e.target.value)}
                   required
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="lastName">{t('Last Name')} *</label>
+                <label htmlFor="userLastName">{t('Last Name')} *</label>
                 <input
-                  id="lastName"
+                  id="userLastName"
                   type="text"
                   placeholder={t('Enter your last name')}
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                  value={userLastName}
+                  onChange={(e) => setUserLastName(e.target.value)}
                   required
                 />
               </div>

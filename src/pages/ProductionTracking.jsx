@@ -10,7 +10,6 @@ import {
   bulkUpdateStatus
 } from '../store/slices/productionSlice';
 import './ProductionTracking.css';
-import { hasPermission } from '../utils/permissions';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 
 export const ProductionTracking = () => {
@@ -18,17 +17,17 @@ export const ProductionTracking = () => {
   const { entries } = useSelector((state) => state.production);
   const { projects } = useSelector((state) => state.projects);
   const { users } = useSelector((state) => state.users);
-  const { user: currentUser, role: currentRole } = useCurrentUser();
+  const { user: currentUser } = useCurrentUser();
 
-  // Permission flags
-  const canCreate = hasPermission(currentRole, 'production', 'createTask');
-  const canAssign = hasPermission(currentRole, 'production', 'assignTask');
-  const canEditAny = hasPermission(currentRole, 'production', 'editTask');
-  const canDeleteAny = hasPermission(currentRole, 'production', 'deleteTask');
-  const canEditOwn = hasPermission(currentRole, 'production', 'editOwnTask');
-  const canViewAll = hasPermission(currentRole, 'production', 'viewAll');
-  const canViewGroup = hasPermission(currentRole, 'production', 'viewGroup');
-  const canBulkStatus = canEditAny || hasPermission(currentRole, 'production', 'editGroupTask');
+  // Single-user mode: todos los permisos habilitados
+  const canCreate = true;
+  const canAssign = true;
+  const canEditAny = true;
+  const canDeleteAny = true;
+  const canEditOwn = true;
+  const canViewAll = true;
+  const canViewGroup = true;
+  const canBulkStatus = true;
 
   const [showModal, setShowModal] = useState(false);
   const [showProgressModal, setShowProgressModal] = useState(false);
@@ -83,33 +82,13 @@ export const ProductionTracking = () => {
     { value: 'high', label: 'High', color: '#f56565' }
   ];
 
-  // Determine visible entries based on role/permissions
-  const scopedEntries = entries.filter(entry => {
-    // Super Admin can see all
-    if (currentRole === 'super-admin') return true;
-    // PM: only entries for their projects
-    if (currentRole === 'pm') {
-      const project = projects.find(p => p.id === entry.projectId);
-      return project && project.pmId === currentUser?.id;
-    }
-    if (canViewGroup) {
-      // Group visibility approximation: same project as current user
-      if (!currentUser?.projectId) return false;
-      return entry.projectId === currentUser.projectId;
-    }
-    // Default: only own tasks
-    return entry.userId === currentUser?.id;
-  });
+  // Single-user mode: todas las entradas son visibles
+  const scopedEntries = entries;
 
-  // Filter and sort entries (applied on scoped entries)
+  // Filter and sort entries
   const filteredEntries = scopedEntries
     .filter(entry => {
       if (filterStatus !== 'all' && entry.status !== filterStatus) return false;
-      // Super Admin: filter by PM
-      if (filterPM !== 'all') {
-        const project = projects.find(p => p.id === entry.projectId);
-        if (!project || project.pmId !== filterPM) return false;
-      }
       if (filterProject !== 'all' && entry.projectId !== filterProject) return false;
       if (filterUser !== 'all' && entry.userId !== filterUser) return false;
       if (todayOnly) {

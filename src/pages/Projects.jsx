@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useTasks } from '../context/TasksContext';
-import { hasPermission } from '../utils/permissions';
 import { addProject, deleteProject, updateProject } from '../store/slices/projectsSlice';
 import { useLanguage } from '../context/LanguageContext';
 import './Projects.css';
@@ -13,11 +12,10 @@ export const Projects = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const { projects } = useSelector((state) => state.projects);
-  const { currentOrgId, workstreams } = useSelector((state) => state.organizations);
+  const { workstreams } = useSelector((state) => state.organizations);
   const { tasks } = useTasks();
-  const { user: currentUser, role: currentRole } = useCurrentUser();
+  const { user: currentUser } = useCurrentUser();
   const { t } = useLanguage();
-  const { teamMemberships } = useSelector((state) => state.organizations);
   const [showCancelled, setShowCancelled] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedWorkstreamId, setSelectedWorkstreamId] = useState('');
@@ -35,22 +33,9 @@ export const Projects = () => {
   });
   const [errors, setErrors] = useState({});
 
-  const roleKey = String(currentRole || '').toLowerCase();
-  const isAdmin = roleKey === 'admin' || roleKey === 'super-admin' || roleKey === 'manager';
-
-  const teamIds = useMemo(() => {
-    if (!currentUser?.id || !currentOrgId) return [];
-    return teamMemberships
-      .filter((entry) => entry.orgId === currentOrgId && entry.userId === currentUser.id)
-      .map((entry) => entry.teamId);
-  }, [currentOrgId, currentUser?.id, teamMemberships]);
-
   const orgWorkstreams = useMemo(() => {
-    if (!currentOrgId) return [];
-    return workstreams.filter(
-      (stream) => stream.orgId === currentOrgId && stream.enabled
-    );
-  }, [currentOrgId, workstreams]);
+    return workstreams.filter((stream) => stream.enabled);
+  }, [workstreams]);
 
   useEffect(() => {
     if (orgWorkstreams.length === 0) {
@@ -76,10 +61,7 @@ export const Projects = () => {
   const selectedWorkstream = orgWorkstreams.find(
     (stream) => stream.id === selectedWorkstreamId
   );
-  const isLeadForSelected =
-    Boolean(selectedWorkstream?.leadId) && selectedWorkstream?.leadId === currentUser?.id;
-  const canCreateProject =
-    hasPermission(currentRole, 'projects', 'create') && (isAdmin || isLeadForSelected);
+  const canCreateProject = true; // Single-user mode: siempre permitido
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -89,35 +71,18 @@ export const Projects = () => {
     setShowCreateModal(true);
   }, [location.search, selectedWorkstreamId, canCreateProject]);
 
-
-  const visibleTasks = useMemo(() => {
-    if (isAdmin) return tasks;
-    return tasks.filter((task) => {
-      if (task.assigneeId && task.assigneeId === currentUser?.id) return true;
-      const teamMatch = teamIds.length > 0 && (
-        (Array.isArray(task.targetTeams) && task.targetTeams.some((id) => teamIds.includes(id))) ||
-        (Array.isArray(task.workstreams) && task.workstreams.some((id) => teamIds.includes(id)))
-      );
-      return teamMatch;
-    });
-  }, [currentUser?.id, isAdmin, tasks, teamIds]);
+  const visibleTasks = tasks; // Single-user mode: todas las tareas visibles
 
   const visibleProjectIds = useMemo(
     () => new Set(visibleTasks.map((task) => task.projectId)),
     [visibleTasks]
   );
 
-  // Filtrar proyectos según el rol
+  // Filtrar proyectos según workstream seleccionado
   const filteredProjects = projects.filter(project => {
-    if (!currentOrgId) return false;
-    if (project.orgId && project.orgId !== currentOrgId) return false;
     if (!selectedWorkstreamId) return false;
     if (project.workstreamId !== selectedWorkstreamId) return false;
-    // Super Admin ve todos los proyectos
-    if (isAdmin) return true;
-    
-    // Otros roles ven proyectos con tareas asignadas
-    return visibleProjectIds.has(project.id);
+    return true;
   });
 
   const getStatusColor = (status) => {

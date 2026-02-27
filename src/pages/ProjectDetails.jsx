@@ -22,10 +22,10 @@ export const ProjectDetails = () => {
   const project = useSelector((state) =>
     state.projects.projects.find((item) => item.id === id)
   );
-  const { workstreams, currentOrgId } = useSelector((state) => state.organizations);
+  const { workstreams } = useSelector((state) => state.organizations);
   const { tasks, addTask, updateTaskStatus, deleteTask } = useTasks();
   const { t } = useLanguage();
-  const { user, role } = useCurrentUser();
+  const { user } = useCurrentUser();
   const [search, setSearch] = useState('');
   const [removedLegacyTitles, setRemovedLegacyTitles] = useState([]);
   const [deletedTasks, setDeletedTasks] = useState([]);
@@ -41,13 +41,10 @@ export const ProjectDetails = () => {
     isSubscription: Boolean(project?.maintenancePlan)
   }));
   const isCancelled = project?.status === 'cancelled';
-  const roleKey = String(role || '').toLowerCase();
-  const isAdmin = roleKey === 'admin' || roleKey === 'super-admin' || roleKey === 'manager';
   const projectWorkstream = workstreams.find(
-    (stream) => stream.orgId === currentOrgId && stream.id === project?.workstreamId
+    (stream) => stream.id === project?.workstreamId
   );
-  const isLead = projectWorkstream?.leadId && projectWorkstream.leadId === user?.id;
-  const canManageProject = isAdmin || isLead;
+  const canManageProject = true; // Single-user mode: siempre permitido
 
   if (!project) {
     return (

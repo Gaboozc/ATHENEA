@@ -10,12 +10,6 @@ import { Layout } from "./pages/Layout";
 import { Home } from "./pages/Home";
 import { Single } from "./pages/Single";
 import { Demo } from "./pages/Demo";
-import { Login } from "./pages/Login";
-import { Register } from "./pages/Register";
-import { Onboarding } from "./pages/Onboarding";
-import { AwaitingCommand } from "./pages/AwaitingCommand";
-import { RequireMembership } from "./components/RequireMembership";
-import { RequireAccess } from "./components/RequireAccess";
 import { Dashboard } from "./pages/Dashboard";
 import { Projects } from "./pages/Projects";
 import { ProjectDetails } from "./pages/ProjectDetails";
@@ -37,20 +31,10 @@ import { MyTasks } from "./pages/MyTasks";
 export const router = createHashRouter(
     createRoutesFromElements(
       <>
-        {/* Login Routes - No Layout */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/awaiting-command" element={<AwaitingCommand />} />
-        
         {/* App Routes with Layout */}
         <Route
           path="/"
-          element={
-            <RequireMembership>
-              <Layout />
-            </RequireMembership>
-          }
+          element={<Layout />}
           errorElement={<h1>Not found!</h1>}
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
@@ -62,63 +46,14 @@ export const router = createHashRouter(
           <Route path="inventory" element={<Inventory />} />
           <Route path="production" element={<ProductionTracking />} />
           <Route path="settings" element={<Settings />} />
-          <Route
-            path="intelligence"
-            element={
-              <RequireAccess allow={["admin", "manager"]} requireWorkstreamsFor={["admin", "manager"]}>
-                <Intelligence />
-              </RequireAccess>
-            }
-          />
-          <Route
-            path="workstreams"
-            element={
-              <RequireAccess allow={["admin", "manager"]}>
-                <Workstreams />
-              </RequireAccess>
-            }
-          />
-          <Route
-            path="workstreams/:id"
-            element={
-              <RequireAccess allow={["admin", "manager", "worker"]}>
-                <WorkstreamDetail />
-              </RequireAccess>
-            }
-          />
-          <Route
-            path="audits/:id"
-            element={
-              <RequireAccess allow={["admin", "manager", "worker"]}>
-                <AuditDetail />
-              </RequireAccess>
-            }
-          />
-          <Route
-            path="fleet"
-            element={
-              <RequireAccess allow={["admin", "manager"]} requireWorkstreamsFor={["admin", "manager"]}>
-                <Fleet />
-              </RequireAccess>
-            }
-          />
+          <Route path="intelligence" element={<Intelligence />} />
+          <Route path="workstreams" element={<Workstreams />} />
+          <Route path="workstreams/:id" element={<WorkstreamDetail />} />
+          <Route path="audits/:id" element={<AuditDetail />} />
+          <Route path="fleet" element={<Fleet />} />
           <Route path="my-tasks" element={<MyTasks />} />
-          <Route
-            path="field-reports"
-            element={
-              <RequireAccess allow={["admin", "manager", "worker"]}>
-                <FieldReports />
-              </RequireAccess>
-            }
-          />
-          <Route
-            path="notifications"
-            element={
-              <RequireAccess allow={["admin", "manager"]}>
-                <Notifications />
-              </RequireAccess>
-            }
-          />
+          <Route path="field-reports" element={<FieldReports />} />
+          <Route path="notifications" element={<Notifications />} />
           <Route path="profile" element={<Profile />} />
           
           {/* Old routes for reference */}

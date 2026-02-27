@@ -18,41 +18,30 @@ const getTaskTeams = (task, teamIds) => {
 export const Fleet = () => {
   const { tasks, updateTaskAssignment, updateTaskStatus } = useTasks();
   const { t } = useLanguage();
-  const { role } = useCurrentUser();
   const { users } = useSelector((state) => state.users);
-  const { workstreams, currentOrgId, teamMemberships } = useSelector(
-    (state) => state.organizations
-  );
+  const { workstreams } = useSelector((state) => state.organizations);
   const [selectedTeamId, setSelectedTeamId] = useState('');
   const [assignments, setAssignments] = useState({});
   const [teamRoutes, setTeamRoutes] = useState({});
 
-  const roleKey = (role || '').toLowerCase();
-  const canDispatch = roleKey === 'admin' || roleKey === 'super-admin' || roleKey === 'manager';
+  const canDispatch = true; // Single-user mode: siempre permitido
 
   const teams = useMemo(() => {
-    if (!currentOrgId) return [];
     return workstreams
-      .filter((stream) => stream.orgId === currentOrgId && stream.enabled)
+      .filter((stream) => stream.enabled)
       .map((stream) => ({
         id: stream.id,
         label: stream.label,
-        permissions: stream.permissions
       }));
-  }, [currentOrgId, workstreams]);
+  }, [workstreams]);
 
   const teamIds = useMemo(() => teams.map((team) => team.id), [teams]);
 
   const activeTeamId = selectedTeamId || teams[0]?.id || '';
 
   const teamMembers = useMemo(() => {
-    if (!activeTeamId || !currentOrgId) return [];
-    const activeUsers = users.filter((user) => user.active);
-    const memberIds = teamMemberships
-      .filter((entry) => entry.orgId === currentOrgId && entry.teamId === activeTeamId)
-      .map((entry) => entry.userId);
-    return activeUsers.filter((user) => memberIds.includes(user.id));
-  }, [activeTeamId, currentOrgId, teamMemberships, users]);
+    return users.filter((user) => user.active);
+  }, [users]);
 
   const teamCards = useMemo(() => {
     return teams.map((team) => {
