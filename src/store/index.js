@@ -11,6 +11,7 @@ import usersReducer from './slices/usersSlice';
 import inventoryReducer from './slices/inventorySlice';
 import productionReducer from './slices/productionSlice';
 import organizationsReducer from './slices/organizationsSlice';
+import notesReducer from './slices/notesSlice';
 
 // Importar los slices maestros
 import {
@@ -40,6 +41,7 @@ const persistConfig = {
     'inventory',
     'production',
     'organizations',
+    'notes',
     // Slices maestros
     'projectsMaster',
     'pointsMaster',
@@ -64,6 +66,7 @@ const rootReducer = combineReducers({
   inventory: inventoryReducer,
   production: productionReducer,
   organizations: organizationsReducer,
+  notes: notesReducer,
   // Slices maestros
   projectsMaster: projectsMasterSlice.reducer,
   pointsMaster: pointsMasterSlice.reducer,

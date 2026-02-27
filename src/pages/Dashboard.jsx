@@ -17,33 +17,14 @@ const PRIORITY_BUCKETS = [
 export const Dashboard = () => {
   const navigate = useNavigate();
   const { projects } = useSelector((state) => state.projects);
-  const { currentOrgId, teamMemberships, workstreams } = useSelector((state) => state.organizations);
+  const { workstreams } = useSelector((state) => state.organizations);
   const { users } = useSelector((state) => state.users);
   const { tasks } = useTasks();
   const { t } = useLanguage();
-  const { user, role } = useCurrentUser();
+  const { user } = useCurrentUser();
 
-  const roleKey = String(role || '').toLowerCase();
-  const isAdmin = roleKey === 'admin' || roleKey === 'super-admin' || roleKey === 'manager';
-
-  const teamIds = useMemo(() => {
-    if (!user?.id || !currentOrgId) return [];
-    return teamMemberships
-      .filter((entry) => entry.orgId === currentOrgId && entry.userId === user.id)
-      .map((entry) => entry.teamId);
-  }, [currentOrgId, teamMemberships, user?.id]);
-
-  const visibleTasks = useMemo(() => {
-    if (isAdmin) return tasks;
-    return tasks.filter((task) => {
-      if (task.assigneeId && task.assigneeId === user?.id) return true;
-      const teamMatch = teamIds.length > 0 && (
-        (Array.isArray(task.targetTeams) && task.targetTeams.some((id) => teamIds.includes(id))) ||
-        (Array.isArray(task.workstreams) && task.workstreams.some((id) => teamIds.includes(id)))
-      );
-      return teamMatch;
-    });
-  }, [isAdmin, tasks, teamIds, user?.id]);
+  // Single-user mode: todas las tareas son visibles
+  const visibleTasks = tasks;
 
   const externalTasks = visibleTasks.filter(
     (task) => task.metadata?.source === 'field_report'
@@ -54,22 +35,17 @@ export const Dashboard = () => {
     return acc;
   }, {});
 
-  const orgProjects = projects.filter(
-    (project) => project.status !== 'cancelled' && project.orgId === currentOrgId
-  );
-  const orgWorkstreams = workstreams.filter(
-    (stream) => stream.orgId === currentOrgId && stream.enabled
-  );
-  const visibleProjectIds = new Set(visibleTasks.map((task) => task.projectId));
-  const activeProjects = isAdmin
-    ? orgProjects
-    : orgProjects.filter((project) => visibleProjectIds.has(project.id));
+  const activeProjects = projects.filter((project) => project.status !== 'cancelled');
+  
+  const orgWorkstreams = workstreams.filter((stream) => stream.enabled);
+  
   const leadById = useMemo(() => {
     return users.reduce((acc, entry) => {
       acc[entry.id] = entry;
       return acc;
     }, {});
   }, [users]);
+  
   const projectsByWorkstream = orgWorkstreams.map((stream) => {
     const streamProjects = activeProjects.filter(
       (project) => project.workstreamId === stream.id
@@ -87,9 +63,9 @@ export const Dashboard = () => {
       completedCount
     };
   });
-  const leadStreams = projectsByWorkstream.filter(
-    (stream) => stream.leadId && stream.leadId === user?.id
-  );
+  
+  // En single-user mode, mostrar todas las áreas
+  const leadStreams = projectsByWorkstream;
 
   const getInitials = (name = '') => {
     const parts = name.trim().split(' ').filter(Boolean);
@@ -102,8 +78,8 @@ export const Dashboard = () => {
     <div className="dashboard-container">
       <header className="dashboard-header">
         <div>
-          <h1>ATHENEA Priority Buckets</h1>
-          <p>{t('Operational tasks organized by priority level.')}</p>
+          <h1>ATHENEA Personal Assistant</h1>
+          <p>{t('Your tasks organized by priority level.')}</p>
         </div>
       </header>
 
@@ -188,7 +164,7 @@ export const Dashboard = () => {
       {leadStreams.length > 0 && (
         <section className="lead-center">
           <div className="lead-center-header">
-            <h2>{t('Lead Command Center')}</h2>
+            <h2>{t('Work Areas Overview')}</h2>
             <span>{leadStreams.length}</span>
           </div>
           <div className="lead-center-grid">

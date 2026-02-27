@@ -14,7 +14,6 @@ import { Dashboard } from "./pages/Dashboard";
 import { Projects } from "./pages/Projects";
 import { ProjectDetails } from "./pages/ProjectDetails";
 import { PointDetails } from "./pages/PointDetails";
-import { Users } from "./pages/Users";
 import { Inventory } from "./pages/Inventory";
 import { ProductionTracking } from "./pages/ProductionTracking";
 import { Settings } from "./pages/Settings";
@@ -27,6 +26,7 @@ import { Notifications } from "./pages/Notifications";
 import { Profile } from "./pages/Profile";
 import { FieldReports } from "./pages/FieldReports";
 import { MyTasks } from "./pages/MyTasks";
+import { Notes } from "./pages/Notes";
 
 export const router = createHashRouter(
     createRoutesFromElements(
@@ -42,7 +42,6 @@ export const router = createHashRouter(
           <Route path="projects" element={<Projects />} />
           <Route path="projects/:id" element={<ProjectDetails />} />
           <Route path="points/:id" element={<PointDetails />} />
-          <Route path="users" element={<Users />} />
           <Route path="inventory" element={<Inventory />} />
           <Route path="production" element={<ProductionTracking />} />
           <Route path="settings" element={<Settings />} />
@@ -55,6 +54,7 @@ export const router = createHashRouter(
           <Route path="field-reports" element={<FieldReports />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="notes" element={<Notes />} />
           
           {/* Old routes for reference */}
           <Route path="single/:theId" element={<Single />} />

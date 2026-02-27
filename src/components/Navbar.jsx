@@ -17,11 +17,12 @@ export const Navbar = () => {
 
 	const navItems = [
 		{ label: t('Dashboard'), path: '/dashboard' },
+		{ label: t('Notes'), path: '/notes' },
 		{ label: t('Projects'), path: '/projects' },
 		{ label: t('My Tasks'), path: '/my-tasks' },
 		{ label: t('Intelligence'), path: '/intelligence' },
-		{ label: t('Workstreams'), path: '/workstreams' },
-		{ label: t('Fleet'), path: '/fleet' },
+		{ label: t('Areas'), path: '/workstreams' },
+		{ label: t('Task Management'), path: '/fleet' },
 		{ label: t('Settings'), path: '/settings' }
 	];
 
