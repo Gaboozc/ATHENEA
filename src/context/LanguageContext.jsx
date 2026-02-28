@@ -876,7 +876,8 @@ const getStoredLanguage = () => {
   if (typeof window === 'undefined') return DEFAULT_LANGUAGE;
   try {
     const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
-    return stored === 'en' || stored === 'es' ? stored : DEFAULT_LANGUAGE;
+    // Force English as default, only accept if explicitly set to 'es'
+    return stored === 'es' ? 'es' : DEFAULT_LANGUAGE;
   } catch (error) {
     return DEFAULT_LANGUAGE;
   }

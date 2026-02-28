@@ -1,0 +1,59 @@
+/* LazyList styles - Virtual scrolling optimization */
+.lazy-list-container {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+
+.lazy-list-content {
+  width: 100%;
+  position: relative;
+}
+
+.lazy-list-item {
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.lazy-list-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  color: #666;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.lazy-list-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.lazy-list-loader .spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #4a90e2;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .lazy-list-container {
+    height: calc(100vh - 120px);
+  }
+}

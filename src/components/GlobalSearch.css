@@ -1,0 +1,284 @@
+.global-search-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.global-search-modal {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 640px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.global-search-header {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+  gap: 12px;
+}
+
+.search-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.global-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.global-search-input::placeholder {
+  color: #9ca3af;
+}
+
+.search-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.search-close:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.global-search-results {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 200px;
+  max-height: 500px;
+}
+
+.search-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #6b7280;
+}
+
+.search-empty p {
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.search-tips {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.search-results-list {
+  padding: 8px;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.search-result-item:hover {
+  background: #f3f4f6;
+}
+
+.result-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.result-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-title {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-type {
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #9ca3af;
+  padding: 4px 8px;
+  background: #f3f4f6;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.global-search-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.search-hint {
+  display: flex;
+  gap: 12px;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .global-search-overlay {
+    padding-top: 10vh;
+  }
+
+  .global-search-modal {
+    width: 95%;
+    max-height: 80vh;
+  }
+
+  .global-search-header {
+    padding: 12px;
+  }
+
+  .global-search-input {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+
+  .search-result-item {
+    padding: 10px;
+  }
+
+  .result-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+
+  .search-hint {
+    display: none; /* Hide keyboard hints on mobile */
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .global-search-modal {
+    background: #1f2937;
+  }
+
+  .global-search-header {
+    border-bottom-color: #374151;
+  }
+
+  .global-search-input {
+    color: #f9fafb;
+  }
+
+  .global-search-input::placeholder {
+    color: #6b7280;
+  }
+
+  .search-close:hover {
+    background: #374151;
+    color: #f9fafb;
+  }
+
+  .search-empty {
+    color: #9ca3af;
+  }
+
+  .search-result-item:hover {
+    background: #374151;
+  }
+
+  .result-icon {
+    background: #374151;
+  }
+
+  .result-title {
+    color: #f9fafb;
+  }
+
+  .result-subtitle {
+    color: #9ca3af;
+  }
+
+  .result-type {
+    background: #374151;
+    color: #9ca3af;
+  }
+
+  .global-search-footer {
+    border-top-color: #374151;
+    color: #9ca3af;
+  }
+}

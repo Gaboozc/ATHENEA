@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ATHENEA</string>
+    <string name="title_activity_main">ATHENEA</string>
+    <string name="package_name">com.athenea.app</string>
+    <string name="custom_url_scheme">com.athenea.app</string>
+</resources>

@@ -8,7 +8,7 @@ import { Layout } from "./pages/Layout";
 import { Dashboard } from "./pages/Dashboard";
 import { Projects } from "./pages/Projects";
 import { ProjectDetails } from "./pages/ProjectDetails";
-import { Settings } from "./pages/Settings";
+import Settings from "./pages/Settings";
 import { Intelligence } from "./pages/Intelligence";
 import { Fleet } from "./pages/Fleet";
 import { Notifications } from "./pages/Notifications";
@@ -22,6 +22,7 @@ import { Payments } from "./pages/Payments";
 import { WorkHub } from "./pages/WorkHub";
 import { PersonalHub } from "./pages/PersonalHub";
 import { FinanceHub } from "./pages/FinanceHub";
+import StatsPage from "./pages/StatsPage";
 
 export const router = createHashRouter(
     createRoutesFromElements(
@@ -50,6 +51,7 @@ export const router = createHashRouter(
           <Route path="profile" element={<Profile />} />
           <Route path="notes" element={<Notes />} />
           <Route path="calendar" element={<Calendar />} />
+          <Route path="stats" element={<StatsPage />} />
         </Route>
       </>
     )

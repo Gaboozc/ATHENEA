@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage'; // localStorage for web
 import { combineReducers } from 'redux';
+import { achievementMiddleware } from './achievementMiddleware';
 
 
 import authReducer from './slices/authSlice';
@@ -15,6 +16,7 @@ import routinesReducer from './slices/routinesSlice';
 import budgetReducer from './slices/budgetSlice';
 import collaboratorsReducer from './slices/collaboratorsSlice';
 import workOrdersReducer from './slices/workOrdersSlice';
+import statsReducer from './slices/statsSlice';
 
 
 // Redux Persist configuration
@@ -33,6 +35,7 @@ const persistConfig = {
     'budget',
     'collaborators',
     'workOrders',
+    'stats',
   ],
 };
 
@@ -49,6 +52,7 @@ const rootReducer = combineReducers({
   budget: budgetReducer,
   collaborators: collaboratorsReducer,
   workOrders: workOrdersReducer,
+  stats: statsReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -60,7 +64,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
       },
-    }),
+    }).concat(achievementMiddleware),
 });
 
 export const persistor = persistStore(store);

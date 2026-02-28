@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useTasks } from '../context/TasksContext';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useLanguage } from '../context/LanguageContext';
+import LazyList from '../components/LazyList';
 import './MyTasks.css';
 
 export const MyTasks = () => {
@@ -31,45 +32,50 @@ export const MyTasks = () => {
         {myTasks.length === 0 ? (
           <div className="mytasks-empty">{t('No tasks assigned.')}</div>
         ) : (
-          myTasks.map((task) => (
-            <article key={task.id} className="mytasks-card">
-              <div className="mytasks-card-header">
-                <div>
-                  <h2>{task.title}</h2>
-                  {task.projectName && (
-                    <span className="mytasks-project">{task.projectName}</span>
-                  )}
+          <LazyList
+            items={myTasks}
+            renderItem={(task) => (
+              <article key={task.id} className="mytasks-card">
+                <div className="mytasks-card-header">
+                  <div>
+                    <h2>{task.title}</h2>
+                    {task.projectName && (
+                      <span className="mytasks-project">{task.projectName}</span>
+                    )}
+                  </div>
+                  <span className="mytasks-status">{task.status || t('Active')}</span>
                 </div>
-                <span className="mytasks-status">{task.status || t('Active')}</span>
-              </div>
-              {task.description && <p className="mytasks-desc">{task.description}</p>}
-              <div className="mytasks-meta">
-                {task.level && <span className="mytasks-pill">{task.level}</span>}
-                {Array.isArray(task.workstreams) &&
-                  task.workstreams.map((stream) => (
-                    <span key={stream} className="mytasks-pill">
-                      {stream}
-                    </span>
-                  ))}
-              </div>
-              <div className="mytasks-actions">
-                <button
-                  type="button"
-                  className={`mytasks-action${task.status === 'In Progress' ? ' is-active' : ''}`}
-                  onClick={() => updateTaskStatus(task.id, 'In Progress')}
-                >
-                  {t('In Progress')}
-                </button>
-                <button
-                  type="button"
-                  className={`mytasks-action${task.status === 'Completed' ? ' is-active' : ''}`}
-                  onClick={() => updateTaskStatus(task.id, 'Completed')}
-                >
-                  {t('Completed')}
-                </button>
-              </div>
-            </article>
-          ))
+                {task.description && <p className="mytasks-desc">{task.description}</p>}
+                <div className="mytasks-meta">
+                  {task.level && <span className="mytasks-pill">{task.level}</span>}
+                  {Array.isArray(task.workstreams) &&
+                    task.workstreams.map((stream) => (
+                      <span key={stream} className="mytasks-pill">
+                        {stream}
+                      </span>
+                    ))}
+                </div>
+                <div className="mytasks-actions">
+                  <button
+                    type="button"
+                    className={`mytasks-action${task.status === 'In Progress' ? ' is-active' : ''}`}
+                    onClick={() => updateTaskStatus(task.id, 'In Progress')}
+                  >
+                    {t('In Progress')}
+                  </button>
+                  <button
+                    type="button"
+                    className={`mytasks-action${task.status === 'Completed' ? ' is-active' : ''}`}
+                    onClick={() => updateTaskStatus(task.id, 'Completed')}
+                  >
+                    {t('Completed')}
+                  </button>
+                </div>
+              </article>
+            )}
+            itemHeight={180}
+            emptyMessage={t('No tasks assigned.')}
+          />
         )}
       </section>
     </div>

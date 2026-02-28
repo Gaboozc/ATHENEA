@@ -6,7 +6,7 @@ import { useLanguage } from '../context/LanguageContext';
 import './Navbar.css';
 
 export const Navbar = () => {
-	const { t } = useLanguage();
+	const { t, toggleLanguage, language } = useLanguage();
 	const location = useLocation();
 	const { projects } = useSelector((state) => state.projects);
 	const { notes } = useSelector((state) => state.notes);
@@ -14,6 +14,7 @@ export const Navbar = () => {
 	const { payments } = useSelector((state) => state.payments);
 	const [openDropdown, setOpenDropdown] = useState(null);
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+	const [expandedMobileGroup, setExpandedMobileGroup] = useState(null);
 	const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 	const dropdownRefs = useRef({});
 
@@ -218,6 +219,16 @@ export const Navbar = () => {
 						</div>
 
 						<div className="navbar-right-group" style={{ gap: '50px' }}>
+							<button
+								onClick={toggleLanguage}
+								className="navbar-language-toggle"
+								title={language === 'en' ? 'Cambiar a Español' : 'Switch to English'}
+								aria-label={language === 'en' ? 'Change to Spanish' : 'Switch to English'}
+							>
+								<span className="navbar-language-text">
+									{language === 'en' ? 'EN' : 'ES'}
+								</span>
+							</button>
 							<Link
 								to="/notifications"
 								className={`navbar-icon-button${location.pathname.startsWith('/notifications') ? ' is-active' : ''}`}
@@ -238,32 +249,72 @@ export const Navbar = () => {
 			{isMobileMenuOpen && createPortal(
 				<div className="navbar-mobile-menu">
 					<div className="navbar-mobile-content">
-						{dropdowns.map((group) => (
-							<div key={group.label} className="navbar-mobile-group">
-								<strong className="navbar-mobile-group-title">{group.label}</strong>
-								{group.items.map((item) => {
-									const isActive = location.pathname.startsWith(item.path);
-									return (
-										<Link
-											key={item.path}
-											to={item.path}
-											onClick={closeMobileMenu}
-											className={`navbar-mobile-link${isActive ? ' is-active' : ''}`}
+						{dropdowns.map((group) => {
+							const isExpanded = expandedMobileGroup === group.label;
+							return (
+								<div key={group.label} className="navbar-mobile-group">
+									<button
+										className="navbar-mobile-group-button"
+										onClick={() => setExpandedMobileGroup(isExpanded ? null : group.label)}
+										aria-expanded={isExpanded}
+									>
+										<span>{group.label}</span>
+										<svg
+											className={`navbar-mobile-group-caret${isExpanded ? ' is-open' : ''}`}
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											strokeWidth={2}
 										>
-											{item.label}
-										</Link>
-									);
-								})}
-							</div>
-						))}
+											<polyline points="6 9 12 15 18 9"></polyline>
+										</svg>
+									</button>
+									{isExpanded && (
+										<div className="navbar-mobile-group-items">
+											{group.items.map((item) => {
+												const isActive = location.pathname.startsWith(item.path);
+												return (
+													<Link
+														key={item.path}
+														to={item.path}
+														onClick={() => {
+															closeMobileMenu();
+															setExpandedMobileGroup(null);
+														}}
+														className={`navbar-mobile-link${isActive ? ' is-active' : ''}`}
+													>
+														{item.label}
+													</Link>
+												);
+											})}
+										</div>
+									)}
+								</div>
+							);
+						})}
 						<div className="navbar-mobile-group">
 							<Link
 								to="/calendar"
-								onClick={closeMobileMenu}
+								onClick={() => {
+									closeMobileMenu();
+									setExpandedMobileGroup(null);
+								}}
 								className={`navbar-mobile-link${location.pathname.startsWith('/calendar') ? ' is-active' : ''}`}
 							>
 								{t('Calendar')}
 							</Link>
+						</div>
+						<div className="navbar-mobile-group" style={{ borderTop: '1px solid #27272a', paddingTop: '12px', marginTop: '12px' }}>
+							<button
+								onClick={() => {
+									toggleLanguage();
+									closeMobileMenu();
+									setExpandedMobileGroup(null);
+								}}
+								className="navbar-mobile-language-toggle"
+							>
+								<span>{language === 'en' ? '🇬🇧 English' : '🇪🇸 Español'}</span>
+							</button>
 						</div>
 					</div>
 				</div>,

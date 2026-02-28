@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
+import CollaboratorCard from '../components/CollaboratorCard';
 import {
   addCollaborator,
   updateCollaborator,
@@ -202,219 +203,23 @@ export const Fleet = () => {
             </button>
           </div>
         ) : (
-          <div className="fleet-collaborators-list">
+          <div className="fleet-collaborators-grid">
             {activeCollaborators.map((collab) => {
-              const isExpanded = expandedCollabId === collab.id;
               const collabOrders = getCollaboratorWorkOrders(collab.id);
               const collabProjects = getCollaboratorProjects(collab.id);
               const activeOrders = collabOrders.filter((wo) => wo.status !== 'completed');
               const completedOrders = collabOrders.filter((wo) => wo.status === 'completed');
 
               return (
-                <div key={collab.id} className={`fleet-collab-item${isExpanded ? ' is-expanded' : ''}`}>
-                  <div 
-                    className="fleet-collab-header"
-                    onClick={() => toggleCollaboratorExpand(collab.id)}
-                  >
-                    <div className="fleet-collab-main">
-                      <div className="fleet-collab-avatar">
-                        {collab.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="fleet-collab-info">
-                        <h3>{collab.name}</h3>
-                        <span className="fleet-collab-email">{collab.email}</span>
-                        {collab.role && (
-                          <span className="fleet-collab-role">{collab.role}</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="fleet-collab-stats">
-                      <div className="fleet-stat">
-                        <span className="fleet-stat-value">{collabProjects.length}</span>
-                        <span className="fleet-stat-label">{t('Projects')}</span>
-                      </div>
-                      <div className="fleet-stat">
-                        <span className="fleet-stat-value">{activeOrders.length}</span>
-                        <span className="fleet-stat-label">{t('Active Orders')}</span>
-                      </div>
-                      <div className="fleet-stat">
-                        <span className="fleet-stat-value">{completedOrders.length}</span>
-                        <span className="fleet-stat-label">{t('Completed')}</span>
-                      </div>
-                    </div>
-                    <button className="fleet-expand-btn">
-                      <svg 
-                        viewBox="0 0 24 24" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        strokeWidth={2}
-                        style={{ 
-                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                          transition: 'transform 0.2s ease'
-                        }}
-                      >
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </button>
-                  </div>
-
-                  {isExpanded && (
-                    <div className="fleet-collab-details">
-                      <div className="fleet-details-grid">
-                        {/* Contact Information */}
-                        <div className="fleet-detail-section">
-                          <h4>{t('Contact Information')}</h4>
-                          <div className="fleet-detail-items">
-                            <div className="fleet-detail-item">
-                              <span className="fleet-detail-label">{t('Email')}:</span>
-                              <span>{collab.email}</span>
-                            </div>
-                            {collab.phone && (
-                              <div className="fleet-detail-item">
-                                <span className="fleet-detail-label">{t('Phone')}:</span>
-                                <span>{collab.phone}</span>
-                              </div>
-                            )}
-                            {collab.area && (
-                              <div className="fleet-detail-item">
-                                <span className="fleet-detail-label">{t('Area')}:</span>
-                                <span>{collab.area}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Associated Projects */}
-                        <div className="fleet-detail-section">
-                          <h4>{t('Associated Projects')}</h4>
-                          {collabProjects.length === 0 ? (
-                            <p className="fleet-detail-empty">{t('No projects associated')}</p>
-                          ) : (
-                            <div className="fleet-projects-list">
-                              {collabProjects.map((project) => (
-                                <div key={project.id} className="fleet-project-chip">
-                                  <span>{project.name}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Work Orders */}
-                        <div className="fleet-detail-section fleet-detail-full">
-                          <div className="fleet-detail-header">
-                            <h4>{t('Work Orders')}</h4>
-                            <button
-                              className="fleet-add-btn-small"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenWorkOrderModal(null, collab.id);
-                              }}
-                            >
-                              + {t('New Order')}
-                            </button>
-                          </div>
-                          {collabOrders.length === 0 ? (
-                            <p className="fleet-detail-empty">{t('No work orders yet')}</p>
-                          ) : (
-                            <div className="fleet-orders-grid">
-                              {collabOrders.map((order) => {
-                                const project = (projects || []).find((p) => p.id === order.projectId);
-                                return (
-                                  <div key={order.id} className="fleet-order-card">
-                                    <div className="fleet-order-header">
-                                      <h5>{order.title}</h5>
-                                      <span className={`fleet-priority fleet-priority-${order.priority}`}>
-                                        {t(order.priority)}
-                                      </span>
-                                    </div>
-                                    {order.description && (
-                                      <p className="fleet-order-desc">{order.description}</p>
-                                    )}
-                                    <div className="fleet-order-meta">
-                                      {project && (
-                                        <span className="fleet-order-project">
-                                          📁 {project.name}
-                                        </span>
-                                      )}
-                                      {order.dueDate && (
-                                        <span className="fleet-order-due">
-                                          📅 {new Date(order.dueDate).toLocaleDateString()}
-                                        </span>
-                                      )}
-                                    </div>
-                                    {order.status !== 'completed' && (
-                                      <div className="fleet-order-progress">
-                                        <div className="fleet-progress-header">
-                                          <span>{t('Progress')}</span>
-                                          <span>{order.progress || 0}%</span>
-                                        </div>
-                                        <input
-                                          type="range"
-                                          min="0"
-                                          max="100"
-                                          value={order.progress || 0}
-                                          onChange={(e) => handleUpdateProgress(order.id, e.target.value)}
-                                          onClick={(e) => e.stopPropagation()}
-                                        />
-                                      </div>
-                                    )}
-                                    <div className="fleet-order-actions">
-                                      <button 
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleOpenWorkOrderModal(order);
-                                        }}
-                                      >
-                                        {t('Edit')}
-                                      </button>
-                                      {order.status !== 'completed' && (
-                                        <button 
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleCompleteWorkOrder(order.id);
-                                          }}
-                                          className="fleet-btn-complete"
-                                        >
-                                          {t('Complete')}
-                                        </button>
-                                      )}
-                                      {order.status === 'completed' && (
-                                        <span className="fleet-status-completed">✓ {t('Completed')}</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="fleet-collab-actions">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenCollaboratorModal(collab);
-                          }}
-                          className="fleet-btn-edit"
-                        >
-                          {t('Edit')} {collab.name}
-                        </button>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteCollaborator(collab.id);
-                          }}
-                          className="fleet-btn-delete"
-                        >
-                          {t('Delete')}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <CollaboratorCard
+                  key={collab.id}
+                  collaborator={collab}
+                  onEdit={handleOpenCollaboratorModal}
+                  onDelete={handleDeleteCollaborator}
+                  projectCount={collabProjects.length}
+                  orderCount={activeOrders.length}
+                  completedCount={completedOrders.length}
+                />
               );
             })}
           </div>

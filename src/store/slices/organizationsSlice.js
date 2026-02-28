@@ -12,6 +12,7 @@ const organizationsSlice = createSlice({
   name: 'organizations',
   initialState: {
     organizations: [DEFAULT_ORG],
+    workstreams: [],
     teamMemberships: [],
     memberships: [],
     currentOrgId: 'org-personal'

@@ -47,8 +47,12 @@ const projectsSlice = createSlice({
   extraReducers: (builder) => {
     builder.addCase('persist/REHYDRATE', (state, action) => {
       const incoming = action.payload?.projects?.projects;
-      if (!incoming || incoming.length === 0) return;
+      if (!incoming || incoming.length === 0) {
+        state.projects = [];
+        return;
+      }
 
+      // Filter out legacy/seed projects
       state.projects = incoming
         .filter((project) => !LEGACY_PROJECTS.has(project.name))
         .map((project) => ({

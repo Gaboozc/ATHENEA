@@ -5,6 +5,7 @@ import { useSelector } from 'react-redux';
 import { useTasks } from "../context/TasksContext";
 import { useLanguage } from '../context/LanguageContext';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import DashboardWidget from '../components/DashboardWidget';
 
 const PRIORITY_BUCKETS = [
   "Critical",
@@ -129,6 +130,9 @@ export const Dashboard = () => {
           <p>{t('Your tasks organized by priority level.')}</p>
         </div>
       </header>
+
+      {/* Dashboard Widget - Quick Overview */}
+      <DashboardWidget />
 
       <section className="notes-recent">
         <div className="notes-recent-header">
@@ -256,14 +260,12 @@ export const Dashboard = () => {
         </div>
       </section>
 
-      <section className="external-requests">
-        <div className="external-header">
-          <h2>{t('External Requests')}</h2>
-          <span>{externalTasks.length}</span>
-        </div>
-        {externalTasks.length === 0 ? (
-          <div className="external-empty">{t('No field reports logged.')}</div>
-        ) : (
+      {externalTasks.length > 0 && (
+        <section className="external-requests">
+          <div className="external-header">
+            <h2>{t('External Requests')}</h2>
+            <span>{externalTasks.length}</span>
+          </div>
           <ul className="external-list">
             {externalTasks.map((task) => (
               <li key={task.id} className="external-card">
@@ -281,8 +283,8 @@ export const Dashboard = () => {
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      )}
 
       {leadStreams.length > 0 && (
         <section className="lead-center">
@@ -317,14 +319,12 @@ export const Dashboard = () => {
         </section>
       )}
 
-      <section className="active-projects">
-        <div className="active-projects-header">
-          <h2>{t('Active Workstreams')}</h2>
-          <span>{orgWorkstreams.length}</span>
-        </div>
-        {projectsByWorkstream.length === 0 ? (
-          <div className="active-projects-empty">{t('No workstreams configured yet.')}</div>
-        ) : (
+      {orgWorkstreams.length > 0 && (
+        <section className="active-projects">
+          <div className="active-projects-header">
+            <h2>{t('Active Workstreams')}</h2>
+            <span>{orgWorkstreams.length}</span>
+          </div>
           <ul className="active-projects-list">
             {projectsByWorkstream.map((stream) => (
               <li
@@ -369,8 +369,8 @@ export const Dashboard = () => {
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      )}
     </div>
   );
 };

@@ -8,6 +8,7 @@ import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from './store/index';
 import { TasksProvider } from './context/TasksContext';
 import { LanguageProvider } from './context/LanguageContext';
+import AppInitializer from './components/AppInitializer';
 
 // Clear localStorage if ?clear=true is in URL (for testing)
 if (new URLSearchParams(window.location.search).get('clear') === 'true') {
@@ -22,12 +23,14 @@ const Main = () => {
             {/* Provide Redux state to all components */}
             <Provider store={store}>
                 <PersistGate loading={null} persistor={persistor}>
-                    <LanguageProvider>
-                        <TasksProvider>
-                            {/* Set up routing for the application */} 
-                            <RouterProvider router={router} />
-                        </TasksProvider>
-                    </LanguageProvider>
+                    <AppInitializer>
+                        <LanguageProvider>
+                            <TasksProvider>
+                                {/* Set up routing for the application */} 
+                                <RouterProvider router={router} />
+                            </TasksProvider>
+                        </LanguageProvider>
+                    </AppInitializer>
                 </PersistGate>
             </Provider>
         </React.StrictMode>

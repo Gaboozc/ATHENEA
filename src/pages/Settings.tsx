@@ -46,7 +46,7 @@ export const Settings = () => {
   const planName = planLimits.label;
   const planPrice = currentOrg?.planPrice ?? planLimits.price;
   const memberCount = memberships.filter((entry: any) => entry.orgId === currentOrgId).length;
-  const resolvedMemberCount = memberCount || fallbackMemberCount;
+  const resolvedMemberCount = memberCount || 1;
   const workerLimit = currentOrg?.workerLimit ?? planLimits.workers;
   const workerLimitReached =
     workerLimit !== null && workerLimit !== undefined && resolvedMemberCount >= workerLimit;
@@ -55,7 +55,7 @@ export const Settings = () => {
   );
   const roleKey = (role || "").toLowerCase();
   const isAdmin = roleKey === "admin" || roleKey === "super-admin";
-  const profileUser = users.find((entry: any) => entry.id === user?.id) || user;
+  const profileUser = user;
   const assignedRole = role || membership?.role || "-";
 
   const myTeams = useMemo(() => {
@@ -117,9 +117,9 @@ export const Settings = () => {
         .filter((entry: any) => entry.orgId === currentOrgId)
         .map((entry: any) => ({
           ...entry,
-          user: users.find((person: any) => person.id === entry.userId)
+          user: { id: entry.userId, name: entry.userId }
         })),
-    [currentOrgId, memberships, users]
+    [currentOrgId, memberships]
   );
 
   const handleOrgSwitch = (orgId: string) => {

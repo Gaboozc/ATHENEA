@@ -460,6 +460,7 @@
   border-radius: 3px;
   outline: none;
   -webkit-appearance: none;
+  appearance: none;
 }
 
 .fleet-progress input[type="range"]::-webkit-slider-thumb {
@@ -771,6 +772,35 @@
   .fleet-add-btn-small:hover {
     background: rgba(212, 175, 55, 0.1);
   }
+
+    /* Collaborators Grid */
+    .fleet-collaborators-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 24px;
+      padding: 20px 0;
+    }
+
+    @media (max-width: 1024px) {
+      .fleet-collaborators-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .fleet-collaborators-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .fleet-collaborators-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+    }
 
   /* Work orders grid */
   .fleet-orders-grid {

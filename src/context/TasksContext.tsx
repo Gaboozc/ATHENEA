@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { taskCompleted, updateStreak } from "../store/slices/statsSlice";
 import type { PriorityFactors, PriorityLevel } from "../utils/priorityEngine";
 
 const TASKS_STORAGE_KEY = "athenea.tasks";
@@ -55,6 +56,7 @@ const TasksContext = createContext<TasksContextValue | undefined>(undefined);
 
 export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
   const [tasks, setTasks] = useState<GatekeeperTask[]>([]);
+  const dispatch = useDispatch();
   const currentOrgId = useSelector(
     (state: { organizations: { currentOrgId: string | null } }) =>
       state.organizations.currentOrgId
@@ -84,27 +86,44 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateTaskStatus = (id: string, status: string) => {
     setTasks((prev) =>
-      prev.map((task) => (task.id === id ? { ...task, status } : task))
+      prev.map((task) => {
+        if (task.id === id) {
+          // Track achievement when task is completed
+          if ((status === 'Completed' || status === 'completed' || status === 'done') && 
+              task.status !== 'Completed' && task.status !== 'completed' && task.status !== 'done') {
+            dispatch(taskCompleted());
+            dispatch(updateStreak());
+          }
+          return { ...task, status };
+        }
+        return task;
+      })
     );
   };
 
   const resolveTask = (id: string, resolvedBy?: string, resolutionNote?: string) => {
     const resolvedAt = new Date().toISOString();
     setTasks((prev) =>
-      prev.map((task) =>
-        task.id === id
-          ? {
-              ...task,
-              status: 'resolved',
-              metadata: {
-                ...task.metadata,
-                resolvedBy: resolvedBy || task.metadata?.resolvedBy || 'system',
-                resolvedAt,
-                resolutionNote: resolutionNote || task.metadata?.resolutionNote
-              }
+      prev.map((task) => {
+        if (task.id === id) {
+          // Track achievement when task is resolved
+          if (task.status !== 'resolved') {
+            dispatch(taskCompleted());
+            dispatch(updateStreak());
+          }
+          return {
+            ...task,
+            status: 'resolved',
+            metadata: {
+              ...task.metadata,
+              resolvedBy: resolvedBy || task.metadata?.resolvedBy || 'system',
+              resolvedAt,
+              resolutionNote: resolutionNote || task.metadata?.resolutionNote
             }
-          : task
-      )
+          };
+        }
+        return task;
+      })
     );
   };
 
