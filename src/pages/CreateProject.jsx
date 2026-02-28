@@ -10,8 +10,7 @@ export const CreateProject = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user: currentUser, role: currentRole } = useCurrentUser();
-  const { users } = useSelector((state) => state.users);
-  const pmUsers = users.filter(u => u.role === 'pm');
+
   const { t } = useLanguage();
   
   const [formData, setFormData] = useState({
@@ -22,7 +21,6 @@ export const CreateProject = () => {
     startDate: '',
     endDate: '',
     maintenancePlan: '',
-    pmId: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -42,8 +40,6 @@ export const CreateProject = () => {
     if (!formData.clientName.trim()) newErrors.clientName = t('Client name is required');
     if (!formData.siteAddress.trim()) newErrors.siteAddress = t('Site address is required');
     if (!formData.startDate) newErrors.startDate = t('Start date is required');
-    // Super Admin must assign a PM
-    if (currentRole === 'super-admin' && !formData.pmId) newErrors.pmId = t('Please assign a PM');
     return newErrors;
   };
 
@@ -56,13 +52,7 @@ export const CreateProject = () => {
       return;
     }
 
-    // Ensure PM-created projects are associated to the creating PM
-    const payload = {
-      ...formData,
-      ...(currentRole === 'pm' && currentUser?.id ? { pmId: currentUser.id } : {}),
-    };
-
-    dispatch(addProject(payload));
+    dispatch(addProject(formData));
     alert(t('Project created successfully.'));
     navigate('/projects');
   };
@@ -103,25 +93,6 @@ export const CreateProject = () => {
               rows="4"
             />
           </div>
-
-            {currentRole === 'super-admin' && (
-              <div className="form-group">
-                <label htmlFor="pmId">{t('Assign Project Manager *')}</label>
-                <select
-                  id="pmId"
-                  name="pmId"
-                  value={formData.pmId}
-                  onChange={handleChange}
-                  className={errors.pmId ? 'error' : ''}
-                >
-                  <option value="">{t('Select PM')}</option>
-                  {pmUsers.map(pm => (
-                    <option key={pm.id} value={pm.id}>{pm.name}</option>
-                  ))}
-                </select>
-                {errors.pmId && <span className="error-text">{errors.pmId}</span>}
-              </div>
-            )}
 
           <div className="form-row">
             <div className="form-group">

@@ -18,7 +18,6 @@ export const Dashboard = () => {
   const navigate = useNavigate();
   const { projects } = useSelector((state) => state.projects);
   const { workstreams } = useSelector((state) => state.organizations);
-  const { users } = useSelector((state) => state.users);
   const { notes } = useSelector((state) => state.notes);
   const { todos } = useSelector((state) => state.todos);
   const { payments } = useSelector((state) => state.payments);
@@ -42,13 +41,6 @@ export const Dashboard = () => {
   const activeProjects = (projects || []).filter((project) => project.status !== 'cancelled');
   
   const orgWorkstreams = (workstreams || []).filter((stream) => stream.enabled);
-  
-  const leadById = useMemo(() => {
-    return (users || []).reduce((acc, entry) => {
-      acc[entry.id] = entry;
-      return acc;
-    }, {});
-  }, [users]);
 
   const recentNotes = useMemo(() => {
     return [...notes]
@@ -367,14 +359,10 @@ export const Dashboard = () => {
                   </span>
                   <div className="active-project-lead">
                     <span className="active-project-avatar">
-                      {stream.leadId && leadById[stream.leadId]
-                        ? getInitials(leadById[stream.leadId].name)
-                        : 'NA'}
+                      --
                     </span>
                     <span>
-                      {stream.leadId && leadById[stream.leadId]
-                        ? leadById[stream.leadId].name
-                        : t('No lead assigned')}
+                      {t('No lead assigned')}
                     </span>
                   </div>
                 </div>

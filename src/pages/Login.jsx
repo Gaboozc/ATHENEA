@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser } from '../store/slices/authSlice';
-import { addUser } from '../store/slices/usersSlice';
+
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import './Login.css';
@@ -12,7 +12,6 @@ export const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isLoading, error, user } = useSelector((state) => state.auth);
-  const { users } = useSelector((state) => state.users);
   const { memberships } = useSelector((state) => state.organizations);
   const { t } = useLanguage();
 

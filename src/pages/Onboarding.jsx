@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { loginUser } from '../store/slices/authSlice';
-import { addUser } from '../store/slices/usersSlice';
 import {
   addMembership,
   addOrganization,
@@ -136,7 +135,6 @@ export const Onboarding = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { user } = useSelector((state) => state.auth);
-  const { users } = useSelector((state) => state.users);
   const { organizations } = useSelector((state) => state.organizations);
   const { memberships } = useSelector((state) => state.organizations);
 
@@ -188,17 +186,6 @@ export const Onboarding = () => {
     navigate('/awaiting-command', { replace: true });
   }, [activeMemberships.length, navigate, registrationComplete, user]);
 
-  const ensureUserInDirectory = (payload) => {
-    const exists = users.some((entry) => entry.email === payload.email);
-    if (!exists) {
-      dispatch(addUser({
-        name: payload.name,
-        email: payload.email,
-        role: payload.role
-      }));
-    }
-  };
-
   const handleSocial = async (provider) => {
     const payload = {
       email: `${provider}@auth.local`,
@@ -208,7 +195,6 @@ export const Onboarding = () => {
     };
     const result = await dispatch(loginUser(payload));
     if (result.type === 'auth/login/fulfilled') {
-      ensureUserInDirectory(result.payload.user);
       setStep(2);
     }
   };
@@ -223,7 +209,6 @@ export const Onboarding = () => {
     };
     const result = await dispatch(loginUser(payload));
     if (result.type === 'auth/login/fulfilled') {
-      ensureUserInDirectory(result.payload.user);
       setStep(2);
     }
   };
@@ -243,7 +228,6 @@ export const Onboarding = () => {
     };
     const result = await dispatch(loginUser(payload));
     if (result.type === 'auth/login/fulfilled') {
-      ensureUserInDirectory(result.payload.user);
       dispatch(
         addMembership({
           userId: result.payload.user.id,
@@ -267,7 +251,6 @@ export const Onboarding = () => {
     };
     const result = await dispatch(loginUser(payload));
     if (result.type === 'auth/login/fulfilled') {
-      ensureUserInDirectory(result.payload.user);
       dispatch(
         addMembership({
           userId: result.payload.user.id,

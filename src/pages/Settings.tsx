@@ -39,7 +39,6 @@ export const Settings = () => {
     workstreams,
     teamMemberships
   } = useSelector((state: any) => state.organizations);
-  const { users } = useSelector((state: any) => state.users);
 
   const currentOrg = organizations.find((org: any) => org.id === currentOrgId);
   const planId = currentOrg?.planId || currentOrg?.plan;
@@ -47,7 +46,6 @@ export const Settings = () => {
   const planName = planLimits.label;
   const planPrice = currentOrg?.planPrice ?? planLimits.price;
   const memberCount = memberships.filter((entry: any) => entry.orgId === currentOrgId).length;
-  const fallbackMemberCount = users.filter((entry: any) => entry.orgId === currentOrgId).length;
   const resolvedMemberCount = memberCount || fallbackMemberCount;
   const workerLimit = currentOrg?.workerLimit ?? planLimits.workers;
   const workerLimitReached =
