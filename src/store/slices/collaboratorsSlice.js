@@ -9,7 +9,7 @@ const collaboratorsSlice = createSlice({
   initialState,
   reducers: {
     addCollaborator: (state, action) => {
-      const { id, name, email, area, role, phone, status } = action.payload;
+      const { id, name, email, area, role, phone, status, projectIds } = action.payload;
       const newCollaborator = {
         id: id || `collab-${Date.now()}`,
         name,
@@ -17,6 +17,7 @@ const collaboratorsSlice = createSlice({
         area: area || '',
         role: role || 'Contractor',
         phone: phone || '',
+        projectIds: projectIds || [],
         status: status || 'active',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

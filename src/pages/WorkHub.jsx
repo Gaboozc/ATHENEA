@@ -8,12 +8,12 @@ import './WorkHub.css';
 export const WorkHub = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { workstreams } = useSelector((state) => state.organizations);
+  const { projects } = useSelector((state) => state.projects);
   const { tasks } = useTasks();
 
-  const activeWorkstreams = useMemo(
-    () => (workstreams || []).filter((stream) => stream?.enabled),
-    [workstreams]
+  const activeProjects = useMemo(
+    () => (projects || []).filter((project) => project?.status !== 'cancelled'),
+    [projects]
   );
   const criticalTasks = useMemo(
     () => (tasks || []).filter((task) => task?.level === 'Critical'),
@@ -66,13 +66,14 @@ export const WorkHub = () => {
           <strong>{criticalTasks.length > 0 ? criticalTasks.length : '0'}</strong>
         </div>
         <div className="workhub-stat">
-          <span>{t('Work Areas')}</span>
-          <strong>{activeWorkstreams.length > 0 ? activeWorkstreams.length : '0'}</strong>
+          <span>{t('Active Projects')}</span>
+          <strong>{activeProjects.length > 0 ? activeProjects.length : '0'}</strong>
         </div>
       </section>
 
       <section className="workhub-actions">
         <button onClick={() => navigate('/my-tasks')}>{t('Go to My Tasks')}</button>
+        <button onClick={() => navigate('/projects')}>{t('Go to Projects')}</button>
         <button onClick={() => navigate('/fleet')}>{t('Go to Collaborators')}</button>
       </section>
 
@@ -87,6 +88,29 @@ export const WorkHub = () => {
                 <li key={task.id}>
                   <span>{task.title}</span>
                   <span className="workhub-pill">{task.level}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="workhub-card">
+          <h2>{t('Active Projects')}</h2>
+          {activeProjects.length === 0 ? (
+            <div className="workhub-empty-block">
+              <div className="workhub-empty">{t('No active projects.')}</div>
+              <button
+                className="workhub-inline-action"
+                onClick={() => navigate('/projects')}
+              >
+                {t('Go to Projects')}
+              </button>
+            </div>
+          ) : (
+            <ul>
+              {activeProjects.slice(0, 3).map((project) => (
+                <li key={project.id}>
+                  <span>{project.name}</span>
+                  <span className="workhub-pill">{t(project.status || 'Active')}</span>
                 </li>
               ))}
             </ul>

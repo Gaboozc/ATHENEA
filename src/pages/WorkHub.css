@@ -140,3 +140,22 @@
 .workhub-empty {
   color: #9aa3ad;
 }
+
+.workhub-empty-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.workhub-inline-action {
+  border: 1px solid #1ec9ff;
+  background: transparent;
+  color: #1ec9ff;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  width: fit-content;
+}

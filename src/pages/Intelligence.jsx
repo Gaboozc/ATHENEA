@@ -23,9 +23,6 @@ export const Intelligence = () => {
   const { tasks } = useTasks();
   const { t } = useLanguage();
   const { projects } = useSelector((state) => state.projects);
-  const { workstreams } = useSelector((state) => state.organizations);
-
-  const hasWorkstreams = workstreams.length > 0;
 
   const scopedProjects = projects;
   
@@ -47,18 +44,7 @@ export const Intelligence = () => {
         <p>{t('Priority analytics and tactical system health.')}</p>
       </header>
 
-      {!hasWorkstreams && (
-        <div className="module-maintenance">
-          <div className="maintenance-icon">!</div>
-          <div>
-            <h2>{t('No workstreams configured yet.')}</h2>
-            <p>{t('Create the first workstream to unlock analytics.')}</p>
-          </div>
-        </div>
-      )}
-
-      {hasWorkstreams && (
-        <section className="intel-grid">
+      <section className="intel-grid">
         <div className="intel-card">
           <h2>{t('System Health')}</h2>
           <div className="health-score">
@@ -146,8 +132,7 @@ export const Intelligence = () => {
             ))}
           </div>
         </div>
-        </section>
-      )}
+      </section>
     </div>
   );
 };

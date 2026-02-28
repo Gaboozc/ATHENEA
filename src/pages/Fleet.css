@@ -493,6 +493,587 @@
 }
 
 .fleet-priority-high {
+
+  /* Full width layout for new design */
+  .fleet-full-width {
+    width: 100%;
+  }
+
+  /* Empty state */
+  .fleet-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    background: #0f2235;
+    border: 1px solid #27272a;
+    border-radius: 16px;
+  }
+
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  .fleet-empty-state h3 {
+    margin: 0 0 8px;
+    color: #c9cdd2;
+    font-size: 20px;
+  }
+
+  .fleet-empty-state p {
+    margin: 0 0 24px;
+    color: #9aa3ad;
+    max-width: 400px;
+  }
+
+  .fleet-add-btn-primary {
+    padding: 12px 24px;
+    background: #d4af37;
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .fleet-add-btn-primary:hover {
+    background: #f0c645;
+    transform: translateY(-2px);
+  }
+
+  /* Collaborators list */
+  .fleet-collaborators-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Collaborator item (accordion) */
+  .fleet-collab-item {
+    background: #0f2235;
+    border: 1px solid #27272a;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+  }
+
+  .fleet-collab-item:hover {
+    border-color: rgba(212, 175, 55, 0.4);
+  }
+
+  .fleet-collab-item.is-expanded {
+    border-color: rgba(212, 175, 55, 0.6);
+  }
+
+  .fleet-collab-header {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    cursor: pointer;
+    gap: 20px;
+  }
+
+  .fleet-collab-main {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .fleet-collab-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #d4af37;
+    color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .fleet-collab-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .fleet-collab-info h3 {
+    margin: 0;
+    color: #d4af37;
+    font-size: 18px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .fleet-collab-email {
+    font-size: 13px;
+    color: #9aa3ad;
+  }
+
+  .fleet-collab-role {
+    font-size: 12px;
+    color: #1ec9ff;
+    display:inline-block;
+    padding: 2px 8px;
+    background: rgba(30, 201, 255, 0.1);
+    border-radius: 4px;
+    align-self: flex-start;
+  }
+
+  .fleet-collab-stats {
+    display: flex;
+    gap: 24px;
+  }
+
+  .fleet-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .fleet-stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #d4af37;
+  }
+
+  .fleet-stat-label {
+    font-size: 11px;
+    color: #9aa3ad;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .fleet-expand-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid #27272a;
+    color: #c9cdd2;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+
+  .fleet-expand-btn:hover {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: #d4af37;
+  }
+
+  .fleet-expand-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Collaborator details (expanded) */
+  .fleet-collab-details {
+    padding: 0 20px 20px;
+    border-top: 1px solid #27272a;
+  }
+
+  .fleet-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-top: 20px;
+  }
+
+  .fleet-detail-section {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #27272a;
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .fleet-detail-section h4 {
+    margin: 0 0 12px;
+    color: #d4af37;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .fleet-detail-full {
+    grid-column: 1 / -1;
+  }
+
+  .fleet-detail-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .fleet-detail-item {
+    display: flex;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .fleet-detail-label {
+    color: #9aa3ad;
+    min-width: 60px;
+  }
+
+  .fleet-detail-empty {
+    font-size: 13px;
+    color: #9aa3ad;
+    font-style: italic;
+  }
+
+  .fleet-projects-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .fleet-project-chip {
+    padding: 6px 12px;
+    background: rgba(30, 201, 255, 0.1);
+    border: 1px solid rgba(30, 201, 255, 0.3);
+    border-radius: 6px;
+    font-size: 12px;
+    color: #1ec9ff;
+  }
+
+  .fleet-detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .fleet-add-btn-small {
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid #d4af37;
+    border-radius: 6px;
+    color: #d4af37;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .fleet-add-btn-small:hover {
+    background: rgba(212, 175, 55, 0.1);
+  }
+
+  /* Work orders grid */
+  .fleet-orders-grid {
+    display: grid;
+    gap: 12px;
+  }
+
+  .fleet-order-card {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #27272a;
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  .fleet-order-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .fleet-order-header h5 {
+    margin: 0;
+    color: #c9cdd2;
+    font-size: 14px;
+  }
+
+  .fleet-order-desc {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: #9aa3ad;
+  }
+
+  .fleet-order-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: #9aa3ad;
+  }
+
+  .fleet-order-project,
+  .fleet-order-due {
+    white-space: nowrap;
+  }
+
+  .fleet-order-progress {
+    margin: 12px 0;
+  }
+
+  .fleet-progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #c9cdd2;
+  }
+
+  .fleet-order-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .fleet-order-actions button {
+    flex: 1;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid #27272a;
+    border-radius: 6px;
+    color: #c9cdd2;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .fleet-order-actions button:hover {
+    border-color: #d4af37;
+    color: #d4af37;
+  }
+
+  .fleet-btn-complete {
+    background: rgba(30, 201, 255, 0.1) !important;
+    border-color: rgba(30, 201, 255, 0.5) !important;
+    color: #1ec9ff !important;
+  }
+
+  .fleet-btn-complete:hover {
+    background: rgba(30, 201, 255, 0.2) !important;
+    border-color: #1ec9ff !important;
+  }
+
+  .fleet-status-completed {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #1ec9ff;
+  }
+
+  /* Collaborator actions */
+  .fleet-collab-actions {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.3);
+    border-top: 1px solid #27272a;
+    margin-top: 20px;
+  }
+
+  .fleet-btn-edit {
+    flex: 1;
+    padding: 10px 20px;
+    background: transparent;
+    border: 1px solid #d4af37;
+    border-radius: 8px;
+    color: #d4af37;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .fleet-btn-edit:hover {
+    background: rgba(212, 175, 55, 0.1);
+  }
+
+  .fleet-btn-delete {
+    padding: 10px 20px;
+    background: transparent;
+    border: 1px solid #dc2626;
+    border-radius: 8px;
+    color: #dc2626;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .fleet-btn-delete:hover {
+    background: rgba(220, 38, 38, 0.1);
+  }
+
+  /* Modal improvements */
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #27272a;
+    margin-bottom: 20px;
+  }
+
+  .modal-header h2 {
+    margin: 0;
+    color: #d4af37;
+    font-size: 22px;
+  }
+
+  .modal-close {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 1px solid #27272a;
+    border-radius: 6px;
+    color: #c9cdd2;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+
+  .modal-close:hover {
+    background: rgba(220, 38, 38, 0.1);
+    border-color: #dc2626;
+    color: #dc2626;
+  }
+
+  .modal-large {
+    max-width: 700px;
+  }
+
+  .modal-body {
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .modal-section {
+    margin-bottom: 24px;
+  }
+
+  .modal-section h3 {
+    margin: 0 0 12px;
+    color: #d4af37;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .modal-label {
+    display: block;
+    margin-bottom: 6px;
+    color: #c9cdd2;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .modal-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .modal-field-full {
+    grid-column: 1 / -1;
+  }
+
+  .modal-empty-message {
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #27272a;
+    border-radius: 6px;
+    color: #9aa3ad;
+    font-size: 13px;
+    margin: 0;
+  }
+
+  .modal-projects-checkboxes {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .modal-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #27272a;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .modal-checkbox-item:hover {
+    background: rgba(212, 175, 55, 0.05);
+    border-color: rgba(212, 175, 55, 0.3);
+  }
+
+  .modal-checkbox-item input[type="checkbox"] {
+    cursor: pointer;
+  }
+
+  .modal-btn-cancel {
+    background: transparent;
+    border: 1px solid #27272a;
+    color: #c9cdd2;
+  }
+
+  .modal-btn-cancel:hover {
+    border-color: #d4af37;
+  }
+
+  .modal-btn-save {
+    background: #d4af37;
+    color: #000;
+    font-weight: 600;
+  }
+
+  .modal-btn-save:hover {
+    background: #f0c645;
+  }
+
+  .modal-btn-save:disabled {
+    background: #27272a;
+    color: #9aa3ad;
+    cursor: not-allowed;
+  }
+
+  /* Responsive */
+  @media (max-width: 960px) {
+    .fleet-collab-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .fleet-collab-stats {
+      width: 100%;
+      justify-content: space-around;
+    }
+
+    .fleet-details-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .modal-form-grid,
+    .modal-projects-checkboxes {
+      grid-template-columns: 1fr;
+    }
+  }
   color: #d4af37;
   border-color: rgba(212, 175, 55, 0.5);
 }

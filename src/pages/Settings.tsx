@@ -10,7 +10,6 @@ import {
 } from "../store/slices/organizationsSlice";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { useTasks } from "../context/TasksContext";
-import { updateUser } from "../store/slices/usersSlice";
 import { getPlanLimits } from "../utils/planLimits";
 
 const INVITES_STORAGE_KEY = "athenea.invites";
@@ -130,12 +129,6 @@ export const Settings = () => {
     window.location.reload();
   };
 
-  const handleOperationToggle = () => {
-    if (!profileUser?.id) return;
-    const nextActive = !(profileUser.active ?? true);
-    dispatch(updateUser({ id: profileUser.id, active: nextActive }));
-  };
-
   const handleCreateInvite = () => {
     if (!currentOrgId || !inviteEmail.trim()) return;
     const expiry = EXPIRY_OPTIONS.find((entry) => entry.label === inviteExpiry);
@@ -207,16 +200,7 @@ export const Settings = () => {
             </div>
           </div>
         </div>
-        <label className="settings-row">
-          <span>{t("Operation Status")}</span>
-          <button
-            type="button"
-            className={`settings-toggle${profileUser?.active ? " is-on" : ""}`}
-            onClick={handleOperationToggle}
-          >
-            {profileUser?.active ? t("Active") : t("Inactive")}
-          </button>
-        </label>
+
         <div className="settings-section">
           <h3>{t("My Teams")}</h3>
           <div className="settings-team-list">

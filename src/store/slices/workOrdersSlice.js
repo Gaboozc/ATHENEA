@@ -14,6 +14,7 @@ const workOrdersSlice = createSlice({
         title,
         description,
         collaboratorId,
+          projectId,
         area,
         dueDate,
         priority,
@@ -24,6 +25,7 @@ const workOrdersSlice = createSlice({
         id: id || `order-${Date.now()}`,
         title,
         description: description || '',
+          projectId: projectId || '',
         collaboratorId,
         area: area || '',
         dueDate: dueDate || '',
@@ -46,6 +48,9 @@ const workOrdersSlice = createSlice({
     },
     deleteWorkOrder: (state, action) => {
       state.workOrders = state.workOrders.filter((o) => o.id !== action.payload);
+    },
+    deleteWorkOrdersByCollaborator: (state, action) => {
+      state.workOrders = state.workOrders.filter((o) => o.collaboratorId !== action.payload);
     },
     setWorkOrderStatus: (state, action) => {
       const { id, status } = action.payload;
@@ -70,6 +75,7 @@ export const {
   addWorkOrder,
   updateWorkOrder,
   deleteWorkOrder,
+  deleteWorkOrdersByCollaborator,
   setWorkOrderStatus,
   setWorkOrderProgress,
 } = workOrdersSlice.actions;
