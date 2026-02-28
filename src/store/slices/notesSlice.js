@@ -8,13 +8,14 @@ const notesSlice = createSlice({
   },
   reducers: {
     addNote: (state, action) => {
-      const { title, content, tags, color } = action.payload;
+      const { id, title, content, tags, color, reminderDate } = action.payload;
       const newNote = {
-        id: Date.now().toString(),
+        id: id || Date.now().toString(),
         title: title || 'Untitled Note',
         content: content || '',
         tags: tags || [],
         color: color || '#1ec9ff',
+        reminderDate: reminderDate || null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         pinned: false,
@@ -22,13 +23,14 @@ const notesSlice = createSlice({
       state.notes.unshift(newNote);
     },
     updateNote: (state, action) => {
-      const { id, title, content, tags, color } = action.payload;
+      const { id, title, content, tags, color, reminderDate } = action.payload;
       const note = state.notes.find((n) => n.id === id);
       if (note) {
         if (title !== undefined) note.title = title;
         if (content !== undefined) note.content = content;
         if (tags !== undefined) note.tags = tags;
         if (color !== undefined) note.color = color;
+        if (reminderDate !== undefined) note.reminderDate = reminderDate;
         note.updatedAt = new Date().toISOString();
       }
     },

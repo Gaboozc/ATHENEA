@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addNote, updateNote, deleteNote, togglePinNote, addTag } from '../store/slices/notesSlice';
+import { linkNoteToCalendar, unlinkFromCalendar } from '../store/slices/calendarSlice';
 import { useLanguage } from '../context/LanguageContext';
 import './Notes.css';
 
@@ -25,6 +26,7 @@ export const Notes = () => {
     content: '',
     tags: [],
     color: '#1ec9ff',
+    reminderDate: '',
   });
   const [filterTag, setFilterTag] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -37,6 +39,7 @@ export const Notes = () => {
         content: note.content,
         tags: note.tags,
         color: note.color,
+        reminderDate: note.reminderDate ? new Date(note.reminderDate).toISOString().split('T')[0] : '',
       });
     } else {
       setEditingNote(null);
@@ -45,6 +48,7 @@ export const Notes = () => {
         content: '',
         tags: [],
         color: '#1ec9ff',
+        reminderDate: '',
       });
     }
     setShowModal(true);
@@ -57,10 +61,36 @@ export const Notes = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const noteData = {
+      ...formData,
+      reminderDate: formData.reminderDate || null,
+    };
+    
     if (editingNote) {
-      dispatch(updateNote({ id: editingNote, ...formData }));
+      dispatch(updateNote({ id: editingNote, ...noteData }));
+      // Update calendar link
+      if (noteData.reminderDate) {
+        dispatch(linkNoteToCalendar({
+          noteId: editingNote,
+          noteTitle: noteData.title,
+          date: noteData.reminderDate,
+          color: noteData.color,
+        }));
+      } else {
+        dispatch(unlinkFromCalendar({ relatedId: editingNote, relatedType: 'note' }));
+      }
     } else {
-      dispatch(addNote(formData));
+      const newNoteId = Date.now().toString();
+      dispatch(addNote({ ...noteData, id: newNoteId }));
+      // Link to calendar if date is set
+      if (noteData.reminderDate) {
+        dispatch(linkNoteToCalendar({
+          noteId: newNoteId,
+          noteTitle: noteData.title,
+          date: noteData.reminderDate,
+          color: noteData.color,
+        }));
+      }
     }
     handleCloseModal();
   };
@@ -182,7 +212,12 @@ export const Notes = () => {
                 </div>
               )}
               <div className="note-card-meta">
-                {new Date(note.updatedAt).toLocaleString()}
+                <div>{new Date(note.updatedAt).toLocaleString()}</div>
+                {note.reminderDate && (
+                  <div style={{ color: '#1ec9ff', marginTop: '0.25rem' }}>
+                    📅 {new Date(note.reminderDate).toLocaleDateString()}
+                  </div>
+                )}
               </div>
             </div>
           ))
@@ -250,6 +285,19 @@ export const Notes = () => {
                     </button>
                   ))}
                 </div>
+              </div>
+              <div className="notes-form-group">
+                <label>{t('Reminder Date')} ({t('optional')})</label>
+                <input
+                  type="date"
+                  value={formData.reminderDate}
+                  onChange={(e) => setFormData({ ...formData, reminderDate: e.target.value })}
+                />
+                {formData.reminderDate && (
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.5rem' }}>
+                    📅 {t('Will appear in your calendar')}
+                  </p>
+                )}
               </div>
               <div className="notes-form-actions">
                 <button type="button" onClick={handleCloseModal}>

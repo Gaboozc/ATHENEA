@@ -114,7 +114,9 @@ export const WorkstreamDetail = () => {
           <div className="panel-header">
             <h2>{t('Projects')}</h2>
             <div className="panel-meta">
-              {activeProjects.length} {t('Active Projects Short')} / {completedProjects.length} {t('Completed Short')}
+              {activeProjects.length > 0 || completedProjects.length > 0
+                ? `${activeProjects.length} ${t('Active Projects Short')} / ${completedProjects.length} ${t('Completed Short')}`
+                : t('No active projects.')}
             </div>
           </div>
           {workstreamProjects.length === 0 ? (

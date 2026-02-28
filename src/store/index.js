@@ -12,6 +12,11 @@ import inventoryReducer from './slices/inventorySlice';
 import productionReducer from './slices/productionSlice';
 import organizationsReducer from './slices/organizationsSlice';
 import notesReducer from './slices/notesSlice';
+import calendarReducer from './slices/calendarSlice';
+import todosReducer from './slices/todosSlice';
+import paymentsReducer from './slices/paymentsSlice';
+import routinesReducer from './slices/routinesSlice';
+import budgetReducer from './slices/budgetSlice';
 
 // Importar los slices maestros
 import {
@@ -42,6 +47,11 @@ const persistConfig = {
     'production',
     'organizations',
     'notes',
+    'calendar',
+    'todos',
+    'payments',
+    'routines',
+    'budget',
     // Slices maestros
     'projectsMaster',
     'pointsMaster',
@@ -67,6 +77,11 @@ const rootReducer = combineReducers({
   production: productionReducer,
   organizations: organizationsReducer,
   notes: notesReducer,
+  calendar: calendarReducer,
+  todos: todosReducer,
+  payments: paymentsReducer,
+  routines: routinesReducer,
+  budget: budgetReducer,
   // Slices maestros
   projectsMaster: projectsMasterSlice.reducer,
   pointsMaster: pointsMasterSlice.reducer,

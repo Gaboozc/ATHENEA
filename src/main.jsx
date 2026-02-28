@@ -9,6 +9,13 @@ import { store, persistor } from './store/index';
 import { TasksProvider } from './context/TasksContext';
 import { LanguageProvider } from './context/LanguageContext';
 
+// Clear localStorage if ?clear=true is in URL (for testing)
+if (new URLSearchParams(window.location.search).get('clear') === 'true') {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = window.location.pathname;
+}
+
 const Main = () => {
     return (
         <React.StrictMode>  

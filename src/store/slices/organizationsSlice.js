@@ -15,20 +15,44 @@ const buildWorkstream = ({ id, label }) => ({
   enabled: true,
 });
 
-const seedWorkstreams = [
-  buildWorkstream({ id: 'ws-general', label: 'General' }),
-];
-
 const organizationsSlice = createSlice({
   name: 'organizations',
   initialState: {
     organizations: [DEFAULT_ORG],
-    workstreams: seedWorkstreams,
+    workstreams: [],
     teamMemberships: [],
     memberships: [],
     currentOrgId: 'org-personal'
   },
   reducers: {
+    setCurrentOrg: (state, action) => {
+      state.currentOrgId = action.payload;
+    },
+    addOrganization: (state, action) => {
+      const newOrg = action.payload;
+      const exists = state.organizations.some((org) => org.id === newOrg.id);
+      if (!exists) {
+        state.organizations.push(newOrg);
+      }
+    },
+    addMembership: (state, action) => {
+      const membership = action.payload;
+      const exists = state.memberships.some(
+        (entry) => entry.orgId === membership.orgId && entry.userId === membership.userId
+      );
+      if (!exists) {
+        state.memberships.push(membership);
+      }
+    },
+    expelMember: (state, action) => {
+      const { orgId, userId } = action.payload;
+      state.memberships = state.memberships.filter(
+        (entry) => !(entry.orgId === orgId && entry.userId === userId)
+      );
+      state.teamMemberships = state.teamMemberships.filter(
+        (entry) => !(entry.orgId === orgId && entry.userId === userId)
+      );
+    },
     updateOrganizationName: (state, action) => {
       state.organizations[0].name = action.payload;
     },
@@ -67,6 +91,10 @@ const organizationsSlice = createSlice({
 });
 
 export const {
+  setCurrentOrg,
+  addOrganization,
+  addMembership,
+  expelMember,
   updateOrganizationName,
   updateOrganizationBranding,
   addWorkstream,

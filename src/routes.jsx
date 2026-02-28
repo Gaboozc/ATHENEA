@@ -24,9 +24,15 @@ import { AuditDetail } from "./pages/AuditDetail";
 import { Fleet } from "./pages/Fleet";
 import { Notifications } from "./pages/Notifications";
 import { Profile } from "./pages/Profile";
-import { FieldReports } from "./pages/FieldReports";
 import { MyTasks } from "./pages/MyTasks";
 import { Notes } from "./pages/Notes";
+import { Calendar } from "./pages/Calendar";
+import { Inbox } from "./pages/Inbox";
+import { Todos } from "./pages/Todos";
+import { Payments } from "./pages/Payments";
+import { WorkHub } from "./pages/WorkHub";
+import { PersonalHub } from "./pages/PersonalHub";
+import { FinanceHub } from "./pages/FinanceHub";
 
 export const router = createHashRouter(
     createRoutesFromElements(
@@ -39,6 +45,12 @@ export const router = createHashRouter(
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="work" element={<WorkHub />} />
+          <Route path="personal" element={<PersonalHub />} />
+          <Route path="finance" element={<FinanceHub />} />
+          <Route path="inbox" element={<Inbox />} />
+          <Route path="todos" element={<Todos />} />
+          <Route path="payments" element={<Payments />} />
           <Route path="projects" element={<Projects />} />
           <Route path="projects/:id" element={<ProjectDetails />} />
           <Route path="points/:id" element={<PointDetails />} />
@@ -51,10 +63,10 @@ export const router = createHashRouter(
           <Route path="audits/:id" element={<AuditDetail />} />
           <Route path="fleet" element={<Fleet />} />
           <Route path="my-tasks" element={<MyTasks />} />
-          <Route path="field-reports" element={<FieldReports />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="profile" element={<Profile />} />
           <Route path="notes" element={<Notes />} />
+          <Route path="calendar" element={<Calendar />} />
           
           {/* Old routes for reference */}
           <Route path="single/:theId" element={<Single />} />

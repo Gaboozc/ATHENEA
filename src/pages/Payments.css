@@ -1,0 +1,145 @@
+.payments-container {
+  padding: 1.5rem 1.25rem 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  color: #c9cdd2;
+}
+
+.payments-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.payments-header h1 {
+  margin: 0 0 0.4rem;
+  color: #d4af37;
+  font-size: 1.8rem;
+}
+
+.payments-header p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #9aa3ad;
+}
+
+.payments-count {
+  border: 1px solid #27272a;
+  border-radius: 999px;
+  padding: 0.25rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+.payments-form {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 0.8fr auto;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.payments-form input,
+.payments-form select {
+  border-radius: 10px;
+  border: 1px solid #27272a;
+  background: #0b0b0b;
+  color: #e2e8f0;
+  padding: 0.65rem 0.75rem;
+}
+
+.payments-form button {
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1ec9ff, #0ea5e9);
+  color: #0b0b0b;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 1.5rem;
+  cursor: pointer;
+}
+
+.payments-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.payment-card {
+  border: 1px solid #27272a;
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  background: #0f2235;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.payment-main {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.payment-main h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #e2e8f0;
+}
+
+.payment-meta {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: #1ec9ff;
+}
+
+.payment-date {
+  font-size: 0.9rem;
+  color: #d4af37;
+}
+
+.payment-notes {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #c9cdd2;
+}
+
+.payment-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.payment-actions button {
+  border: 1px solid #27272a;
+  background: #0b0b0b;
+  color: #c9cdd2;
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.payment-actions button.danger {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.payments-empty {
+  color: #9aa3ad;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+  .payments-form {
+    grid-template-columns: 1fr;
+  }
+
+  .payments-form button {
+    padding: 0.65rem;
+  }
+
+  .payment-main {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
