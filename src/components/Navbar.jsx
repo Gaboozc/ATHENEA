@@ -87,7 +87,7 @@ export const Navbar = () => {
 				{ label: t('Work Hub'), path: '/work' },
 				{ label: t('Projects'), path: '/projects' },
 				{ label: t('My Tasks'), path: '/my-tasks' },
-				{ label: t('Task Management'), path: '/fleet' },
+					{ label: t('Collaborators'), path: '/fleet' },
 				{ label: t('Intelligence'), path: '/intelligence' },
 			],
 		},

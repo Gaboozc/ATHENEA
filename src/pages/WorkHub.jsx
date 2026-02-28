@@ -73,7 +73,7 @@ export const WorkHub = () => {
 
       <section className="workhub-actions">
         <button onClick={() => navigate('/my-tasks')}>{t('Go to My Tasks')}</button>
-        <button onClick={() => navigate('/fleet')}>{t('Go to Task Management')}</button>
+        <button onClick={() => navigate('/fleet')}>{t('Go to Collaborators')}</button>
       </section>
 
       <section className="workhub-grid">

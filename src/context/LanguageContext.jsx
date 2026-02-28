@@ -896,7 +896,32 @@ const translations = {
     'No work areas configured yet.': 'No hay áreas de trabajo configuradas aún.',
     'Area ID:': 'ID del área:',
     'Delete': 'Eliminar',
-    'Remove': 'Eliminar'
+    'Remove': 'Eliminar',
+    'Collaborators': 'Colaboradores',
+    'Track external collaborators and their assigned work orders.': 'Rastrea colaboradores externos y sus órdenes de trabajo asignadas.',
+    'Add Collaborator': 'Agregar Colaborador',
+    'No collaborators yet.': 'No hay colaboradores aún.',
+    'Edit Collaborator': 'Editar Colaborador',
+    'Delete this collaborator?': '¿Eliminar este colaborador?',
+    'Phone': 'Teléfono',
+    'Work Orders': 'Órdenes de Trabajo',
+    'New Order': 'Nueva Orden',
+    'No active work orders.': 'No hay órdenes de trabajo activas.',
+    'Assigned to': 'Asignado a',
+    'Unknown': 'Desconocido',
+    'Progress': 'Progreso',
+    'Complete': 'Completar',
+    'Edit Work Order': 'Editar Orden de Trabajo',
+    'New Work Order': 'Nueva Orden de Trabajo',
+    'Description': 'Descripción',
+    'Assign to': 'Asignar a',
+    'Select collaborator': 'Seleccionar colaborador',
+    'Due Date': 'Fecha Límite',
+    'Priority': 'Prioridad',
+    'low': 'baja',
+    'medium': 'media',
+    'high': 'alta',
+    'Go to Collaborators': 'Ir a Colaboradores'
   }
 };
 
