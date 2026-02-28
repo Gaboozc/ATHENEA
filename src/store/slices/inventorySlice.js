@@ -1,85 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const initialInventoryItems = [
-  // Warehouse inventory
-  {
-    id: '1',
-    name: 'Cat6 Cable Roll',
-    category: 'cable',
-    quantity: 50,
-    unit: 'rolls',
-    location: 'warehouse',
-    projectId: null,
-    minStock: 10,
-  },
-  {
-    id: '2',
-    name: 'RJ45 Connectors',
-    category: 'connector',
-    quantity: 1000,
-    unit: 'pieces',
-    location: 'warehouse',
-    projectId: null,
-    minStock: 200,
-  },
-  {
-    id: '3',
-    name: 'Network Switch 24-Port',
-    category: 'equipment',
-    quantity: 5,
-    unit: 'units',
-    location: 'warehouse',
-    projectId: null,
-    minStock: 2,
-  },
-  {
-    id: '4',
-    name: 'Fiber Optic Cable',
-    category: 'cable',
-    quantity: 20,
-    unit: 'rolls',
-    location: 'warehouse',
-    projectId: null,
-    minStock: 5,
-  },
-  // Project-specific inventory (Office Building A)
-  {
-    id: '5',
-    name: 'Cat6 Cable Roll',
-    category: 'cable',
-    quantity: 15,
-    unit: 'rolls',
-    location: 'project',
-    projectId: '1',
-    minStock: 0,
-  },
-  {
-    id: '6',
-    name: 'RJ45 Connectors',
-    category: 'connector',
-    quantity: 300,
-    unit: 'pieces',
-    location: 'project',
-    projectId: '1',
-    minStock: 0,
-  },
-  // Project-specific inventory (Warehouse Data Center)
-  {
-    id: '7',
-    name: 'Fiber Optic Cable',
-    category: 'cable',
-    quantity: 8,
-    unit: 'rolls',
-    location: 'project',
-    projectId: '2',
-    minStock: 0,
-  },
-];
-
 const inventorySlice = createSlice({
   name: 'inventory',
   initialState: {
-    items: initialInventoryItems,
+    items: [],
     selectedItem: null,
   },
   reducers: {
