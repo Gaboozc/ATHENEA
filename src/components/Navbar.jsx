@@ -119,19 +119,9 @@ export const Navbar = () => {
 				padding: '12px 5px',
 			}}>
 				<div className="navbar-inner" style={{ display: 'flex', alignItems: 'center', gap: '1px', justifyContent: 'flex-start' }}>
-					<Link to="/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
-						<img src={"/src/assets/img/Athena-logo.png"} alt="ATHENEA logo" style={{ height: '52px', width: '52px' }} />
-	 					<span className="navbar-brand mb-0 h1" style={{
-							background: '#d4af37',
-	 						WebkitBackgroundClip: 'text',
-							WebkitTextFillColor: 'transparent',
-	 						fontWeight: 700,
-							fontSize: '22px',
-	 						display: 'inline-block'
-	 					}}>
-							ATHENEA
-	 					</span>
-	 				</Link>
+					<Link to="/dashboard" className="navbar-home-button" aria-label="ATHENEA home">
+						<span>ATHENEA</span>
+					</Link>
 
 					<button
 						className="navbar-mobile-toggle"

@@ -1,5 +1,5 @@
 import "./Dashboard.css";
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTasks } from "../context/TasksContext";
@@ -25,7 +25,18 @@ export const Dashboard = () => {
   const { tasks } = useTasks();
   const { t } = useLanguage();
   const { user, role } = useCurrentUser();
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 768px)').matches);
   const isAdmin = (role || '').toLowerCase() === 'admin' || (role || '').toLowerCase() === 'super-admin';
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const handleMediaChange = (event) => setIsMobile(event.matches);
+
+    setIsMobile(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handleMediaChange);
+
+    return () => mediaQuery.removeEventListener('change', handleMediaChange);
+  }, []);
 
   // Single-user mode: todas las tareas son visibles
   const visibleTasks = tasks || [];
@@ -244,13 +255,15 @@ export const Dashboard = () => {
                       {task.description && (
                         <div className="priority-card-desc">{task.description}</div>
                       )}
-                      <div className="priority-card-tags">
-                        {task.workstreams.map((stream) => (
-                          <span key={stream} className="priority-tag">
-                            {stream}
-                          </span>
-                        ))}
-                      </div>
+                      {!isMobile && (
+                        <div className="priority-card-tags">
+                          {task.workstreams.map((stream) => (
+                            <span key={stream} className="priority-tag">
+                              {stream}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -286,7 +299,7 @@ export const Dashboard = () => {
         </section>
       )}
 
-      {leadStreams.length > 0 && (
+      {!isMobile && leadStreams.length > 0 && (
         <section className="lead-center">
           <div className="lead-center-header">
             <h2>{t('Work Areas Overview')}</h2>
@@ -319,7 +332,7 @@ export const Dashboard = () => {
         </section>
       )}
 
-      {orgWorkstreams.length > 0 && (
+      {!isMobile && orgWorkstreams.length > 0 && (
         <section className="active-projects">
           <div className="active-projects-header">
             <h2>{t('Active Workstreams')}</h2>

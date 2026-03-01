@@ -2,7 +2,6 @@ import { Outlet } from "react-router-dom"
 import { useState, useEffect } from "react"
 import ScrollToTop from "../components/ScrollToTop"
 import { Navbar } from "../components/Navbar"
-import { Footer } from "../components/Footer"
 import { GatekeeperModal } from "../components/modals/GatekeeperModal"
 import { ReminderToasts } from "../components/ReminderToasts"
 import GlobalSearch from "../components/GlobalSearch"
@@ -34,7 +33,6 @@ export const Layout = () => {
             <GatekeeperModal />
             <ReminderToasts />
             {searchOpen && <GlobalSearch onClose={() => setSearchOpen(false)} />}
-            <Footer />
         </ScrollToTop>
     )
 }
