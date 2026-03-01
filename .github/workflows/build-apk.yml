@@ -37,18 +37,18 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Build APK (release)
+      - name: Build APK (debug)
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease
+          ./gradlew assembleDebug
 
       - name: Find APK
         id: apk
         run: |
-          APK_PATH=$(find android/app/build/outputs/apk/release -name "*.apk" -type f | head -1)
+          APK_PATH=$(find android/app/build/outputs/apk/debug -name "*.apk" -type f | head -1)
           if [ -z "$APK_PATH" ]; then
-            echo "No se encontró APK en android/app/build/outputs/apk/release"
+            echo "No se encontró APK en android/app/build/outputs/apk/debug"
             exit 1
           fi
           echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
