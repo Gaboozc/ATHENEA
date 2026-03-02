@@ -1,7 +1,6 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
-import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useTasks } from '../context/TasksContext';
 import { addProject, deleteProject, updateProject } from '../store/slices/projectsSlice';
 import { useLanguage } from '../context/LanguageContext';
@@ -12,13 +11,10 @@ export const Projects = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const { projects } = useSelector((state) => state.projects);
-  const { workstreams } = useSelector((state) => state.organizations);
   const { tasks } = useTasks();
-  const { user: currentUser } = useCurrentUser();
   const { t } = useLanguage();
   const [showCancelled, setShowCancelled] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedWorkstreamId, setSelectedWorkstreamId] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -28,62 +24,21 @@ export const Projects = () => {
     startDate: '',
     endDate: '',
     maintenancePlan: '',
-    isSubscription: false,
-    workstreamId: ''
+    isSubscription: false
   });
   const [errors, setErrors] = useState({});
 
-  const orgWorkstreams = useMemo(() => {
-    return workstreams.filter((stream) => stream.enabled);
-  }, [workstreams]);
-
-  useEffect(() => {
-    if (orgWorkstreams.length === 0) {
-      setSelectedWorkstreamId('');
-      return;
-    }
-    setSelectedWorkstreamId((prev) => {
-      if (!prev || !orgWorkstreams.some((stream) => stream.id === prev)) {
-        return orgWorkstreams[0].id;
-      }
-      return prev;
-    });
-  }, [orgWorkstreams]);
-
-  useEffect(() => {
-    const param = new URLSearchParams(location.search).get('workstream');
-    if (!param) return;
-    if (orgWorkstreams.some((stream) => stream.id === param)) {
-      setSelectedWorkstreamId(param);
-    }
-  }, [location.search, orgWorkstreams]);
-
-  const selectedWorkstream = orgWorkstreams.find(
-    (stream) => stream.id === selectedWorkstreamId
-  );
   const canCreateProject = true; // Single-user mode: siempre permitido
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const openCreate = params.get('create') === '1';
     if (!openCreate) return;
-    if (!selectedWorkstreamId || !canCreateProject) return;
+    if (!canCreateProject) return;
     setShowCreateModal(true);
-  }, [location.search, selectedWorkstreamId, canCreateProject]);
+  }, [location.search, canCreateProject]);
 
   const visibleTasks = tasks; // Single-user mode: todas las tareas visibles
-
-  const visibleProjectIds = useMemo(
-    () => new Set(visibleTasks.map((task) => task.projectId)),
-    [visibleTasks]
-  );
-
-  // Filtrar proyectos según workstream seleccionado
-  const filteredProjects = projects.filter(project => {
-    if (!selectedWorkstreamId) return false;
-    if (project.workstreamId !== selectedWorkstreamId) return false;
-    return true;
-  });
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -127,7 +82,6 @@ export const Projects = () => {
 
   const handleCancelProject = (event, projectId) => {
     event.stopPropagation();
-    if (!isAdmin && !isLeadForSelected) return;
     dispatch(updateProject({
       id: projectId,
       status: 'cancelled',
@@ -137,18 +91,15 @@ export const Projects = () => {
 
   const handleRestoreProject = (event, projectId) => {
     event.stopPropagation();
-    if (!isAdmin && !isLeadForSelected) return;
     dispatch(updateProject({
       id: projectId,
       status: 'planning',
-      cancelledAt: '',
-      ...(currentOrgId ? { orgId: currentOrgId } : {})
+      cancelledAt: ''
     }));
   };
 
   const handleDeleteProject = (event, projectId) => {
     event.stopPropagation();
-    if (!isAdmin && !isLeadForSelected) return;
     dispatch(deleteProject(projectId));
   };
 
@@ -163,8 +114,7 @@ export const Projects = () => {
       startDate: '',
       endDate: '',
       maintenancePlan: '',
-      isSubscription: false,
-      workstreamId: selectedWorkstreamId || ''
+      isSubscription: false
     });
     setShowCreateModal(true);
   };
@@ -186,7 +136,6 @@ export const Projects = () => {
     if (!formData.clientName.trim()) nextErrors.clientName = t('Client name is required');
     if (!formData.siteAddress.trim()) nextErrors.siteAddress = t('Site address is required');
     if (!formData.startDate) nextErrors.startDate = t('Start date is required');
-    if (!formData.workstreamId) nextErrors.workstreamId = t('Workstream is required');
     return nextErrors;
   };
 
@@ -198,9 +147,6 @@ export const Projects = () => {
       return;
     }
 
-    const activeWorkstream = orgWorkstreams.find(
-      (stream) => stream.id === formData.workstreamId
-    );
     const payload = {
       name: formData.name,
       description: formData.description,
@@ -209,19 +155,15 @@ export const Projects = () => {
       siteAddress: formData.siteAddress,
       startDate: formData.startDate,
       endDate: formData.endDate,
-      maintenancePlan: formData.isSubscription ? formData.maintenancePlan : '',
-      workstreamId: formData.workstreamId,
-      workstreamName: activeWorkstream?.label || '',
-      orgId: currentOrgId,
-      ...(currentRole === 'pm' && currentUser?.id ? { pmId: currentUser.id } : {})
+      maintenancePlan: formData.isSubscription ? formData.maintenancePlan : ''
     };
 
     dispatch(addProject(payload));
     setShowCreateModal(false);
   };
 
-  const activeProjects = filteredProjects.filter((project) => project.status !== 'cancelled');
-  const cancelledProjects = filteredProjects.filter((project) => project.status === 'cancelled');
+  const activeProjects = projects.filter((project) => project.status !== 'cancelled');
+  const cancelledProjects = projects.filter((project) => project.status === 'cancelled');
 
   return (
     <div className="projects-container">
@@ -234,7 +176,7 @@ export const Projects = () => {
           type="button"
           className="navbar-task-button project-create-button"
           onClick={openCreateModal}
-          disabled={!selectedWorkstreamId || !canCreateProject}
+          disabled={!canCreateProject}
         >
           <span className="task-button-text">{t('New Project')}</span>
           <span className="task-button-icon" aria-hidden="true">
@@ -253,39 +195,6 @@ export const Projects = () => {
           </span>
         </button>
       </div>
-      {!canCreateProject && selectedWorkstreamId && (
-        <div className="workstream-filter">
-          <span className="workstream-hint">{t('Only the Workstream Lead or Admin can manage projects here.')}</span>
-        </div>
-      )}
-
-      <div className="workstream-filter">
-        <div>
-          <div className="workstream-filter-label">{t('Workstream')}</div>
-          <select
-            value={selectedWorkstreamId}
-            onChange={(event) => setSelectedWorkstreamId(event.target.value)}
-            disabled={orgWorkstreams.length === 0}
-          >
-            {orgWorkstreams.length === 0 && (
-              <option value="">{t('No workstreams configured yet.')}</option>
-            )}
-            {orgWorkstreams.map((stream) => (
-              <option key={stream.id} value={stream.id}>
-                {stream.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button
-          type="button"
-          className="tactical-button"
-          onClick={() => navigate('/workstreams')}
-        >
-          {t('Manage Workstreams')}
-        </button>
-      </div>
-
       <div className="projects-grid">
         {activeProjects.map((project) => {
           const projectTasks = visibleTasks
@@ -353,12 +262,6 @@ export const Projects = () => {
             )}
 
             <div className="project-info">
-              {project.workstreamName && (
-                <div className="info-item">
-                  <span className="info-label">{t('Workstream:')}</span>
-                  <span className="info-value">{project.workstreamName}</span>
-                </div>
-              )}
               <div className="info-item">
                 <span className="info-label">{t('Client:')}</span>
                 <span className="info-value">{project.clientName}</span>
@@ -409,7 +312,6 @@ export const Projects = () => {
                 type="button"
                 className="project-action project-cancel"
                 onClick={(event) => handleCancelProject(event, project.id)}
-                disabled={!isAdmin && !isLeadForSelected}
               >
                 {t('Cancel')}
               </button>
@@ -465,7 +367,6 @@ export const Projects = () => {
                       type="button"
                       className="project-action project-restore"
                       onClick={(event) => handleRestoreProject(event, project.id)}
-                      disabled={!isAdmin && !isLeadForSelected}
                     >
                       {t('Restore')}
                     </button>
@@ -473,7 +374,6 @@ export const Projects = () => {
                       type="button"
                       className="project-action project-delete"
                       onClick={(event) => handleDeleteProject(event, project.id)}
-                      disabled={!isAdmin && !isLeadForSelected}
                     >
                       {t('Delete')}
                     </button>
@@ -487,11 +387,7 @@ export const Projects = () => {
 
       {activeProjects.length === 0 && (
         <div className="empty-state">
-          <p>
-            {orgWorkstreams.length === 0
-              ? t('No workstreams configured yet.')
-              : t('No projects yet')}
-          </p>
+          <p>{t('No projects yet')}</p>
         </div>
       )}
 
@@ -510,25 +406,6 @@ export const Projects = () => {
             </div>
 
             <form onSubmit={handleCreateSubmit} className="project-create-form">
-              <label>
-                {t('Workstream *')}
-                <select
-                  name="workstreamId"
-                  value={formData.workstreamId}
-                  onChange={handleFormChange}
-                  className={errors.workstreamId ? 'is-error' : ''}
-                >
-                  <option value="">{t('Select a workstream')}</option>
-                  {orgWorkstreams.map((stream) => (
-                    <option key={stream.id} value={stream.id}>
-                      {stream.label}
-                    </option>
-                  ))}
-                </select>
-                {errors.workstreamId && (
-                  <span className="form-error">{errors.workstreamId}</span>
-                )}
-              </label>
               <label>
                 {t('Project Name *')}
                 <input

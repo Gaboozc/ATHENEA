@@ -828,7 +828,7 @@
 
 .navbar-mobile-menu {
   position: fixed;
-  top: 76px;
+  top: calc(env(safe-area-inset-top, 0px) + 66px);
   left: 0;
   right: 0;
   bottom: 0;
@@ -999,9 +999,27 @@
 @media (max-width: 1024px) {
   .navbar-mobile-toggle {
     display: flex;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
   }
 
   .navbar-main {
     display: none;
+  }
+
+  .navbar-inner {
+    position: relative;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center !important;
+    padding-right: 44px;
+  }
+
+  .navbar-home-button {
+    margin: 0 auto;
   }
 }

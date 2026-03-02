@@ -28,7 +28,7 @@ export const getPriorityDistribution = (tasks: any[]) => {
 
 export const getSystemHealth = (tasks: any[]) => {
   if (tasks.length === 0) {
-    return { healthScore: 100, status: "Stable" };
+    return { healthScore: 0, status: "No Data" };
   }
   const weightedTotal = tasks.reduce(
     (sum, task) => sum + (PRIORITY_WEIGHTS[task.level] || 1),
@@ -43,14 +43,21 @@ export const getSystemHealth = (tasks: any[]) => {
 export const getProjectHealth = (projects: any[], tasks: any[]) =>
   projects.map((project) => {
     const projectTasks = tasks.filter((task) => task.projectId === project.id);
+    if (projectTasks.length === 0) {
+      return {
+        projectId: project.id,
+        name: project.name,
+        healthScore: 0,
+        status: "No Data",
+        totalTasks: 0
+      };
+    }
     const weightedTotal = projectTasks.reduce(
       (sum, task) => sum + (PRIORITY_WEIGHTS[task.level] || 1),
       0
     );
     const density = weightedTotal / Math.max(1, projectTasks.length * 5);
-    const healthScore = projectTasks.length
-      ? Math.max(0, Math.round(100 - density * 100))
-      : 100;
+    const healthScore = Math.max(0, Math.round(100 - density * 100));
     const status = healthScore > 80 ? "Stable" : healthScore > 55 ? "Elevated" : "Degraded";
     return {
       projectId: project.id,

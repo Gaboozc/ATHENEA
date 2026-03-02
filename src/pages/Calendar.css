@@ -121,6 +121,7 @@
   cursor: pointer;
   transition: background 0.2s;
   position: relative;
+  overflow: hidden;
 }
 
 .calendar-day:hover {
@@ -163,8 +164,23 @@
 
 .calendar-day-events {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.calendar-event-dot {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
 }
 
 .calendar-event-item {
@@ -221,8 +237,87 @@
 .calendar-more-events {
   padding: 2px 6px;
   font-size: 0.7rem;
-  color: #64748b;
+  color: #cbd5e1;
   text-align: center;
+  border-radius: 999px;
+  border: 1px solid #475569;
+  background: #0f172a;
+}
+
+.calendar-selected-day {
+  border-bottom: 1px solid #334155;
+  padding: 1rem 1.5rem;
+  display: grid;
+  gap: 10px;
+}
+
+.calendar-selected-day h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #1ec9ff;
+}
+
+.calendar-selected-day p {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+.calendar-selected-events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.calendar-selected-events li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.calendar-selected-event-main {
+  flex: 1;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.calendar-selected-event-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-selected-event-time {
+  margin-left: auto;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.calendar-selected-event-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.calendar-selected-event-actions button {
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
 }
 
 /* Today's Events Sidebar */
@@ -486,11 +581,35 @@
   }
 
   .calendar-day {
-    min-height: 80px;
+    min-height: 72px;
+    padding: 0.35rem;
   }
 
   .calendar-weekday {
     font-size: 0.75rem;
+  }
+
+  .calendar-day-number {
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+  }
+
+  .calendar-day-icons {
+    margin-bottom: 4px;
+    gap: 3px;
+  }
+
+  .calendar-day-icon,
+  .calendar-event-dot {
+    width: 18px;
+    height: 18px;
+    font-size: 0.72rem;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .calendar-selected-day {
+    padding: 0.9rem 1rem;
   }
 
   .calendar-form-row {

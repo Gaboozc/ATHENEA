@@ -779,6 +779,7 @@ const translations = {
     'Stable': 'Estable',
     'Elevated': 'Elevado',
     'Degraded': 'Degradado',
+    'No Data': 'Sin datos',
     'Workstreams Overview': 'Resumen de Workstreams',
     'Category ID:': 'ID de Categoria:',
     'Fleet Readiness': 'Listo de Flota',

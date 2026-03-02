@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useTasks } from '../context/TasksContext';
+import { useNavigate } from 'react-router-dom';
 import './DashboardWidget.css';
 
 /**
@@ -9,6 +10,7 @@ import './DashboardWidget.css';
  * Can be used as home screen widget or quick-view modal
  */
 const DashboardWidget = ({ compact = false }) => {
+  const navigate = useNavigate();
   const projects = useSelector((state) => state.projects.projects || []);
   const payments = useSelector((state) => state.payments.payments || []);
   const calendar = useSelector((state) => state.calendar.events || []);
@@ -17,9 +19,17 @@ const DashboardWidget = ({ compact = false }) => {
 
   // Calculate metrics
   const metrics = useMemo(() => {
-    const activeProjects = projects.filter(p => p.status === 'active' || p.status === 'in-progress').length;
-    const pendingTasks = tasks?.filter(t => t.status === 'pending' || t.status === 'in-progress').length || 0;
-    const completedTasks = tasks?.filter(t => t.status === 'done').length || 0;
+    const activeProjects = projects.filter(
+      (project) => project.status !== 'cancelled' && project.status !== 'completed'
+    ).length;
+    const pendingTasks = tasks?.filter((task) => {
+      const status = (task.status || '').toLowerCase();
+      return status !== 'done' && status !== 'completed' && status !== 'closed';
+    }).length || 0;
+    const completedTasks = tasks?.filter((task) => {
+      const status = (task.status || '').toLowerCase();
+      return status === 'done' || status === 'completed' || status === 'closed';
+    }).length || 0;
     const pendingTodos = todos.filter(t => t.status !== 'done').length;
     
     // Upcoming payments (next 7 days)

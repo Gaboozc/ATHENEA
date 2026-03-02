@@ -104,6 +104,53 @@ export const Dashboard = () => {
     if (diffDays === 0) return t('Due today');
     return `+${diffDays}d`;
   };
+
+  const taskHealth = useMemo(() => {
+    const total = visibleTasks.length;
+    const completed = visibleTasks.filter((task) => (task.status || '').toLowerCase() === 'completed').length;
+    const inProgress = visibleTasks.filter((task) => (task.status || '').toLowerCase() === 'active' || (task.status || '').toLowerCase() === 'in-progress').length;
+    const critical = tasksByLevel.Critical?.length || 0;
+    const avgScore = total > 0
+      ? Math.round(
+          visibleTasks.reduce((acc, task) => acc + (Number(task.totalScore) || 0), 0) / total
+        )
+      : 0;
+
+    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    if (total === 0) {
+      return {
+        total,
+        completed,
+        inProgress,
+        critical,
+        avgScore,
+        completionRate,
+        healthScore: 0,
+        healthLabel: t('No Data'),
+      };
+    }
+
+    const healthScore = Math.max(
+      0,
+      Math.min(100, Math.round(completionRate * 0.6 + Math.max(0, 100 - critical * 12) * 0.4))
+    );
+
+    let healthLabel = t('Steady Flow');
+    if (healthScore >= 80) healthLabel = t('Low Friction');
+    else if (healthScore < 50) healthLabel = t('High Velocity');
+    if (critical >= 3) healthLabel = t('Critical');
+
+    return {
+      total,
+      completed,
+      inProgress,
+      critical,
+      avgScore,
+      completionRate,
+      healthScore,
+      healthLabel,
+    };
+  }, [visibleTasks, tasksByLevel, t]);
   
   const projectsByWorkstream = orgWorkstreams.map((stream) => {
     const streamProjects = activeProjects.filter(
@@ -221,41 +268,89 @@ export const Dashboard = () => {
         )}
       </section>
 
-      <section className="priority-board">
-        <div className="priority-columns">
-          {PRIORITY_BUCKETS.map((level) => (
-            <div
-              key={level}
-              className={`priority-column${level === "Critical" ? " priority-column-critical" : ""}`}
-            >
-              <div className="priority-column-header">
-                <span className="priority-level">{level}</span>
-                <span className="priority-count">{tasksByLevel[level].length}</span>
+      {isMobile ? (
+        <section className="workflow-health-mobile">
+          <div className="workflow-health-header">
+            <h2>{t('Intelligence Workflow')}</h2>
+            <button type="button" onClick={() => navigate('/intelligence')}>
+              {t('Open')}
+            </button>
+          </div>
+
+          <div className="workflow-health-score">
+            <div>
+              <span className="workflow-health-label">{t('Work Health')}</span>
+              <strong>{taskHealth.healthScore}%</strong>
+              <p>{taskHealth.healthLabel}</p>
+            </div>
+            <div className="workflow-health-progress" aria-hidden="true">
+              <span style={{ width: `${taskHealth.healthScore}%` }} />
+            </div>
+          </div>
+
+          <div className="workflow-health-metrics">
+            <article>
+              <span>{t('Tasks')}</span>
+              <strong>{taskHealth.total}</strong>
+            </article>
+            <article>
+              <span>{t('Completed')}</span>
+              <strong>{taskHealth.completionRate}%</strong>
+            </article>
+            <article>
+              <span>{t('Critical')}</span>
+              <strong>{taskHealth.critical}</strong>
+            </article>
+            <article>
+              <span>{t('PS')}</span>
+              <strong>{taskHealth.avgScore}/14</strong>
+            </article>
+          </div>
+
+          <div className="workflow-health-priority-snapshot">
+            {PRIORITY_BUCKETS.map((level) => (
+              <div key={level}>
+                <span>{level}</span>
+                <strong>{tasksByLevel[level].length}</strong>
               </div>
-              {tasksByLevel[level].length === 0 ? (
-                <div className="priority-empty">{t('No tasks in this bucket.')}</div>
-              ) : (
-                <ul className="priority-task-list">
-                  {tasksByLevel[level].map((task) => (
-                    <li
-                      key={task.id}
-                      className={`priority-card${
-                        task.metadata?.source === 'field_report'
-                          ? ' priority-card-external'
-                          : ''
-                      }`}
-                    >
-                      <div className="priority-card-header">
-                        <span className="priority-card-title">{task.title}</span>
-                        <span className="priority-card-score">[PS: {task.totalScore}/14]</span>
-                      </div>
-                      {task.projectName && (
-                        <div className="priority-card-project">{task.projectName}</div>
-                      )}
-                      {task.description && (
-                        <div className="priority-card-desc">{task.description}</div>
-                      )}
-                      {!isMobile && (
+            ))}
+          </div>
+        </section>
+      ) : (
+        <section className="priority-board">
+          <div className="priority-columns">
+            {PRIORITY_BUCKETS.map((level) => (
+              <div
+                key={level}
+                className={`priority-column${level === "Critical" ? " priority-column-critical" : ""}`}
+              >
+                <div className="priority-column-header">
+                  <span className="priority-level">{level}</span>
+                  <span className="priority-count">{tasksByLevel[level].length}</span>
+                </div>
+                {tasksByLevel[level].length === 0 ? (
+                  <div className="priority-empty">{t('No tasks in this bucket.')}</div>
+                ) : (
+                  <ul className="priority-task-list">
+                    {tasksByLevel[level].map((task) => (
+                      <li
+                        key={task.id}
+                        className={`priority-card${
+                          task.metadata?.source === 'field_report'
+                            ? ' priority-card-external'
+                            : ''
+                        }`}
+                      >
+                        <div className="priority-card-header">
+                          <span className="priority-card-title">{task.title}</span>
+                          <span className="priority-card-score">[PS: {task.totalScore}/14]</span>
+                        </div>
+                        {task.projectName && (
+                          <div className="priority-card-project">{task.projectName}</div>
+                        )}
+                        {task.description && (
+                          <div className="priority-card-desc">{task.description}</div>
+                        )}
                         <div className="priority-card-tags">
                           {task.workstreams.map((stream) => (
                             <span key={stream} className="priority-tag">
@@ -263,15 +358,15 @@ export const Dashboard = () => {
                             </span>
                           ))}
                         </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {externalTasks.length > 0 && (
         <section className="external-requests">

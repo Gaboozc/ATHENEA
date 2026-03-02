@@ -116,9 +116,12 @@ export const Navbar = () => {
 			<nav className="navbar" style={{ 
 				background: '#0b0b0b',
 				borderBottom: '2px solid #27272a',
-				padding: '12px 5px',
+				paddingTop: 'calc(env(safe-area-inset-top, 0px) + 10px)',
+				paddingBottom: '10px',
+				paddingLeft: '10px',
+				paddingRight: '10px',
 			}}>
-				<div className="navbar-inner" style={{ display: 'flex', alignItems: 'center', gap: '1px', justifyContent: 'flex-start' }}>
+				<div className="navbar-inner">
 					<Link to="/dashboard" className="navbar-home-button" aria-label="ATHENEA home">
 						<span>ATHENEA</span>
 					</Link>

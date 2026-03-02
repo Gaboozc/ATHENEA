@@ -4,6 +4,7 @@ import { loginUser } from '../store/slices/authSlice';
 
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import atheneaLogo from '../assets/img/Athena-logo.png';
 import './Login.css';
 
 export const Login = () => {
@@ -118,7 +119,7 @@ export const Login = () => {
       <div className="login-shell">
         <div className="login-hero">
           <div className="login-brand">
-            <img src="/src/assets/img/Athena-logo.png" alt="ATHENEA logo" className="login-logo" />
+            <img src={atheneaLogo} alt="ATHENEA logo" className="login-logo" />
             <div>
               <h1>ATHENEA</h1>
               <p className="login-brand-sub">{t('Tactical Engineering System')}</p>

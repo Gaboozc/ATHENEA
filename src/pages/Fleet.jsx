@@ -52,6 +52,10 @@ export const Fleet = () => {
     return (projects || []).filter((p) => p.status !== 'cancelled');
   }, [projects]);
 
+  const closedProjects = useMemo(() => {
+    return (projects || []).filter((p) => p.status === 'cancelled' || p.status === 'completed');
+  }, [projects]);
+
   const activeCollaborators = useMemo(() => {
     return (collaborators || []).filter((c) => c.status === 'active');
   }, [collaborators]);
@@ -164,12 +168,9 @@ export const Fleet = () => {
     dispatch(setWorkOrderStatus({ id, status: 'completed' }));
   };
 
-  const handleToggleProjectInCollaborator = (projectId) => {
-    const currentIds = collaboratorForm.projectIds || [];
-    const newIds = currentIds.includes(projectId)
-      ? currentIds.filter((id) => id !== projectId)
-      : [...currentIds, projectId];
-    setCollaboratorForm({ ...collaboratorForm, projectIds: newIds });
+  const handleProjectsSelectionChange = (event) => {
+    const selectedIds = Array.from(event.target.selectedOptions).map((option) => option.value);
+    setCollaboratorForm({ ...collaboratorForm, projectIds: selectedIds });
   };
 
   return (
@@ -304,21 +305,38 @@ export const Fleet = () => {
 
                 <div className="modal-section">
                   <h3>{t('Associated Projects')}</h3>
-                  {activeProjects.length === 0 ? (
+                  {(projects || []).length === 0 ? (
                     <p className="modal-empty-message">{t('No projects available. Create a project first.')}</p>
                   ) : (
-                    <div className="modal-projects-checkboxes">
-                      {activeProjects.map((project) => (
-                        <label key={project.id} className="modal-checkbox-item">
-                          <input
-                            type="checkbox"
-                            checked={(collaboratorForm.projectIds || []).includes(project.id)}
-                            onChange={() => handleToggleProjectInCollaborator(project.id)}
-                          />
-                          <span>{project.name}</span>
-                        </label>
-                      ))}
-                    </div>
+                    <label>
+                      <span className="modal-label">{t('Projects (multi-select)')}</span>
+                      <select
+                        multiple
+                        className="modal-projects-select"
+                        value={collaboratorForm.projectIds || []}
+                        onChange={handleProjectsSelectionChange}
+                        size={Math.min(Math.max((projects || []).length, 4), 10)}
+                      >
+                        {activeProjects.length > 0 && (
+                          <optgroup label={t('Active Projects')}>
+                            {activeProjects.map((project) => (
+                              <option key={project.id} value={project.id}>
+                                {project.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {closedProjects.length > 0 && (
+                          <optgroup label={t('Closed / Cancelled Projects')}>
+                            {closedProjects.map((project) => (
+                              <option key={project.id} value={project.id}>
+                                {project.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                      </select>
+                    </label>
                   )}
                 </div>
               </div>

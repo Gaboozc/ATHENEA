@@ -66,6 +66,16 @@ export const Calendar = () => {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
+  const formatDateLabel = (date) => {
+    if (!date) return '';
+    return date.toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
   const daysInMonth = useMemo(() => {
     const firstDay = new Date(year, month, 1).getDay();
     const lastDate = new Date(year, month + 1, 0).getDate();
@@ -143,11 +153,12 @@ export const Calendar = () => {
     });
   };
 
-  const handleEditEvent = (event, e) => {
-    e.stopPropagation();
+  const handleEditEvent = (event, triggerEvent) => {
+    triggerEvent?.stopPropagation?.();
     setEditingEvent(event.id);
     const startDate = new Date(event.startDate);
     const endDate = new Date(event.endDate);
+    setSelectedDate(startDate);
     setFormData({
       title: event.title,
       description: event.description,
@@ -162,8 +173,8 @@ export const Calendar = () => {
     setShowModal(true);
   };
 
-  const handleDeleteEvent = (eventId, e) => {
-    e.stopPropagation();
+  const handleDeleteEvent = (eventId, triggerEvent) => {
+    triggerEvent?.stopPropagation?.();
     if (confirm(t('Delete this event?'))) {
       dispatch(deleteEvent(eventId));
     }
@@ -221,6 +232,13 @@ export const Calendar = () => {
     }
   };
 
+  const selectedDayEvents = useMemo(() => {
+    if (!selectedDate) return [];
+    return getEventsForDate(selectedDate).sort(
+      (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+    );
+  }, [selectedDate, events]);
+
   const todayEvents = getEventsForDate(new Date());
 
   return (
@@ -233,7 +251,9 @@ export const Calendar = () => {
         <button className="calendar-create-btn" onClick={() => {
           setShowModal(true);
           setEditingEvent(null);
-          const today = new Date().toISOString().split('T')[0];
+          const todayDate = new Date();
+          const today = todayDate.toISOString().split('T')[0];
+          setSelectedDate(todayDate);
           setFormData({
             title: '',
             description: '',
@@ -293,31 +313,27 @@ export const Calendar = () => {
                   </div>
                 )}
                 <div className="calendar-day-events">
-                  {dayEvents.slice(0, 3).map((event) => (
-                    <div
+                  {dayEvents.slice(0, 4).map((event) => (
+                    <button
+                      type="button"
                       key={event.id}
-                      className="calendar-event-item"
+                      className="calendar-event-dot"
                       style={{ backgroundColor: event.color }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleEventClick(event);
+                        handleDateClick(day);
                       }}
+                      aria-label={event.title}
+                      title={event.title}
                     >
-                      <span className="calendar-event-title">
-                        <span className="calendar-event-icon" aria-hidden="true">
-                          {EVENT_ICONS[event.type] || '📌'}
-                        </span>
-                        {event.title}
+                      <span className="calendar-event-icon" aria-hidden="true">
+                        {EVENT_ICONS[event.type] || '📌'}
                       </span>
-                      <div className="calendar-event-actions">
-                        <button onClick={(e) => handleEditEvent(event, e)}>✏️</button>
-                        <button onClick={(e) => handleDeleteEvent(event.id, e)}>🗑️</button>
-                      </div>
-                    </div>
+                    </button>
                   ))}
-                  {dayEvents.length > 3 && (
+                  {dayEvents.length > 4 && (
                     <div className="calendar-more-events">
-                      +{dayEvents.length - 3} {t('more')}
+                      +{dayEvents.length - 4}
                     </div>
                   )}
                 </div>
@@ -366,6 +382,38 @@ export const Calendar = () => {
               <h2>{editingEvent ? t('Edit Event') : t('New Event')}</h2>
               <button onClick={() => setShowModal(false)}>✕</button>
             </div>
+            {selectedDate && (
+              <div className="calendar-selected-day">
+                <h3>{t('Events')} · {formatDateLabel(selectedDate)}</h3>
+                {selectedDayEvents.length === 0 ? (
+                  <p>{t('No events yet')}</p>
+                ) : (
+                  <ul className="calendar-selected-events">
+                    {selectedDayEvents.map((event) => (
+                      <li key={event.id}>
+                        <button
+                          type="button"
+                          className="calendar-selected-event-main"
+                          onClick={() => handleEventClick(event)}
+                        >
+                          <span className="calendar-event-icon" aria-hidden="true">
+                            {EVENT_ICONS[event.type] || '📌'}
+                          </span>
+                          <span className="calendar-selected-event-title">{event.title}</span>
+                          <span className="calendar-selected-event-time">
+                            {event.allDay ? t('All day') : new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </button>
+                        <div className="calendar-selected-event-actions">
+                          <button type="button" onClick={(e) => handleEditEvent(event, e)}>✏️</button>
+                          <button type="button" onClick={(e) => handleDeleteEvent(event.id, e)}>🗑️</button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
             <form onSubmit={handleSubmit}>
               <div className="calendar-form-group">
                 <label>{t('Title')}</label>

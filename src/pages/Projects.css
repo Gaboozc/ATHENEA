@@ -63,6 +63,7 @@
 
 .project-create-button {
   width: 170px;
+  min-width: 170px;
 }
 
 .project-create-button[disabled] {
@@ -99,19 +100,32 @@
 
 .project-create-button .task-button-text {
   transform: translateX(20px);
+  white-space: nowrap;
 }
 
 .project-create-button .task-button-icon {
   transform: translateX(129px);
 }
 
-.project-create-button:hover .task-button-text {
-  color: transparent;
+@media (hover: hover) and (pointer: fine) {
+  .project-create-button:hover .task-button-text {
+    color: transparent;
+  }
+
+  .project-create-button:hover .task-button-icon {
+    width: 168px;
+    transform: translateX(0);
+  }
 }
 
-.project-create-button:hover .task-button-icon {
-  width: 168px;
-  transform: translateX(0);
+@media (hover: none), (pointer: coarse) {
+  .project-create-button .task-button-text {
+    color: var(--font-color);
+  }
+
+  .project-create-button .task-button-icon {
+    width: 39px;
+  }
 }
 
 .project-cancelled-date {

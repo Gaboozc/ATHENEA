@@ -1057,6 +1057,10 @@
     cursor: pointer;
   }
 
+  .modal-projects-select {
+    min-height: 180px;
+  }
+
   .modal-btn-cancel {
     background: transparent;
     border: 1px solid #27272a;
@@ -1104,6 +1108,3 @@
       grid-template-columns: 1fr;
     }
   }
-  color: #d4af37;
-  border-color: rgba(212, 175, 55, 0.5);
-}

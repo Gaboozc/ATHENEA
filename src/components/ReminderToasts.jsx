@@ -120,6 +120,17 @@ export const ReminderToasts = () => {
     return () => clearInterval(interval);
   }, [reminders]);
 
+  useEffect(() => {
+    if (toasts.length === 0) return undefined;
+    const timers = toasts.map((toast) =>
+      setTimeout(() => dismissToast(toast.id), 12000)
+    );
+
+    return () => {
+      timers.forEach((timerId) => clearTimeout(timerId));
+    };
+  }, [toasts]);
+
   const dismissToast = (id) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };

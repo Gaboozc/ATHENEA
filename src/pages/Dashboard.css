@@ -677,6 +677,133 @@
   color: #1ec9ff;
 }
 
+.workflow-health-mobile {
+  margin-top: 24px;
+  border: 1px solid #1ec9ff;
+  border-radius: 16px;
+  padding: 16px;
+  background: #0f2235;
+  display: grid;
+  gap: 12px;
+}
+
+.workflow-health-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.workflow-health-header h2 {
+  margin: 0;
+  color: #1ec9ff;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.workflow-health-header button {
+  border: 1px solid #1ec9ff;
+  background: #0b0b0b;
+  color: #1ec9ff;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.workflow-health-score {
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  background: #0b0b0b;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.workflow-health-label {
+  display: block;
+  color: #9aa3ad;
+  font-size: 11px;
+}
+
+.workflow-health-score strong {
+  color: #d4af37;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.workflow-health-score p {
+  margin: 4px 0 0;
+  color: #c9cdd2;
+  font-size: 12px;
+}
+
+.workflow-health-progress {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: #1f2937;
+  overflow: hidden;
+}
+
+.workflow-health-progress span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #1ec9ff, #22c55e);
+}
+
+.workflow-health-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.workflow-health-metrics article {
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  background: #0b0b0b;
+  padding: 8px 10px;
+}
+
+.workflow-health-metrics span {
+  display: block;
+  color: #9aa3ad;
+  font-size: 11px;
+}
+
+.workflow-health-metrics strong {
+  color: #e2e8f0;
+  font-size: 18px;
+}
+
+.workflow-health-priority-snapshot {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.workflow-health-priority-snapshot > div {
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: #0b0b0b;
+  padding: 6px 4px;
+  text-align: center;
+}
+
+.workflow-health-priority-snapshot span {
+  display: block;
+  font-size: 9px;
+  color: #9aa3ad;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.workflow-health-priority-snapshot strong {
+  color: #1ec9ff;
+  font-size: 14px;
+}
+
 @media (max-width: 1100px) {
   .priority-columns {
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));

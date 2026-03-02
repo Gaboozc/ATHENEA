@@ -5,6 +5,7 @@ import { Navbar } from "../components/Navbar"
 import { GatekeeperModal } from "../components/modals/GatekeeperModal"
 import { ReminderToasts } from "../components/ReminderToasts"
 import GlobalSearch from "../components/GlobalSearch"
+import NativeReminderNotifications from "../components/NativeReminderNotifications"
 
 // Base component that maintains the navbar and footer throughout the page and the scroll to top functionality.
 export const Layout = () => {
@@ -32,6 +33,7 @@ export const Layout = () => {
             </div>
             <GatekeeperModal />
             <ReminderToasts />
+            <NativeReminderNotifications />
             {searchOpen && <GlobalSearch onClose={() => setSearchOpen(false)} />}
         </ScrollToTop>
     )

@@ -1,6 +1,6 @@
 .reminder-toasts {
   position: fixed;
-  bottom: 20px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
   right: 20px;
   display: grid;
   gap: 12px;
@@ -78,7 +78,10 @@
   .reminder-toasts {
     right: 12px;
     left: 12px;
-    bottom: 12px;
+    top: calc(env(safe-area-inset-top, 0px) + 72px);
+    bottom: auto;
     width: auto;
+    max-height: 42vh;
+    overflow-y: auto;
   }
 }
