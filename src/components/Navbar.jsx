@@ -8,7 +8,6 @@ import './Navbar.css';
 export const Navbar = () => {
 	const { t, toggleLanguage, language } = useLanguage();
 	const location = useLocation();
-	const { projects } = useSelector((state) => state.projects);
 	const { notes } = useSelector((state) => state.notes);
 	const { todos } = useSelector((state) => state.todos);
 	const { payments } = useSelector((state) => state.payments);
@@ -43,9 +42,6 @@ export const Navbar = () => {
 		}
 	}, [openDropdown]);
 	
-	const availableProjects = projects.filter((project) => project.status !== 'cancelled');
-	const canCreateTask = availableProjects.length > 0;
-
 	const reminderCount = (() => {
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
@@ -65,10 +61,6 @@ export const Navbar = () => {
 		);
 	})();
 	
-	const handleOpenGatekeeper = () => {
-		window.dispatchEvent(new CustomEvent("athenea:gatekeeper:open"));
-	};
-
 	const toggleDropdown = (label) => {
 		setOpenDropdown(openDropdown === label ? null : label);
 	};
@@ -179,36 +171,6 @@ export const Navbar = () => {
 								<span className="navbar-button-glow" />
 								{t('Calendar')}
 							</Link>
-						</div>
-
-						<div className="navbar-task-group">
-							<button
-								onClick={handleOpenGatekeeper}
-								data-gatekeeper-trigger="true"
-								disabled={!canCreateTask}
-								className={`navbar-task-button${canCreateTask ? '' : ' is-disabled'}`}
-							>
-								<span className="task-button-text">{t('New Task')}</span>
-								<span className="task-button-icon" aria-hidden="true">
-									<svg
-										className="task-button-svg"
-										viewBox="0 0 24 24"
-										strokeWidth={2}
-										strokeLinejoin="round"
-										strokeLinecap="round"
-										stroke="currentColor"
-										fill="none"
-									>
-										<line y2={19} y1={5} x2={12} x1={12} />
-										<line y2={12} y1={12} x2={19} x1={5} />
-									</svg>
-								</span>
-							</button>
-							{!canCreateTask && (
-								<span style={{ fontSize: '12px', color: '#9aa3ad' }}>
-										{t('Create a project to log tasks.')}
-								</span>
-							)}
 						</div>
 
 						<div className="navbar-right-group" style={{ gap: '50px' }}>

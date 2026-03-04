@@ -14,6 +14,19 @@
   gap: 16px;
 }
 
+.projects-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.projects-header-hint {
+  font-size: 12px;
+  color: #9aa3ad;
+}
+
 .projects-header h1 {
   font-size: 32px;
   font-weight: 700;
@@ -66,6 +79,11 @@
   min-width: 170px;
 }
 
+.project-task-button {
+  width: 170px;
+  min-width: 170px;
+}
+
 .project-create-button[disabled] {
   opacity: 0.5;
   cursor: not-allowed;
@@ -103,7 +121,16 @@
   white-space: nowrap;
 }
 
+.project-task-button .task-button-text {
+  transform: translateX(24px);
+  white-space: nowrap;
+}
+
 .project-create-button .task-button-icon {
+  transform: translateX(129px);
+}
+
+.project-task-button .task-button-icon {
   transform: translateX(129px);
 }
 
@@ -112,7 +139,16 @@
     color: transparent;
   }
 
+  .project-task-button:hover .task-button-text {
+    color: transparent;
+  }
+
   .project-create-button:hover .task-button-icon {
+    width: 168px;
+    transform: translateX(0);
+  }
+
+  .project-task-button:hover .task-button-icon {
     width: 168px;
     transform: translateX(0);
   }
@@ -123,7 +159,15 @@
     color: var(--font-color);
   }
 
+  .project-task-button .task-button-text {
+    color: var(--font-color);
+  }
+
   .project-create-button .task-button-icon {
+    width: 39px;
+  }
+
+  .project-task-button .task-button-icon {
     width: 39px;
   }
 }

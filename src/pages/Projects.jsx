@@ -164,6 +164,11 @@ export const Projects = () => {
 
   const activeProjects = projects.filter((project) => project.status !== 'cancelled');
   const cancelledProjects = projects.filter((project) => project.status === 'cancelled');
+  const canCreateTask = activeProjects.length > 0;
+
+  const handleOpenTaskModal = () => {
+    window.dispatchEvent(new CustomEvent('athenea:gatekeeper:open'));
+  };
 
   return (
     <div className="projects-container">
@@ -172,28 +177,55 @@ export const Projects = () => {
           <h1>{t('Projects')}</h1>
           <p>{t('Operational programs aligned to ATHENEA build objectives.')}</p>
         </div>
-        <button
-          type="button"
-          className="navbar-task-button project-create-button"
-          onClick={openCreateModal}
-          disabled={!canCreateProject}
-        >
-          <span className="task-button-text">{t('New Project')}</span>
-          <span className="task-button-icon" aria-hidden="true">
-            <svg
-              className="task-button-svg"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              stroke="currentColor"
-              fill="none"
-            >
-              <line y2={19} y1={5} x2={12} x1={12} />
-              <line y2={12} y1={12} x2={19} x1={5} />
-            </svg>
-          </span>
-        </button>
+        <div className="projects-header-actions">
+          <button
+            type="button"
+            className={`navbar-task-button project-task-button${canCreateTask ? '' : ' is-disabled'}`}
+            onClick={handleOpenTaskModal}
+            disabled={!canCreateTask}
+          >
+            <span className="task-button-text">{t('New Task')}</span>
+            <span className="task-button-icon" aria-hidden="true">
+              <svg
+                className="task-button-svg"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                stroke="currentColor"
+                fill="none"
+              >
+                <line y2={19} y1={5} x2={12} x1={12} />
+                <line y2={12} y1={12} x2={19} x1={5} />
+              </svg>
+            </span>
+          </button>
+          <button
+            type="button"
+            className="navbar-task-button project-create-button"
+            onClick={openCreateModal}
+            disabled={!canCreateProject}
+          >
+            <span className="task-button-text">{t('New Project')}</span>
+            <span className="task-button-icon" aria-hidden="true">
+              <svg
+                className="task-button-svg"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                stroke="currentColor"
+                fill="none"
+              >
+                <line y2={19} y1={5} x2={12} x1={12} />
+                <line y2={12} y1={12} x2={19} x1={5} />
+              </svg>
+            </span>
+          </button>
+          {!canCreateTask && (
+            <span className="projects-header-hint">{t('Create a project to log tasks.')}</span>
+          )}
+        </div>
       </div>
       <div className="projects-grid">
         {activeProjects.map((project) => {
