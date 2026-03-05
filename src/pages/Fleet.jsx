@@ -60,6 +60,14 @@ export const Fleet = () => {
     return (collaborators || []).filter((c) => c.status === 'active');
   }, [collaborators]);
 
+  const completedWorkOrdersCount = useMemo(() => {
+    return (workOrders || []).filter((wo) => wo.status === 'completed').length;
+  }, [workOrders]);
+
+  const activeWorkOrdersCount = useMemo(() => {
+    return (workOrders || []).filter((wo) => wo.status !== 'completed').length;
+  }, [workOrders]);
+
   const getCollaboratorWorkOrders = (collabId) => {
     return (workOrders || []).filter((wo) => wo.collaboratorId === collabId);
   };
@@ -179,6 +187,25 @@ export const Fleet = () => {
         <h1>{t('Collaborators')}</h1>
         <p>{t('Track external collaborators and their assigned work orders.')}</p>
       </header>
+
+      <section className="fleet-kpi-strip">
+        <article className="fleet-kpi-card">
+          <span className="fleet-kpi-label">{t('Collaborators')}</span>
+          <strong className="fleet-kpi-value">{activeCollaborators.length}</strong>
+        </article>
+        <article className="fleet-kpi-card">
+          <span className="fleet-kpi-label">{t('Active Orders')}</span>
+          <strong className="fleet-kpi-value">{activeWorkOrdersCount}</strong>
+        </article>
+        <article className="fleet-kpi-card">
+          <span className="fleet-kpi-label">{t('Completed')}</span>
+          <strong className="fleet-kpi-value">{completedWorkOrdersCount}</strong>
+        </article>
+        <article className="fleet-kpi-card">
+          <span className="fleet-kpi-label">{t('Active Projects')}</span>
+          <strong className="fleet-kpi-value">{activeProjects.length}</strong>
+        </article>
+      </section>
 
       <section className="fleet-full-width">
         <div className="fleet-section-header">

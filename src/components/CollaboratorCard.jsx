@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../context/LanguageContext';
 import './CollaboratorCard.css';
 
 const CollaboratorCard = ({ 
@@ -8,6 +9,8 @@ const CollaboratorCard = ({
   orderCount,
   completedCount 
 }) => {
+  const { t } = useLanguage();
+
   const getInitials = (name) => {
     return name
       .split(' ')
@@ -35,24 +38,29 @@ const CollaboratorCard = ({
           </div>
           <div className="card-header-info">
             <div className="card-title">{collaborator.name}</div>
-            <div className="card-subtitle">{collaborator.role || collaborator.area || 'Collaborator'}</div>
+            <div className="card-subtitle">{collaborator.role || collaborator.area || t('Collaborators')}</div>
           </div>
+        </div>
+
+        <div className="card-chip-row">
+          {collaborator.area && <span className="card-chip">{collaborator.area}</span>}
+          {collaborator.role && <span className="card-chip">{collaborator.role}</span>}
         </div>
 
         <div className="card-back-content">
           <div className="back-line">
-            <span className="back-label">Email:</span>
+            <span className="back-label">{t('Email')}:</span>
             <span className="back-value">{collaborator.email}</span>
           </div>
           {collaborator.phone && (
             <div className="back-line">
-              <span className="back-label">Phone:</span>
+              <span className="back-label">{t('Phone')}:</span>
               <span className="back-value">{collaborator.phone}</span>
             </div>
           )}
           {collaborator.area && (
             <div className="back-line">
-              <span className="back-label">Area:</span>
+              <span className="back-label">{t('Area')}:</span>
               <span className="back-value">{collaborator.area}</span>
             </div>
           )}
@@ -61,15 +69,15 @@ const CollaboratorCard = ({
         <div className="card-stats-row">
           <div className="stat">
             <span className="stat-num">{projectCount}</span>
-            <span className="stat-label">Projects</span>
+            <span className="stat-label">{t('Projects')}</span>
           </div>
           <div className="stat">
             <span className="stat-num">{orderCount}</span>
-            <span className="stat-label">Orders</span>
+            <span className="stat-label">{t('Active Orders')}</span>
           </div>
           <div className="stat">
             <span className="stat-num">{completedCount}</span>
-            <span className="stat-label">Completed</span>
+            <span className="stat-label">{t('Completed')}</span>
           </div>
         </div>
 
@@ -81,7 +89,7 @@ const CollaboratorCard = ({
               onEdit(collaborator);
             }}
           >
-            Edit
+            {t('Edit')}
           </button>
         </div>
 
