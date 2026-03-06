@@ -7,7 +7,7 @@ import {
   expelMember,
   setCurrentOrg,
   updateOrganizationBranding
-} from "../store/slices/organizationsSlice";
+} from "../../store/slices/organizationsSlice";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { useTasks } from "../context/TasksContext";
 import { getPlanLimits } from "../utils/planLimits";

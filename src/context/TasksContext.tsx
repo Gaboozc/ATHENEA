@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { taskCompleted, updateStreak } from "../store/slices/statsSlice";
+import { taskCompleted, updateStreak } from "../../store/slices/statsSlice";
 import type { PriorityFactors, PriorityLevel } from "../utils/priorityEngine";
 
 const TASKS_STORAGE_KEY = "athenea.tasks";

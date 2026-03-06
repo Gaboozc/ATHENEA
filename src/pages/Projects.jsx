@@ -2,7 +2,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { useTasks } from '../context/TasksContext';
-import { addProject, deleteProject, updateProject } from '../store/slices/projectsSlice';
+import { addProject, deleteProject, updateProject } from '../../store/slices/projectsSlice';
 import { useLanguage } from '../context/LanguageContext';
 import './Projects.css';
 

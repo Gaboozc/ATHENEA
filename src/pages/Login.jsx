@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { loginUser } from '../store/slices/authSlice';
+import { loginUser } from '../../store/slices/authSlice';
 
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';

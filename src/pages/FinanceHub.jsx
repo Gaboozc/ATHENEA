@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
-import { addCategory, addExpense, deleteExpense } from '../store/slices/budgetSlice';
+import { addCategory, addExpense, deleteExpense } from '../../store/slices/budgetSlice';
 import './FinanceHub.css';
 
 export const FinanceHub = () => {

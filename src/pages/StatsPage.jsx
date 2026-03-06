@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { initializeAchievements, resetStats } from '../store/slices/statsSlice';
+import { initializeAchievements, resetStats } from '../../store/slices/statsSlice';
 import './StatsPage.css';
 
 /**

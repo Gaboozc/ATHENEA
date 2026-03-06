@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
-import { addNote } from '../store/slices/notesSlice';
-import { addTodo } from '../store/slices/todosSlice';
-import { addPayment } from '../store/slices/paymentsSlice';
-import { linkNoteToCalendar, linkTodoToCalendar, linkPaymentToCalendar } from '../store/slices/calendarSlice';
+import { addNote } from '../../store/slices/notesSlice';
+import { addTodo } from '../../store/slices/todosSlice';
+import { addPayment } from '../../store/slices/paymentsSlice';
+import { linkNoteToCalendar, linkTodoToCalendar, linkPaymentToCalendar } from '../../store/slices/calendarSlice';
 import './Inbox.css';
 
 const buildId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;

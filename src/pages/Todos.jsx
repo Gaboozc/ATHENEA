@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
-import { addTodo, deleteTodo, setTodoProgress, setTodoStatus } from '../store/slices/todosSlice';
-import { linkTodoToCalendar, unlinkFromCalendar } from '../store/slices/calendarSlice';
+import { addTodo, deleteTodo, setTodoProgress, setTodoStatus } from '../../store/slices/todosSlice';
+import { linkTodoToCalendar, unlinkFromCalendar } from '../../store/slices/calendarSlice';
 import './Todos.css';
 
 const PROGRESS_STEPS = [0, 25, 50, 75, 100];

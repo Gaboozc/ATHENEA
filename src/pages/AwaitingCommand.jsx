@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { addMembership, setCurrentOrg } from '../store/slices/organizationsSlice';
+import { addMembership, setCurrentOrg } from '../../store/slices/organizationsSlice';
 import { useLanguage } from '../context/LanguageContext';
 import './AwaitingCommand.css';
 

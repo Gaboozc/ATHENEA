@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { loginUser } from '../store/slices/authSlice';
+import { loginUser } from '../../store/slices/authSlice';
 import {
   addMembership,
   addOrganization,
   setCurrentOrg
-} from '../store/slices/organizationsSlice';
+} from '../../store/slices/organizationsSlice';
 import { useLanguage } from '../context/LanguageContext';
 import { getPlanLimits } from '../utils/planLimits';
 import './Onboarding.css';

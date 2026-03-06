@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { loginUser } from '../store/slices/authSlice';
-import { addUser } from '../store/slices/usersSlice';
-import { addOrganization, addMembership, setCurrentOrg } from '../store/slices/organizationsSlice';
+import { loginUser } from '../../store/slices/authSlice';
+import { addUser } from '../../store/slices/usersSlice';
+import { addOrganization, addMembership, setCurrentOrg } from '../../store/slices/organizationsSlice';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { getPlanLimits } from '../utils/planLimits';

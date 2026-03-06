@@ -5,7 +5,7 @@ import { RouterProvider } from "react-router-dom";  // Import RouterProvider to 
 import { router } from "./routes";  // Import the router configuration
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
-import { store, persistor } from './store/index';
+import { store, persistor } from '../store/index';
 import { TasksProvider } from './context/TasksContext';
 import { LanguageProvider } from './context/LanguageContext';
 import AppInitializer from './components/AppInitializer';

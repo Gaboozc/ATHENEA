@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
-import { addRoutine, toggleRoutineToday } from '../store/slices/routinesSlice';
+import { addRoutine, toggleRoutineToday } from '../../store/slices/routinesSlice';
 import './PersonalHub.css';
 
 export const PersonalHub = () => {

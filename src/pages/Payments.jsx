@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
-import { addPayment, deletePayment, markPaymentPaid } from '../store/slices/paymentsSlice';
-import { linkPaymentToCalendar, unlinkFromCalendar } from '../store/slices/calendarSlice';
+import { addPayment, deletePayment, markPaymentPaid } from '../../store/slices/paymentsSlice';
+import { linkPaymentToCalendar, unlinkFromCalendar } from '../../store/slices/calendarSlice';
 import './Payments.css';
 
 export const Payments = () => {

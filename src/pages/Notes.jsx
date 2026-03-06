@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { addNote, updateNote, deleteNote, togglePinNote, addTag } from '../store/slices/notesSlice';
-import { linkNoteToCalendar, unlinkFromCalendar } from '../store/slices/calendarSlice';
+import { addNote, updateNote, deleteNote, togglePinNote, addTag } from '../../store/slices/notesSlice';
+import { linkNoteToCalendar, unlinkFromCalendar } from '../../store/slices/calendarSlice';
 import { useLanguage } from '../context/LanguageContext';
 import './Notes.css';
 

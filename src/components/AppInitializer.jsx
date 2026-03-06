@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { initializeAchievements } from '../store/slices/statsSlice';
+import { initializeAchievements } from '../../store/slices/statsSlice';
 
 /**
  * AppInitializer - Initialize app features on mount

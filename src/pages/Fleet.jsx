@@ -6,14 +6,14 @@ import {
   addCollaborator,
   updateCollaborator,
   deleteCollaborator,
-} from '../store/slices/collaboratorsSlice';
+} from '../../store/slices/collaboratorsSlice';
 import {
   addWorkOrder,
   updateWorkOrder,
   deleteWorkOrdersByCollaborator,
   setWorkOrderStatus,
   setWorkOrderProgress,
-} from '../store/slices/workOrdersSlice';
+} from '../../store/slices/workOrdersSlice';
 import './Fleet.css';
 
 export const Fleet = () => {

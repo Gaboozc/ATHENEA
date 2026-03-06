@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { addEvent, updateEvent, deleteEvent } from '../store/slices/calendarSlice';
+import { addEvent, updateEvent, deleteEvent } from '../../store/slices/calendarSlice';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import './Calendar.css';
