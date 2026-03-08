@@ -1,59 +1,30 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const todayKey = () => new Date().toISOString().split('T')[0];
-
-const initialState = {
-  routines: [],
-};
-
 const routinesSlice = createSlice({
   name: 'routines',
-  initialState,
+  initialState: {
+    routines: []
+  },
   reducers: {
     addRoutine: (state, action) => {
-      const { title, frequency, daysOfWeek } = action.payload;
-      const newRoutine = {
-        id: `routine-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        title: title || 'Untitled Routine',
-        frequency: frequency || 'daily',
-        daysOfWeek: Array.isArray(daysOfWeek) && daysOfWeek.length
-          ? daysOfWeek
-          : [0, 1, 2, 3, 4, 5, 6],
+      state.routines.unshift({
+        id: action.payload?.id || `routine-${Date.now()}`,
+        title: action.payload?.title || 'Untitled Routine',
+        frequency: action.payload?.frequency || 'daily',
+        daysOfWeek: action.payload?.daysOfWeek || [0, 1, 2, 3, 4, 5, 6],
         lastCompleted: null,
-        streak: 0,
-        createdAt: new Date().toISOString(),
-      };
-      state.routines.unshift(newRoutine);
-    },
-    updateRoutineDays: (state, action) => {
-      const { id, daysOfWeek } = action.payload;
-      const routine = state.routines.find((item) => item.id === id);
-      if (routine && Array.isArray(daysOfWeek) && daysOfWeek.length) {
-        routine.daysOfWeek = daysOfWeek;
-      }
+        streak: 0
+      });
     },
     toggleRoutineToday: (state, action) => {
-      const { id } = action.payload;
-      const routine = state.routines.find((item) => item.id === id);
+      const id = action.payload?.id;
+      const routine = state.routines.find((entry) => entry.id === id);
       if (!routine) return;
-
-      const today = todayKey();
-      if (routine.lastCompleted === today) {
-        routine.lastCompleted = null;
-        routine.streak = Math.max(0, routine.streak - 1);
-        return;
-      }
-
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayKey = yesterday.toISOString().split('T')[0];
-
-      const wasYesterday = routine.lastCompleted === yesterdayKey;
-      routine.lastCompleted = today;
-      routine.streak = wasYesterday ? routine.streak + 1 : 1;
-    },
-  },
+      const today = new Date().toISOString().slice(0, 10);
+      routine.lastCompleted = routine.lastCompleted === today ? null : today;
+    }
+  }
 });
 
-export const { addRoutine, updateRoutineDays, toggleRoutineToday } = routinesSlice.actions;
+export const { addRoutine, toggleRoutineToday } = routinesSlice.actions;
 export default routinesSlice.reducer;

@@ -1,40 +1,34 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const initialState = {
-  categories: [],
-  expenses: [],
-};
-
 const budgetSlice = createSlice({
   name: 'budget',
-  initialState,
+  initialState: {
+    categories: [],
+    expenses: [],
+    balance: 0
+  },
   reducers: {
     addCategory: (state, action) => {
-      const { name, limit } = action.payload;
-      const newCategory = {
-        id: `cat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        name: name || 'General',
-        limit: Number(limit || 0),
-        createdAt: new Date().toISOString(),
-      };
-      state.categories.push(newCategory);
+      state.categories.push({
+        id: action.payload?.id || `cat-${Date.now()}`,
+        name: action.payload?.name || 'General',
+        limit: Number(action.payload?.limit || 0)
+      });
     },
     addExpense: (state, action) => {
-      const { amount, categoryId, date, note } = action.payload;
-      const newExpense = {
-        id: `exp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        amount: Number(amount || 0),
-        categoryId,
-        date: date || new Date().toISOString(),
-        note: note || '',
-        createdAt: new Date().toISOString(),
-      };
-      state.expenses.unshift(newExpense);
+      state.expenses.unshift({
+        id: action.payload?.id || `exp-${Date.now()}`,
+        amount: Number(action.payload?.amount || 0),
+        categoryId: action.payload?.categoryId || null,
+        note: action.payload?.note || '',
+        date: action.payload?.date || new Date().toISOString()
+      });
+      state.balance -= Number(action.payload?.amount || 0);
     },
     deleteExpense: (state, action) => {
-      state.expenses = state.expenses.filter((item) => item.id !== action.payload);
-    },
-  },
+      state.expenses = state.expenses.filter((entry) => entry.id !== action.payload);
+    }
+  }
 });
 
 export const { addCategory, addExpense, deleteExpense } = budgetSlice.actions;

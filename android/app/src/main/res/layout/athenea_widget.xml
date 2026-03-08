@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="12dp"
+    android:background="@drawable/widget_bg_glass"
+    android:clipToPadding="false">
+
+    <TextView
+        android:id="@+id/widgetTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ATHENEA"
+        android:textStyle="bold"
+        android:textColor="#FFFFFFFF"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/widgetPulse"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/widgetTitle"
+        android:layout_marginTop="4dp"
+        android:text="Stable"
+        android:textColor="#D6E7FF"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/widgetInsightTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/widgetPulse"
+        android:layout_marginTop="10dp"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:text="Top insight"
+        android:textColor="#FFFFFFFF"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widgetEventTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/widgetInsightTitle"
+        android:layout_marginTop="8dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text="Next event"
+        android:textColor="#BDE2FF"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/widgetEventAt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/widgetEventTitle"
+        android:layout_marginTop="2dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text=""
+        android:textColor="#8EC5FF"
+        android:textSize="11sp" />
+
+    <LinearLayout
+        android:id="@+id/widgetActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:gravity="end"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widgetMicButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:background="@drawable/widget_action_chip"
+            android:text="🎤"
+            android:textSize="16sp"
+            android:textColor="#FFFFFFFF" />
+
+        <TextView
+            android:id="@+id/widgetCheckButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="8dp"
+            android:gravity="center"
+            android:background="@drawable/widget_action_chip"
+            android:text="✓"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFFFF" />
+    </LinearLayout>
+
+</RelativeLayout>

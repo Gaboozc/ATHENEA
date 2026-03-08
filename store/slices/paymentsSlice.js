@@ -1,86 +1,78 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const addMonths = (date, count) => {
-  const next = new Date(date);
-  const day = next.getDate();
-  next.setMonth(next.getMonth() + count);
-  if (next.getDate() < day) {
-    next.setDate(0);
-  }
-  return next;
-};
-
-const addYears = (date, count) => {
-  const next = new Date(date);
-  next.setFullYear(next.getFullYear() + count);
-  return next;
-};
-
-const addWeeks = (date, count) => {
-  const next = new Date(date);
-  next.setDate(next.getDate() + count * 7);
-  return next;
-};
-
 const advanceByFrequency = (dateIso, frequency) => {
-  const base = new Date(dateIso);
-  if (frequency === 'weekly') return addWeeks(base, 1).toISOString();
-  if (frequency === 'yearly') return addYears(base, 1).toISOString();
-  return addMonths(base, 1).toISOString();
-};
-
-const initialState = {
-  payments: [],
+  const base = new Date(dateIso || new Date().toISOString());
+  if (frequency === 'weekly') {
+    base.setDate(base.getDate() + 7);
+  } else if (frequency === 'yearly') {
+    base.setFullYear(base.getFullYear() + 1);
+  } else {
+    const day = base.getDate();
+    base.setMonth(base.getMonth() + 1);
+    if (base.getDate() < day) {
+      base.setDate(0);
+    }
+  }
+  return base.toISOString();
 };
 
 const paymentsSlice = createSlice({
   name: 'payments',
-  initialState,
+  initialState: {
+    payments: []
+  },
   reducers: {
     addPayment: (state, action) => {
-      const { id, name, amount, currency, frequency, nextDueDate, notes } = action.payload;
-      const newPayment = {
-        id: id || `payment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        name: name || 'Untitled Payment',
-        amount: amount || 0,
-        currency: currency || 'USD',
-        frequency: frequency || 'monthly',
-        nextDueDate: nextDueDate || new Date().toISOString(),
-        notes: notes || '',
-        lastPaidAt: null,
+      const payload = action.payload || {};
+      state.payments.unshift({
+        id: payload.id || `payment-${Date.now()}`,
+        name: payload.name || 'Untitled Payment',
+        amount: Number(payload.amount || 0),
+        currency: payload.currency || 'USD',
+        frequency: payload.frequency || 'monthly',
+        nextDueDate: payload.nextDueDate || new Date().toISOString(),
+        notes: payload.notes || '',
+        status: payload.status || 'pending',
+        lastPaidAt: payload.lastPaidAt || null,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      state.payments.unshift(newPayment);
-    },
-    updatePayment: (state, action) => {
-      const { id, ...updates } = action.payload;
-      const payment = state.payments.find((item) => item.id === id);
-      if (payment) {
-        Object.assign(payment, updates);
-        payment.updatedAt = new Date().toISOString();
-      }
+        updatedAt: new Date().toISOString()
+      });
     },
     deletePayment: (state, action) => {
-      state.payments = state.payments.filter((item) => item.id !== action.payload);
+      state.payments = state.payments.filter((payment) => payment.id !== action.payload);
     },
     markPaymentPaid: (state, action) => {
-      const { id } = action.payload;
-      const payment = state.payments.find((item) => item.id === id);
-      if (payment) {
-        payment.lastPaidAt = new Date().toISOString();
+      const { id } = action.payload || {};
+      const payment = state.payments.find((entry) => entry.id === id);
+      if (!payment) return;
+      payment.lastPaidAt = new Date().toISOString();
+      payment.status = 'paid';
+      payment.nextDueDate = advanceByFrequency(payment.nextDueDate, payment.frequency);
+      payment.updatedAt = new Date().toISOString();
+    }
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase('payments/markPaid', (state, action) => {
+        const { id, paidAt } = action.payload || {};
+        const payment = state.payments.find((entry) => entry.id === id);
+        if (!payment) return;
+        payment.lastPaidAt = paidAt || new Date().toISOString();
+        payment.status = 'paid';
         payment.nextDueDate = advanceByFrequency(payment.nextDueDate, payment.frequency);
         payment.updatedAt = new Date().toISOString();
-      }
-    },
-  },
+      })
+      .addCase('payments/markPaymentPaid', (state, action) => {
+        const { id, paidAt } = action.payload || {};
+        const payment = state.payments.find((entry) => entry.id === id);
+        if (!payment) return;
+        payment.lastPaidAt = paidAt || new Date().toISOString();
+        payment.status = 'paid';
+        payment.nextDueDate = advanceByFrequency(payment.nextDueDate, payment.frequency);
+        payment.updatedAt = new Date().toISOString();
+      });
+  }
 });
 
-export const {
-  addPayment,
-  updatePayment,
-  deletePayment,
-  markPaymentPaid,
-} = paymentsSlice.actions;
-
+export const { addPayment, deletePayment, markPaymentPaid } = paymentsSlice.actions;
 export default paymentsSlice.reducer;

@@ -33,6 +33,27 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <receiver
+            android:name=".AtheneaWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/athenea_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".AtheneaWidgetActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.athenea.app.WIDGET_OPEN_OMNIBAR" />
+                <action android:name="com.athenea.app.WIDGET_OPEN_VOICE" />
+                <action android:name="com.athenea.app.WIDGET_CHECK_TASK" />
+            </intent-filter>
+        </receiver>
     </application>
 
     <!-- Permissions -->

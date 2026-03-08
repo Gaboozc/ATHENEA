@@ -1,211 +1,201 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { listGoogleCalendarEvents } from '../../src/services/googleCalendar.ts';
 
-const initialState = {
-  events: [],
+const normalizeIso = (value) => {
+  if (!value) return null;
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
 };
+
+const mapGoogleEventToAthenea = (event) => {
+  const startDate = normalizeIso(event?.start?.dateTime || event?.start?.date);
+  const endDate = normalizeIso(event?.end?.dateTime || event?.end?.date || startDate);
+  const title = event?.summary || 'Google Calendar event';
+  const lowerTitle = String(title).toLowerCase();
+  const important = /interview|deadline|presentation|board|client|important|critical|launch/.test(lowerTitle);
+
+  return {
+    id: `gcal-${event.id}`,
+    externalId: event.id,
+    provider: 'google',
+    title,
+    description: event?.description || '',
+    startDate,
+    endDate,
+    location: event?.location || '',
+    sourceUrl: event?.htmlLink || '',
+    relatedType: 'external-calendar',
+    color: important ? '#ef4444' : '#3b82f6',
+    importance: important ? 'high' : 'normal',
+    updatedAt: normalizeIso(event?.updated) || new Date().toISOString(),
+    syncedAt: new Date().toISOString()
+  };
+};
+
+export const syncExternalEvents = createAsyncThunk(
+  'calendar/syncExternalEvents',
+  async (payload = {}, thunkApi) => {
+    try {
+      const state = thunkApi.getState();
+      const existingEvents = Array.isArray(state?.calendar?.events) ? state.calendar.events : [];
+
+      const now = new Date();
+      const timeMin = payload.timeMin || now.toISOString();
+      const horizon = new Date(now.getTime() + 1000 * 60 * 60 * 24 * 14);
+      const timeMax = payload.timeMax || horizon.toISOString();
+
+      const response = await listGoogleCalendarEvents({
+        timeMin,
+        timeMax,
+        maxResults: payload.maxResults || 100,
+        forceInteractiveAuth: Boolean(payload.forceInteractiveAuth)
+      });
+
+      const mapped = response.items.map(mapGoogleEventToAthenea).filter((event) => event.startDate);
+      const existingExternalIds = new Set(
+        existingEvents
+          .filter((event) => event?.provider === 'google' && event?.externalId)
+          .map((event) => event.externalId)
+      );
+
+      const updatesByExternalId = new Map();
+      mapped.forEach((event) => updatesByExternalId.set(event.externalId, event));
+
+      const newEvents = mapped.filter((event) => !existingExternalIds.has(event.externalId));
+
+      return {
+        newEvents,
+        updatesByExternalId: Object.fromEntries(updatesByExternalId),
+        syncedCount: mapped.length,
+        nextSyncToken: response.nextSyncToken || null,
+        syncedAt: new Date().toISOString()
+      };
+    } catch (error) {
+      return thunkApi.rejectWithValue(error instanceof Error ? error.message : 'Calendar sync failed');
+    }
+  }
+);
 
 const calendarSlice = createSlice({
   name: 'calendar',
-  initialState,
+  initialState: {
+    events: [],
+    lastExternalSyncAt: null,
+    externalSyncStatus: 'idle',
+    externalSyncError: null,
+    externalProvider: 'google',
+    nextSyncToken: null
+  },
   reducers: {
     addEvent: (state, action) => {
-      const newEvent = {
-        id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        title: action.payload.title,
-        description: action.payload.description || '',
-        startDate: action.payload.startDate,
-        endDate: action.payload.endDate || action.payload.startDate,
-        allDay: action.payload.allDay || false,
-        color: action.payload.color || '#1ec9ff',
-        type: action.payload.type || 'event', // 'event', 'task', 'note', 'deadline'
-        relatedId: action.payload.relatedId || null, // ID of related task, project, or note
-        relatedType: action.payload.relatedType || null, // 'task', 'project', 'note'
-        createdAt: new Date().toISOString(),
-      };
-      state.events.push(newEvent);
+      state.events.push({
+        id: action.payload?.id || `event-${Date.now()}`,
+        ...action.payload,
+        createdAt: new Date().toISOString()
+      });
     },
-    
     updateEvent: (state, action) => {
-      const { id, ...updates } = action.payload;
-      const event = state.events.find((e) => e.id === id);
-      if (event) {
-        Object.assign(event, updates);
-      }
+      const { id, ...updates } = action.payload || {};
+      const event = state.events.find((entry) => entry.id === id);
+      if (event) Object.assign(event, updates);
     },
-    
     deleteEvent: (state, action) => {
-      state.events = state.events.filter((e) => e.id !== action.payload);
+      state.events = state.events.filter((entry) => entry.id !== action.payload);
     },
-    
-    linkTaskToCalendar: (state, action) => {
-      const { taskId, taskTitle, dueDate, projectId } = action.payload;
-      const existingEvent = state.events.find(
-        (e) => e.relatedId === taskId && e.relatedType === 'task'
-      );
-      
-      if (existingEvent) {
-        existingEvent.startDate = dueDate;
-        existingEvent.endDate = dueDate;
-        existingEvent.title = taskTitle;
-      } else {
-        const newEvent = {
-          id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          title: taskTitle,
-          description: `Task deadline`,
-          startDate: dueDate,
-          endDate: dueDate,
-          allDay: true,
-          color: '#f59e0b',
-          type: 'deadline',
-          relatedId: taskId,
-          relatedType: 'task',
-          projectId: projectId,
-          createdAt: new Date().toISOString(),
-        };
-        state.events.push(newEvent);
-      }
-    },
-    
     linkNoteToCalendar: (state, action) => {
-      const { noteId, noteTitle, date, color } = action.payload;
-      const existingEvent = state.events.find(
-        (e) => e.relatedId === noteId && e.relatedType === 'note'
-      );
-      
-      if (existingEvent) {
-        existingEvent.startDate = date;
-        existingEvent.endDate = date;
-        existingEvent.title = noteTitle;
-        existingEvent.color = color || '#1ec9ff';
-      } else {
-        const newEvent = {
-          id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          title: noteTitle,
-          description: `Note reminder`,
-          startDate: date,
-          endDate: date,
-          allDay: true,
-          color: color || '#1ec9ff',
-          type: 'note',
-          relatedId: noteId,
-          relatedType: 'note',
-          createdAt: new Date().toISOString(),
-        };
-        state.events.push(newEvent);
-      }
+      const payload = action.payload || {};
+      const id = `note-${payload.noteId}`;
+      state.events = state.events.filter((entry) => entry.id !== id);
+      state.events.push({
+        id,
+        title: payload.noteTitle || 'Note reminder',
+        startDate: payload.date,
+        endDate: payload.date,
+        relatedId: payload.noteId,
+        relatedType: 'note',
+        color: payload.color || '#1ec9ff'
+      });
     },
-
     linkTodoToCalendar: (state, action) => {
-      const { todoId, todoTitle, dueDate } = action.payload;
-      const existingEvent = state.events.find(
-        (e) => e.relatedId === todoId && e.relatedType === 'todo'
-      );
-
-      if (existingEvent) {
-        existingEvent.startDate = dueDate;
-        existingEvent.endDate = dueDate;
-        existingEvent.title = todoTitle;
-        existingEvent.type = 'todo';
-        existingEvent.color = '#22c55e';
-      } else {
-        const newEvent = {
-          id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          title: todoTitle,
-          description: 'Todo reminder',
-          startDate: dueDate,
-          endDate: dueDate,
-          allDay: true,
-          color: '#22c55e',
-          type: 'todo',
-          relatedId: todoId,
-          relatedType: 'todo',
-          createdAt: new Date().toISOString(),
-        };
-        state.events.push(newEvent);
-      }
+      const payload = action.payload || {};
+      const id = `todo-${payload.todoId}`;
+      state.events = state.events.filter((entry) => entry.id !== id);
+      state.events.push({
+        id,
+        title: payload.todoTitle || 'Todo',
+        startDate: payload.dueDate,
+        endDate: payload.dueDate,
+        relatedId: payload.todoId,
+        relatedType: 'todo',
+        color: '#22c55e'
+      });
     },
-
     linkPaymentToCalendar: (state, action) => {
-      const { paymentId, paymentTitle, dueDate } = action.payload;
-      const existingEvent = state.events.find(
-        (e) => e.relatedId === paymentId && e.relatedType === 'payment'
-      );
-
-      if (existingEvent) {
-        existingEvent.startDate = dueDate;
-        existingEvent.endDate = dueDate;
-        existingEvent.title = paymentTitle;
-        existingEvent.type = 'payment';
-        existingEvent.color = '#a855f7';
-      } else {
-        const newEvent = {
-          id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          title: paymentTitle,
-          description: 'Payment due',
-          startDate: dueDate,
-          endDate: dueDate,
-          allDay: true,
-          color: '#a855f7',
-          type: 'payment',
-          relatedId: paymentId,
-          relatedType: 'payment',
-          createdAt: new Date().toISOString(),
-        };
-        state.events.push(newEvent);
-      }
+      const payload = action.payload || {};
+      const id = `payment-${payload.paymentId}`;
+      state.events = state.events.filter((entry) => entry.id !== id);
+      state.events.push({
+        id,
+        title: payload.paymentTitle || 'Payment',
+        startDate: payload.dueDate,
+        endDate: payload.dueDate,
+        relatedId: payload.paymentId,
+        relatedType: 'payment',
+        color: '#a855f7'
+      });
     },
-    
     unlinkFromCalendar: (state, action) => {
-      const { relatedId, relatedType } = action.payload;
+      const { relatedId, relatedType } = action.payload || {};
       state.events = state.events.filter(
-        (e) => !(e.relatedId === relatedId && e.relatedType === relatedType)
+        (entry) => !(entry.relatedId === relatedId && entry.relatedType === relatedType)
       );
     },
-    
-    syncProjectDeadline: (state, action) => {
-      const { projectId, projectName, deadline } = action.payload;
-      const existingEvent = state.events.find(
-        (e) => e.relatedId === projectId && e.relatedType === 'project'
-      );
-      
-      if (deadline) {
-        if (existingEvent) {
-          existingEvent.startDate = deadline;
-          existingEvent.endDate = deadline;
-          existingEvent.title = `${projectName} - Deadline`;
-        } else {
-          const newEvent = {
-            id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            title: `${projectName} - Deadline`,
-            description: `Project deadline`,
-            startDate: deadline,
-            endDate: deadline,
-            allDay: true,
-            color: '#ef4444',
-            type: 'deadline',
-            relatedId: projectId,
-            relatedType: 'project',
-            createdAt: new Date().toISOString(),
-          };
-          state.events.push(newEvent);
-        }
-      } else if (existingEvent) {
-        state.events = state.events.filter((e) => e.id !== existingEvent.id);
-      }
-    },
+    resetExternalSyncError: (state) => {
+      state.externalSyncError = null;
+    }
   },
+  extraReducers: (builder) => {
+    builder
+      .addCase(syncExternalEvents.pending, (state) => {
+        state.externalSyncStatus = 'loading';
+        state.externalSyncError = null;
+      })
+      .addCase(syncExternalEvents.fulfilled, (state, action) => {
+        const payload = action.payload || {};
+        const updatesMap = payload.updatesByExternalId || {};
+
+        state.events = state.events.map((event) => {
+          if (event?.provider !== 'google' || !event?.externalId) return event;
+          const next = updatesMap[event.externalId];
+          return next ? { ...event, ...next } : event;
+        });
+
+        (payload.newEvents || []).forEach((event) => {
+          state.events.push(event);
+        });
+
+        state.lastExternalSyncAt = payload.syncedAt || new Date().toISOString();
+        state.externalSyncStatus = 'succeeded';
+        state.nextSyncToken = payload.nextSyncToken || null;
+      })
+      .addCase(syncExternalEvents.rejected, (state, action) => {
+        state.externalSyncStatus = 'failed';
+        state.externalSyncError =
+          action.payload || action.error?.message || 'Calendar sync failed';
+      });
+  }
 });
 
 export const {
   addEvent,
   updateEvent,
   deleteEvent,
-  linkTaskToCalendar,
   linkNoteToCalendar,
-  unlinkFromCalendar,
-  syncProjectDeadline,
   linkTodoToCalendar,
   linkPaymentToCalendar,
+  unlinkFromCalendar,
+  resetExternalSyncError
 } = calendarSlice.actions;
 
 export default calendarSlice.reducer;

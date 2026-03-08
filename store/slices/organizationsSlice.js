@@ -1,11 +1,10 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-// Single-user mode: una organización por defecto
 const DEFAULT_ORG = {
   id: 'org-personal',
   name: 'Personal',
   brandColor: '#1ec9ff',
-  logoUrl: '',
+  logoUrl: ''
 };
 
 const organizationsSlice = createSlice({
@@ -13,49 +12,41 @@ const organizationsSlice = createSlice({
   initialState: {
     organizations: [DEFAULT_ORG],
     workstreams: [],
-    teamMemberships: [],
     memberships: [],
-    currentOrgId: 'org-personal'
+    teamMemberships: [],
+    currentOrgId: DEFAULT_ORG.id
   },
   reducers: {
     setCurrentOrg: (state, action) => {
       state.currentOrgId = action.payload;
     },
     addOrganization: (state, action) => {
-      const newOrg = action.payload;
-      const exists = state.organizations.some((org) => org.id === newOrg.id);
-      if (!exists) {
-        state.organizations.push(newOrg);
-      }
+      const incoming = action.payload;
+      if (!incoming?.id) return;
+      const exists = state.organizations.some((entry) => entry.id === incoming.id);
+      if (!exists) state.organizations.push(incoming);
     },
     addMembership: (state, action) => {
-      const membership = action.payload;
-      const exists = state.memberships.some(
-        (entry) => entry.orgId === membership.orgId && entry.userId === membership.userId
-      );
-      if (!exists) {
-        state.memberships.push(membership);
-      }
+      state.memberships.push(action.payload);
     },
     expelMember: (state, action) => {
-      const { orgId, userId } = action.payload;
+      const { orgId, userId } = action.payload || {};
       state.memberships = state.memberships.filter(
-        (entry) => !(entry.orgId === orgId && entry.userId === userId)
-      );
-      state.teamMemberships = state.teamMemberships.filter(
         (entry) => !(entry.orgId === orgId && entry.userId === userId)
       );
     },
     updateOrganizationName: (state, action) => {
-      state.organizations[0].name = action.payload;
+      const org = state.organizations.find((entry) => entry.id === state.currentOrgId);
+      if (org) org.name = action.payload;
     },
     updateOrganizationBranding: (state, action) => {
-      const { name, brandColor, logoUrl } = action.payload;
-      if (name) state.organizations[0].name = name;
-      if (brandColor) state.organizations[0].brandColor = brandColor;
-      if (logoUrl) state.organizations[0].logoUrl = logoUrl;
-    },
-  },
+      const org = state.organizations.find((entry) => entry.id === state.currentOrgId);
+      if (!org) return;
+      org.name = action.payload?.name || org.name;
+      org.brandColor = action.payload?.brandColor || org.brandColor;
+      org.logoUrl = action.payload?.logoUrl || org.logoUrl;
+    }
+  }
 });
 
 export const {
@@ -64,6 +55,7 @@ export const {
   addMembership,
   expelMember,
   updateOrganizationName,
-  updateOrganizationBranding,
+  updateOrganizationBranding
 } = organizationsSlice.actions;
+
 export default organizationsSlice.reducer;

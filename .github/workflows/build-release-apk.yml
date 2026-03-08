@@ -1,0 +1,81 @@
+name: Build Release APK (Signed)
+
+on:
+  push:
+    tags:
+      - 'v*' # Ejecuta solo en tags como v1.0.0
+  workflow_dispatch:
+
+jobs:
+  build-release:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build web app
+        run: npm run build
+      
+      - name: Sync Capacitor
+        run: npx cap sync android
+      
+      # Decodificar keystore desde secrets
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+      
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+      
+      # Compilar APK firmada
+      - name: Build Release APK
+        working-directory: ./android
+        run: ./gradlew assembleRelease --no-daemon
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: athenea-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 90
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: android/app/build/outputs/apk/release/app-release.apk
+          body: |
+            ## 📱 Athenea v${{ github.ref_name }}
+            
+            ### Descargar APK
+            - **app-release.apk** - APK firmada para instalación
+            
+            ### Novedades
+            - Sistema de ejecución autónoma
+            - Audio feedback con earcons
+            - Smart parameter resolution
+            - Widget nativo de Android
+            - Google Calendar sync
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,27 +1,39 @@
 import { Outlet } from "react-router-dom"
-import { useState, useEffect } from "react"
 import ScrollToTop from "../components/ScrollToTop"
 import { Navbar } from "../components/Navbar"
 import { GatekeeperModal } from "../components/modals/GatekeeperModal"
 import { ReminderToasts } from "../components/ReminderToasts"
-import GlobalSearch from "../components/GlobalSearch"
 import NativeReminderNotifications from "../components/NativeReminderNotifications"
+import { Omnibar } from "../components/Omnibar/Omnibar"
+import { ToastContainer, showToast } from "../components/Toast"
+import {
+    useExternalCalendarObserver,
+    useInsightNotificationBridge,
+    useProactiveInsights,
+    useWidgetDataBridge
+} from "../modules/intelligence"
+import { useOmnibar } from "../components/Omnibar/useOmnibar"
+import "../components/Omnibar/FloatingOmnibarFab.css"
+import athenaLogo from "../assets/img/Athena-logo.png"
 
 // Base component that maintains the navbar and footer throughout the page and the scroll to top functionality.
 export const Layout = () => {
-    const [searchOpen, setSearchOpen] = useState(false);
+    const { openOmnibar } = useOmnibar();
+    const { insights } = useProactiveInsights();
+    useInsightNotificationBridge(true);
+    useExternalCalendarObserver(true);
+    useWidgetDataBridge(true);
 
-    // Global keyboard shortcut for search (Ctrl+K or Cmd+K)
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
-                setSearchOpen(true);
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    const highInsightsCount = insights.filter((insight) => insight.severity === 'high').length;
+
+    const handleOmnibarActionExecuted = (result) => {
+        if (result?.success) {
+            showToast(result.message || 'Action completed', 'success', 2600, '✓');
+            return;
+        }
+
+        showToast(result?.message || 'Action could not be completed', 'warning', 3200, '!');
+    };
 
     return (
         <ScrollToTop>
@@ -34,7 +46,19 @@ export const Layout = () => {
             <GatekeeperModal />
             <ReminderToasts />
             <NativeReminderNotifications />
-            {searchOpen && <GlobalSearch onClose={() => setSearchOpen(false)} />}
+            <Omnibar defaultHub="WorkHub" onActionExecuted={handleOmnibarActionExecuted} />
+            <ToastContainer />
+            <button
+                type="button"
+                className={`omnibar-fab ${highInsightsCount > 0 ? 'has-alert' : ''}`}
+                onClick={openOmnibar}
+                aria-label="Open Athenea Omnibar"
+            >
+                <img className="omnibar-fab-logo" src={athenaLogo} alt="Athenea" />
+                {highInsightsCount > 0 && (
+                    <span className="omnibar-fab-badge">{highInsightsCount > 9 ? '9+' : highInsightsCount}</span>
+                )}
+            </button>
         </ScrollToTop>
     )
 }

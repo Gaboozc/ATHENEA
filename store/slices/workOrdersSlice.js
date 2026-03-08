@@ -1,74 +1,42 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const initialState = {
-  workOrders: [],
-};
-
 const workOrdersSlice = createSlice({
   name: 'workOrders',
-  initialState,
+  initialState: {
+    workOrders: []
+  },
   reducers: {
     addWorkOrder: (state, action) => {
-      const {
-        id,
-        title,
-        description,
-        collaboratorId,
-          projectId,
-        area,
-        dueDate,
-        priority,
-        status,
-        attachments,
-      } = action.payload;
-      const newOrder = {
-        id: id || `order-${Date.now()}`,
-        title,
-        description: description || '',
-          projectId: projectId || '',
-        collaboratorId,
-        area: area || '',
-        dueDate: dueDate || '',
-        priority: priority || 'Normal',
-        status: status || 'draft',
-        progress: 0,
-        attachments: attachments || [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      state.workOrders.unshift(newOrder);
+      state.workOrders.unshift({
+        id: action.payload?.id || `order-${Date.now()}`,
+        ...action.payload,
+        status: action.payload?.status || 'draft',
+        progress: Number(action.payload?.progress || 0),
+        createdAt: new Date().toISOString()
+      });
     },
     updateWorkOrder: (state, action) => {
-      const { id, ...updates } = action.payload;
-      const order = state.workOrders.find((o) => o.id === id);
-      if (order) {
-        Object.assign(order, updates);
-        order.updatedAt = new Date().toISOString();
-      }
+      const { id, ...updates } = action.payload || {};
+      const target = state.workOrders.find((entry) => entry.id === id);
+      if (target) Object.assign(target, updates);
     },
     deleteWorkOrder: (state, action) => {
-      state.workOrders = state.workOrders.filter((o) => o.id !== action.payload);
+      state.workOrders = state.workOrders.filter((entry) => entry.id !== action.payload);
     },
     deleteWorkOrdersByCollaborator: (state, action) => {
-      state.workOrders = state.workOrders.filter((o) => o.collaboratorId !== action.payload);
+      state.workOrders = state.workOrders.filter((entry) => entry.collaboratorId !== action.payload);
     },
     setWorkOrderStatus: (state, action) => {
-      const { id, status } = action.payload;
-      const order = state.workOrders.find((o) => o.id === id);
-      if (order) {
-        order.status = status;
-        order.updatedAt = new Date().toISOString();
-      }
+      const { id, status } = action.payload || {};
+      const target = state.workOrders.find((entry) => entry.id === id);
+      if (target) target.status = status;
     },
     setWorkOrderProgress: (state, action) => {
-      const { id, progress } = action.payload;
-      const order = state.workOrders.find((o) => o.id === id);
-      if (order) {
-        order.progress = Math.min(100, Math.max(0, progress));
-        order.updatedAt = new Date().toISOString();
-      }
-    },
-  },
+      const { id, progress } = action.payload || {};
+      const target = state.workOrders.find((entry) => entry.id === id);
+      if (target) target.progress = Math.max(0, Math.min(100, Number(progress || 0)));
+    }
+  }
 });
 
 export const {
@@ -77,6 +45,7 @@ export const {
   deleteWorkOrder,
   deleteWorkOrdersByCollaborator,
   setWorkOrderStatus,
-  setWorkOrderProgress,
+  setWorkOrderProgress
 } = workOrdersSlice.actions;
+
 export default workOrdersSlice.reducer;

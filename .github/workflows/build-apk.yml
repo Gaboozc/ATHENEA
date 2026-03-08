@@ -1,61 +1,70 @@
-name: Build APK
+name: Build Android APK
 
 on:
   push:
-    branches: [ main, single-person, develop ]
-  workflow_dispatch:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: # Permite ejecutar manualmente
 
 jobs:
-  build-apk:
+  build:
+    name: Build APK
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout code
+      # Checkout del código
+      - name: Checkout repository
         uses: actions/checkout@v4
-
+      
+      # Configurar Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '18'
           cache: 'npm'
-
-      - name: Setup Java
+      
+      # Configurar JDK para Android
+      - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
           distribution: 'temurin'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
-
+          java-version: '17'
+      
+      # Instalar dependencias
       - name: Install dependencies
         run: npm ci
-
+      
+      # Compilar frontend
       - name: Build web app
         run: npm run build
-
+      
+      # Sincronizar con Capacitor
       - name: Sync Capacitor
         run: npx cap sync android
-
-      - name: Build APK (debug)
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug
-
-      - name: Find APK
-        id: apk
-        run: |
-          APK_PATH=$(find android/app/build/outputs/apk/debug -name "*.apk" -type f | head -1)
-          if [ -z "$APK_PATH" ]; then
-            echo "No se encontró APK en android/app/build/outputs/apk/debug"
-            exit 1
-          fi
-          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
-          echo "APK found at: $APK_PATH"
-
-      - name: Upload APK Artifact
+      
+      # Dar permisos a gradlew
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+      
+      # Compilar APK
+      - name: Build APK
+        working-directory: ./android
+        run: ./gradlew assembleDebug --no-daemon
+      
+      # Subir APK como artefacto
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ATHENEA-APK
-          path: ${{ steps.apk.outputs.apk_path }}
+          name: athenea-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+      
+      # Crear release (opcional - solo en tags)
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: android/app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

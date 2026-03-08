@@ -1,68 +1,47 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const initialState = {
-  todos: [],
-};
-
 const todosSlice = createSlice({
   name: 'todos',
-  initialState,
+  initialState: {
+    todos: []
+  },
   reducers: {
     addTodo: (state, action) => {
-      const { id, title, notes, dueDate, priority } = action.payload;
-      const newTodo = {
-        id: id || `todo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        title: title || 'Untitled Todo',
-        notes: notes || '',
-        dueDate: dueDate || null,
-        priority: priority || 'normal',
-        status: 'pending',
-        progress: 0,
+      const payload = action.payload || {};
+      state.todos.unshift({
+        id: payload.id || `todo-${Date.now()}`,
+        title: payload.title || 'Untitled Todo',
+        notes: payload.notes || '',
+        dueDate: payload.dueDate || null,
+        priority: payload.priority || 'normal',
+        status: payload.status || 'pending',
+        progress: Number(payload.progress || 0),
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      state.todos.unshift(newTodo);
-    },
-    updateTodo: (state, action) => {
-      const { id, ...updates } = action.payload;
-      const todo = state.todos.find((item) => item.id === id);
-      if (todo) {
-        Object.assign(todo, updates);
-        todo.updatedAt = new Date().toISOString();
-      }
+        updatedAt: new Date().toISOString()
+      });
     },
     deleteTodo: (state, action) => {
-      state.todos = state.todos.filter((item) => item.id !== action.payload);
+      state.todos = state.todos.filter((entry) => entry.id !== action.payload);
     },
     setTodoStatus: (state, action) => {
-      const { id, status } = action.payload;
-      const todo = state.todos.find((item) => item.id === id);
-      if (todo) {
-        todo.status = status;
-        if (status === 'done') {
-          todo.progress = 100;
-        }
-        todo.updatedAt = new Date().toISOString();
-      }
+      const { id, status } = action.payload || {};
+      const todo = state.todos.find((entry) => entry.id === id);
+      if (!todo) return;
+      todo.status = status;
+      if (status === 'done') todo.progress = 100;
+      todo.updatedAt = new Date().toISOString();
     },
     setTodoProgress: (state, action) => {
-      const { id, progress } = action.payload;
-      const todo = state.todos.find((item) => item.id === id);
-      if (todo) {
-        todo.progress = Math.max(0, Math.min(100, progress));
-        todo.status = todo.progress === 100 ? 'done' : 'pending';
-        todo.updatedAt = new Date().toISOString();
-      }
-    },
-  },
+      const { id, progress } = action.payload || {};
+      const todo = state.todos.find((entry) => entry.id === id);
+      if (!todo) return;
+      const safeProgress = Math.max(0, Math.min(100, Number(progress || 0)));
+      todo.progress = safeProgress;
+      todo.status = safeProgress === 100 ? 'done' : 'pending';
+      todo.updatedAt = new Date().toISOString();
+    }
+  }
 });
 
-export const {
-  addTodo,
-  updateTodo,
-  deleteTodo,
-  setTodoStatus,
-  setTodoProgress,
-} = todosSlice.actions;
-
+export const { addTodo, deleteTodo, setTodoStatus, setTodoProgress } = todosSlice.actions;
 export default todosSlice.reducer;

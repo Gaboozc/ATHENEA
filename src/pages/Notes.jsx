@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addNote, updateNote, deleteNote, togglePinNote, addTag } from '../../store/slices/notesSlice';
 import { linkNoteToCalendar, unlinkFromCalendar } from '../../store/slices/calendarSlice';
+import { clearGhostWriteDraft, setGhostWriteDraft } from '../modules/intelligence';
 import { useLanguage } from '../context/LanguageContext';
 import './Notes.css';
 
@@ -30,6 +31,20 @@ export const Notes = () => {
   });
   const [filterTag, setFilterTag] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (!showModal) {
+      clearGhostWriteDraft();
+      return;
+    }
+
+    setGhostWriteDraft({
+      noteId: editingNote,
+      title: formData.title,
+      content: formData.content,
+      tags: formData.tags
+    });
+  }, [showModal, editingNote, formData.title, formData.content, formData.tags]);
 
   const handleOpenModal = (note = null) => {
     if (note) {

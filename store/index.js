@@ -1,13 +1,11 @@
-import { configureStore } from '@reduxjs/toolkit';
-import { persistStore, persistReducer } from 'redux-persist';
-import storage from 'redux-persist/lib/storage'; // localStorage for web
-import { combineReducers } from 'redux';
-import { achievementMiddleware } from './achievementMiddleware';
+import { combineReducers, configureStore, createSlice } from '@reduxjs/toolkit';
+import { persistReducer, persistStore } from 'redux-persist';
+import storage from 'redux-persist/lib/storage';
 
-
+import usersReducer from './slices/usersSlice';
 import authReducer from './slices/authSlice';
-import projectsReducer from './slices/projectsSlice';
 import organizationsReducer from './slices/organizationsSlice';
+import projectsReducer from './slices/projectsSlice';
 import notesReducer from './slices/notesSlice';
 import calendarReducer from './slices/calendarSlice';
 import todosReducer from './slices/todosSlice';
@@ -17,33 +15,19 @@ import budgetReducer from './slices/budgetSlice';
 import collaboratorsReducer from './slices/collaboratorsSlice';
 import workOrdersReducer from './slices/workOrdersSlice';
 import statsReducer from './slices/statsSlice';
+import tasksReducer from './slices/tasksSlice';
 
-
-// Redux Persist configuration
-const persistConfig = {
-  key: 'root',
-  storage,
-  whitelist: [
-    'auth',
-    'projects',
-    'organizations',
-    'notes',
-    'calendar',
-    'todos',
-    'payments',
-    'routines',
-    'budget',
-    'collaborators',
-    'workOrders',
-    'stats',
-  ],
-};
-
+const placeholderSlice = createSlice({
+  name: 'placeholder',
+  initialState: {},
+  reducers: {}
+});
 
 const rootReducer = combineReducers({
+  users: usersReducer,
   auth: authReducer,
-  projects: projectsReducer,
   organizations: organizationsReducer,
+  projects: projectsReducer,
   notes: notesReducer,
   calendar: calendarReducer,
   todos: todosReducer,
@@ -53,7 +37,30 @@ const rootReducer = combineReducers({
   collaborators: collaboratorsReducer,
   workOrders: workOrdersReducer,
   stats: statsReducer,
+  tasks: tasksReducer,
+  app: placeholderSlice.reducer
 });
+
+const persistConfig = {
+  key: 'athenea-root',
+  storage,
+  whitelist: [
+    'users',
+    'auth',
+    'organizations',
+    'projects',
+    'notes',
+    'calendar',
+    'todos',
+    'payments',
+    'routines',
+    'budget',
+    'collaborators',
+    'workOrders',
+    'stats',
+    'tasks'
+  ]
+};
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
@@ -62,9 +69,11 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
-      },
-    }).concat(achievementMiddleware),
+        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE']
+      }
+    })
 });
 
 export const persistor = persistStore(store);
+
+export default store;

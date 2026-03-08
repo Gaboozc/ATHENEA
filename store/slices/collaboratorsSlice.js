@@ -1,51 +1,33 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const initialState = {
-  collaborators: [],
-};
-
 const collaboratorsSlice = createSlice({
   name: 'collaborators',
-  initialState,
+  initialState: {
+    collaborators: []
+  },
   reducers: {
     addCollaborator: (state, action) => {
-      const { id, name, email, area, role, phone, status, projectIds } = action.payload;
-      const newCollaborator = {
-        id: id || `collab-${Date.now()}`,
-        name,
-        email,
-        area: area || '',
-        role: role || 'Contractor',
-        phone: phone || '',
-        projectIds: projectIds || [],
-        status: status || 'active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      state.collaborators.unshift(newCollaborator);
+      state.collaborators.unshift({
+        id: action.payload?.id || `collab-${Date.now()}`,
+        ...action.payload,
+        createdAt: new Date().toISOString()
+      });
     },
     updateCollaborator: (state, action) => {
-      const { id, ...updates } = action.payload;
-      const collaborator = state.collaborators.find((c) => c.id === id);
-      if (collaborator) {
-        Object.assign(collaborator, updates);
-        collaborator.updatedAt = new Date().toISOString();
-      }
+      const { id, ...updates } = action.payload || {};
+      const target = state.collaborators.find((entry) => entry.id === id);
+      if (target) Object.assign(target, updates);
     },
     deleteCollaborator: (state, action) => {
-      state.collaborators = state.collaborators.filter((c) => c.id !== action.payload);
+      state.collaborators = state.collaborators.filter((entry) => entry.id !== action.payload);
     },
     setCollaboratorStatus: (state, action) => {
-      const { id, status } = action.payload;
-      const collaborator = state.collaborators.find((c) => c.id === id);
-      if (collaborator) {
-        collaborator.status = status;
-        collaborator.updatedAt = new Date().toISOString();
-      }
-    },
-  },
+      const { id, status } = action.payload || {};
+      const target = state.collaborators.find((entry) => entry.id === id);
+      if (target) target.status = status;
+    }
+  }
 });
 
-export const { addCollaborator, updateCollaborator, deleteCollaborator, setCollaboratorStatus } =
-  collaboratorsSlice.actions;
+export const { addCollaborator, updateCollaborator, deleteCollaborator, setCollaboratorStatus } = collaboratorsSlice.actions;
 export default collaboratorsSlice.reducer;
