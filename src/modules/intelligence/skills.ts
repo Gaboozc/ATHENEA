@@ -22,7 +22,7 @@ export const workHubSkills: SkillManifest[] = [
     description: 'Create a new work project with goals and timeline',
     icon: '📁',
     hub: 'WorkHub',
-    keywords: ['create', 'new', 'project', 'start', 'begin'],
+    keywords: ['project', 'create project', 'new project', 'start project', 'begin project'],
     action: 'projects/create',
     paramSchema: {
       title: {
@@ -162,8 +162,8 @@ export const personalHubSkills: SkillManifest[] = [
     description: 'Create a reminder for later',
     icon: '🔔',
     hub: 'PersonalHub',
-    keywords: ['remind', 'remember', 'alert', 'notification', 'set', 'schedule'],
-    action: 'reminders/create',
+    keywords: ['reminder', 'set reminder', 'remind', 'remember', 'wake up', 'alarm', 'alert', 'notification', 'schedule reminder'],
+    action: 'tasks/addTask',
     paramSchema: {
       title: {
         type: 'string',
@@ -179,7 +179,7 @@ export const personalHubSkills: SkillManifest[] = [
         type: 'select',
         required: false,
         description: 'Reminder priority',
-        enum: ['low', 'normal', 'high']
+        enum: ['low', 'medium', 'high']
       }
     }
   },
@@ -393,16 +393,46 @@ export function getSkillById(id: string): SkillManifest | undefined {
 /**
  * Find skill by keyword matching
  */
-export function findSkillByKeywords(input: string): SkillManifest | null {
+export function findSkillByKeywords(
+  input: string,
+  preferredHub?: 'WorkHub' | 'PersonalHub' | 'FinanceHub'
+): SkillManifest | null {
   const lowerInput = input.toLowerCase();
-  
+
+  let bestSkill: SkillManifest | null = null;
+  let bestScore = 0;
+
   for (const skill of allSkills) {
+    let score = 0;
+
     for (const keyword of skill.keywords) {
-      if (lowerInput.includes(keyword)) {
-        return skill;
+      const lowerKeyword = keyword.toLowerCase();
+      if (lowerInput.includes(lowerKeyword)) {
+        // Longer phrases are more specific and should rank higher.
+        score += Math.max(1, lowerKeyword.length);
+
+        // Exact phrase match boost.
+        if (lowerInput === lowerKeyword) {
+          score += 20;
+        }
       }
     }
+
+    // Prefer current hub when scores are close.
+    if (preferredHub && skill.hub === preferredHub) {
+      score += 5;
+    }
+
+    // Reminder-specific boost to avoid being hijacked by generic "create" matches.
+    if (skill.id === 'add_reminder' && /(remind|reminder|wake\s*up|alarm)/.test(lowerInput)) {
+      score += 25;
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestSkill = skill;
+    }
   }
-  
-  return null;
+
+  return bestScore > 0 ? bestSkill : null;
 }

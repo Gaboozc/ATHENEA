@@ -18,15 +18,56 @@ export interface SmartResolverContext {
 /**
  * Smart Date Resolution
  * Handles natural language dates with full Date object support
+ * ENHANCED: Now infers dates from context when dateString is empty
  */
 export function resolveSmartDate(
   dateString: string | undefined,
   context: SmartResolverContext
 ): Date | string | undefined {
-  if (!dateString) return undefined;
+  const now = new Date();
+  
+  // ENHANCEMENT: If no explicit date, infer from natural language context
+  if (!dateString || dateString.trim() === '') {
+    // Check for time-sensitive keywords in the full prompt
+    const lower = context.lowerPrompt;
+    
+    // "In X minutes/hours"
+    const minutesMatch = lower.match(/in\s+(\d+)\s+minute/i);
+    if (minutesMatch) {
+      const date = new Date(now);
+      date.setMinutes(date.getMinutes() + parseInt(minutesMatch[1]));
+      return date;
+    }
+    
+    const hoursMatch = lower.match(/in\s+(\d+)\s+hour/i);
+    if (hoursMatch) {
+      const date = new Date(now);
+      date.setHours(date.getHours() + parseInt(hoursMatch[1]));
+      return date;
+    }
+    
+    // "Tomorrow" without explicit time
+    if (lower.includes('tomorrow') || lower.includes('mañana')) {
+      const date = new Date(now);
+      date.setDate(date.getDate() + 1);
+      date.setHours(9, 0, 0, 0); // Default to 9 AM
+      return date;
+    }
+    
+    // "Wake up" related prompts default to tomorrow morning
+    if (lower.includes('wake up') || lower.includes('wake me') || 
+        lower.includes('alarm') || lower.includes('despertador')) {
+      const date = new Date(now);
+      date.setDate(date.getDate() + 1);
+      date.setHours(7, 0, 0, 0); // Default to 7 AM
+      return date;
+    }
+    
+    // No inference possible, return undefined
+    return undefined;
+  }
 
   const lower = dateString.toLowerCase();
-  const now = new Date();
 
   // Handle time expressions (at 5pm, at 17:00)
   const timeMatch = context.lowerPrompt.match(/at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
@@ -104,6 +145,7 @@ export function resolveSmartDate(
 /**
  * Smart Payment ID Resolution
  * Finds the most recent unpaid payment when user says "liquidar deuda" or "pay debt"
+ * FIXED: Now uses correct state path (state.payments instead of state.finance)
  */
 export function resolvePaymentId(
   context: SmartResolverContext
@@ -119,16 +161,16 @@ export function resolvePaymentId(
     return undefined;
   }
 
-  // Get all finances from FinanceHub
-  const finances = state.finance?.finances || [];
+  // CORRECTED: Use state.payments.payments (not state.finance)
+  const payments = state.payments?.payments || [];
   
   // Find most recent unpaid entry
-  const unpaidFinances = finances
-    .filter((f: any) => f.type === 'payment' && !f.isPaid)
+  const unpaidPayments = payments
+    .filter((p: any) => p.type === 'expense' && !p.isPaid)
     .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  if (unpaidFinances.length > 0) {
-    return unpaidFinances[0].id;
+  if (unpaidPayments.length > 0) {
+    return unpaidPayments[0].id;
   }
 
   return undefined;

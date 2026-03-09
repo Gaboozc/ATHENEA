@@ -50,11 +50,14 @@ export class IntelligenceBridge {
 
     try {
       // Step 1: Analyze user intent
-      const intentAnalysis = await this.analyzeIntent(request.userPrompt);
+      const intentAnalysis = await this.analyzeIntent(
+        request.userPrompt,
+        request.context.currentHub
+      );
 
       // Step 2: Select skill (with fallback)
       const selectedSkill = intentAnalysis.suggestedSkill || 
-                           findSkillByKeywords(request.userPrompt);
+                           findSkillByKeywords(request.userPrompt, request.context.currentHub);
 
       if (!selectedSkill) {
         return this.createErrorResponse(request, 'Could not understand your request');
@@ -146,11 +149,14 @@ export class IntelligenceBridge {
    * Step 1: Analyze intent from user input
    * Uses keyword matching + basic NLP patterns
    */
-  private async analyzeIntent(userPrompt: string): Promise<IntentAnalysis> {
+  private async analyzeIntent(
+    userPrompt: string,
+    currentHub?: 'WorkHub' | 'PersonalHub' | 'FinanceHub'
+  ): Promise<IntentAnalysis> {
     const lowerPrompt = userPrompt.toLowerCase();
 
     // Try to find matching skill by keywords
-    const matchedSkill = findSkillByKeywords(userPrompt);
+    const matchedSkill = findSkillByKeywords(userPrompt, currentHub);
 
     if (matchedSkill) {
       return {

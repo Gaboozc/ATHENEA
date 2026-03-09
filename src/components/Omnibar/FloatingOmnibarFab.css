@@ -1,7 +1,7 @@
 .omnibar-fab {
   position: fixed;
   right: 18px;
-  bottom: 20px;
+  bottom: 45px;
   width: 82px;
   height: 82px;
   border: none;
@@ -67,6 +67,6 @@
 @media (min-width: 1024px) {
   .omnibar-fab {
     right: 24px;
-    bottom: 24px;
+    bottom: 49px;
   }
 }

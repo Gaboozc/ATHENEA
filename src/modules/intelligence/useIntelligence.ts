@@ -17,7 +17,9 @@ import {
   CanvasArtifact
 } from './types';
 import { intelligenceBridge } from './Bridge';
-import { playSuccessSound, playErrorSound } from './utils/audioFeedback';
+import { audioFeedback } from './utils/audioFeedback';
+import { openclawAdapter } from './adapters/openclawAdapter';
+import { actionHistoryStore } from './actionHistory';
 
 interface UseIntelligenceReturn {
   // Prompt handling
@@ -105,7 +107,14 @@ export function useIntelligence(
 
         if (!response.success) {
           setLastError(response.userMessage);
-          playErrorSound();
+          audioFeedback.playError();
+          actionHistoryStore.recordAction({
+            type: 'user-command',
+            hub: hub || initialHub || 'WorkHub',
+            actionType: 'unknown',
+            description: `Failed: ${prompt}`,
+            success: false
+          });
           return { executed: false, response, needsConfirmation: false };
         }
 
@@ -116,27 +125,61 @@ export function useIntelligence(
           response.reduxAction;
 
         if (shouldAutoExecute) {
-          // AUTONOMOUS EXECUTION: Execute immediately without confirmation
+          // AUTONOMOUS EXECUTION: Use OpenClaw Adapter for strict action mapping
           console.log(`[Intelligence] Auto-executing with ${response.reasoning.confidence}% confidence`);
           
-          await intelligenceBridge.executeAction(
-            response,
-            dispatch as any,
-            () => storeState
-          );
+          const adapterResult = openclawAdapter.adapt({
+            skillId: response.reasoning.matchedSkill?.id || '',
+            parameters: response.reduxAction?.payload || {},
+            confidence: response.reasoning.confidence,
+            context: {
+              getState: () => storeState,
+              userPrompt: prompt,
+              lowerPrompt: prompt.toLowerCase(),
+              currentHub: hub || initialHub || 'WorkHub'
+            }
+          });
 
-          // Play success sound
-          playSuccessSound();
+          if (!adapterResult.success || !adapterResult.action) {
+            console.error('[OpenClaw Adapter] Failed:', adapterResult.error);
+            audioFeedback.playError();
+            actionHistoryStore.recordAction({
+              type: 'voice-command',
+              hub: hub || initialHub || 'WorkHub',
+              actionType: response.reasoning.matchedSkill?.id || 'unknown',
+              description: `Adapter failed: ${prompt}`,
+              success: false
+            });
+            return { executed: false, response, needsConfirmation: false };
+          }
 
-          // Clear state - no artifact needed
-          setCurrentArtifact(null);
-          setCurrentResponse(null);
-
-          return { 
-            executed: true, 
-            response, 
-            needsConfirmation: false 
-          };
+          try {
+            dispatch(adapterResult.action as any);
+            audioFeedback.playSuccess();
+            actionHistoryStore.recordAction({
+              type: 'voice-command',
+              hub: hub || initialHub || 'WorkHub',
+              actionType: response.reasoning.matchedSkill?.id || 'executed',
+              description: response.userMessage || prompt,
+              reduxActionType: adapterResult.action.type,
+              payload: adapterResult.action.payload,
+              success: true
+            });
+            setCurrentArtifact(null);
+            setCurrentResponse(null);
+            return { executed: true, response, needsConfirmation: false };
+          } catch (dispatchError) {
+            console.error('[Redux Dispatch] Failed:', dispatchError);
+            audioFeedback.playError();
+            actionHistoryStore.recordAction({
+              type: 'voice-command',
+              hub: hub || initialHub || 'WorkHub',
+              actionType: response.reasoning.matchedSkill?.id || 'unknown',
+              description: `Dispatch error: ${prompt}`,
+              success: false
+            });
+            return { executed: false, response, needsConfirmation: false };
+          }
         } else {
           // MANUAL CONFIRMATION NEEDED: Show artifact
           setCurrentArtifact(response.artifact || null);
@@ -151,7 +194,14 @@ export function useIntelligence(
         const errorMsg = error instanceof Error ? error.message : 'An error occurred';
         setLastError(errorMsg);
         console.error('Intelligence error:', error);
-        playErrorSound();
+        audioFeedback.playError();
+        actionHistoryStore.recordAction({
+          type: 'user-command',
+          hub: hub || initialHub || 'WorkHub',
+          actionType: 'error',
+          description: `Error: ${errorMsg}`,
+          success: false
+        });
         return { executed: false, response: null, needsConfirmation: false };
       } finally {
         setIsLoading(false);
@@ -168,36 +218,62 @@ export function useIntelligence(
 
     try {
       setIsLoading(true);
-      const responseToExecute = overrideData && currentResponse.reduxAction
-        ? {
-            ...currentResponse,
-            reduxAction: {
-              ...currentResponse.reduxAction,
-              payload: {
-                ...(currentResponse.reduxAction.payload || {}),
-                ...overrideData
-              }
-            }
-          }
-        : currentResponse;
-
-      await intelligenceBridge.executeAction(
-        responseToExecute,
-        dispatch as any,
-        () => storeState
-      );
       
-      // Clear the artifact after execution
+      const adapterResult = openclawAdapter.adapt({
+        skillId: currentResponse.reasoning.matchedSkill?.id || '',
+        parameters: overrideData || currentResponse.reduxAction?.payload || {},
+        confidence: currentResponse.reasoning.confidence,
+        context: {
+          getState: () => storeState,
+          userPrompt: currentResponse.reasoning.matchedSkill?.name || '',
+          lowerPrompt: '',
+          currentHub: initialHub || 'WorkHub'
+        }
+      });
+
+      if (!adapterResult.success || !adapterResult.action) {
+        console.error('[OpenClaw Adapter] Failed:', adapterResult.error);
+        audioFeedback.playError();
+        actionHistoryStore.recordAction({
+          type: 'user-command',
+          hub: initialHub || 'WorkHub',
+          actionType: currentResponse.reasoning.matchedSkill?.id || 'unknown',
+          description: 'Manual confirmation failed',
+          success: false
+        });
+        return;
+      }
+
+      dispatch(adapterResult.action as any);
+      audioFeedback.playSuccess();
+      actionHistoryStore.recordAction({
+        type: 'user-command',
+        hub: initialHub || 'WorkHub',
+        actionType: currentResponse.reasoning.matchedSkill?.id || 'confirmed',
+        description: currentResponse.userMessage || 'Action confirmed',
+        reduxActionType: adapterResult.action.type,
+        payload: adapterResult.action.payload,
+        success: true
+      });
+      
       setCurrentArtifact(null);
       setCurrentResponse(null);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to execute action';
       setLastError(errorMsg);
       console.error('Action execution error:', error);
+      audioFeedback.playError();
+      actionHistoryStore.recordAction({
+        type: 'user-command',
+        hub: initialHub || 'WorkHub',
+        actionType: 'execution-error',
+        description: errorMsg,
+        success: false
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [currentResponse, dispatch, storeState]);
+  }, [currentResponse, dispatch, storeState, initialHub]);
 
   /**
    * Cancel the current action

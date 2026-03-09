@@ -320,17 +320,113 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     setInputValue(insight.suggestedPrompt);
   };
 
-  const handleVoiceInput = () => {
+  const handleVoiceInput = async () => {
+    const processTranscript = async (normalizedTranscript: string) => {
+      setInputValue(normalizedTranscript);
+
+      // Auto-process voice commands with clear intent.
+      const commandKeywords = [
+        'create', 'add', 'new', 'schedule', 'record', 'sync', 'set',
+        'pay', 'mark', 'update', 'delete', 'remove', 'reminder',
+        'start', 'finish', 'complete', 'cancel', 'buy', 'call', 'send'
+      ];
+
+      const startsWithCommand = commandKeywords.some(keyword =>
+        normalizedTranscript.toLowerCase().startsWith(keyword)
+      );
+
+      if (!startsWithCommand) return;
+
+      actionHistoryStore.recordAction({
+        type: 'voice-command',
+        hub: selectedHub,
+        actionType: 'Voice Input',
+        description: `Voice command: "${normalizedTranscript}"`,
+        payload: { transcript: normalizedTranscript },
+        success: true
+      });
+
+      const result = await sendPrompt(normalizedTranscript, selectedHub, { autoExecute: true });
+
+      if (result.executed) {
+        const skillName = result.response?.reasoning.matchedSkill?.name || 'Action';
+        const params = result.response?.reduxAction?.payload;
+        const title = params?.title || params?.text || params?.description || '';
+        const time = params?.dueDate || params?.date ? ` for ${new Date(params.dueDate || params.date).toLocaleString()}` : '';
+
+        showToast(`✅ ${skillName}: ${title}${time}`, 'success');
+
+        setTimeout(() => {
+          setInputValue('');
+          closeOmnibar();
+        }, 1500);
+      } else if (result.needsConfirmation) {
+        const missingParams = result.response?.reasoning.missingParams || [];
+        if (missingParams.length > 0) {
+          if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(
+              `I need more information: ${missingParams.join(', ')}`
+            );
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            window.speechSynthesis.speak(utterance);
+          }
+          showToast(`ℹ️ Please provide: ${missingParams.join(', ')}`, 'info');
+        }
+      } else {
+        playErrorSound();
+        showToast('Could not process voice command', 'error');
+      }
+    };
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      if (onActionExecuted) {
-        onActionExecuted({
-          success: false,
-          message: 'Voice input is not available in this browser',
-          hub: selectedHub
-        });
+      // Fallback for Android Capacitor builds where Web Speech API is unavailable.
+      try {
+        const capacitor = (window as any).Capacitor;
+        if (capacitor?.isNativePlatform?.()) {
+          const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
+          const available = await SpeechRecognition.available();
+          if (!available?.available) {
+            showToast('Speech recognition is not available on this device', 'error');
+            return;
+          }
+
+          const permission = await SpeechRecognition.requestPermissions();
+          const granted = permission?.speechRecognition === 'granted';
+          if (!granted) {
+            showToast('Microphone permission denied', 'error');
+            return;
+          }
+
+          setIsListening(true);
+          const result = await SpeechRecognition.start({
+            language: navigator.language || 'en-US',
+            maxResults: 1,
+            prompt: 'Speak now...'
+          } as any);
+
+          const spoken = (result as any)?.matches?.[0]?.trim();
+          setIsListening(false);
+
+          if (spoken) {
+            await processTranscript(spoken);
+          } else {
+            showToast('No voice input detected', 'error');
+          }
+          return;
+        }
+      } catch (nativeError) {
+        console.error('Native voice fallback failed:', nativeError);
       }
+
+      showToast('Voice input is not available in this environment', 'error');
+      onActionExecuted?.({
+        success: false,
+        message: 'Voice input is not available in this browser',
+        hub: selectedHub
+      });
       return;
     }
 
@@ -339,8 +435,16 @@ export const Omnibar: React.FC<OmnibarProps> = ({
       return;
     }
 
+    try {
+      await navigator.mediaDevices?.getUserMedia?.({ audio: true });
+    } catch {
+      showToast('Microphone permission denied', 'error');
+      playErrorSound();
+      return;
+    }
+
     const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';
+    recognition.lang = navigator.language || 'en-US';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
@@ -352,85 +456,20 @@ export const Omnibar: React.FC<OmnibarProps> = ({
       const transcript = event?.results?.[0]?.[0]?.transcript;
       if (transcript) {
         const normalizedTranscript = transcript.trim();
-        setInputValue(normalizedTranscript);
-
-        // Auto-process voice commands with clear intent
-        const commandKeywords = [
-          'create', 'add', 'new', 'schedule', 'record', 'sync', 'set',
-          'pay', 'mark', 'update', 'delete', 'remove', 'reminder',
-          'start', 'finish', 'complete', 'cancel', 'buy', 'call', 'send'
-        ];
-
-        const startsWithCommand = commandKeywords.some(keyword => 
-          normalizedTranscript.toLowerCase().startsWith(keyword)
-        );
-
-        if (startsWithCommand) {
-          // Record voice command in history
-          actionHistoryStore.recordAction({
-            type: 'voice-command',
-            hub: selectedHub,
-            actionType: 'Voice Input',
-            description: `Voice command: "${normalizedTranscript}"`,
-            payload: { transcript: normalizedTranscript },
-            success: true
+        setTimeout(() => {
+          processTranscript(normalizedTranscript).catch((err) => {
+            console.error('Voice processing failed:', err);
+            playErrorSound();
+            showToast('Could not process voice command', 'error');
           });
-
-          // AUTONOMOUS VOICE EXECUTION
-          setTimeout(async () => {
-            const result = await sendPrompt(normalizedTranscript, selectedHub, { autoExecute: true });
-
-            if (result.executed) {
-              // SUCCESS: Auto-executed
-              const skillName = result.response?.reasoning.matchedSkill?.name || 'Action';
-              const params = result.response?.reduxAction?.payload;
-              const title = params?.title || params?.text || params?.description || '';
-              const time = params?.dueDate || params?.date ? ` for ${new Date(params.dueDate || params.date).toLocaleString()}` : '';
-              
-              showToast(
-                `✅ ${skillName}: ${title}${time}`,
-                'success'
-              );
-
-              // Close omnibar after brief delay
-              setTimeout(() => {
-                setInputValue('');
-                closeOmnibar();
-              }, 1500);
-            } else if (result.needsConfirmation) {
-              // FALLBACK: Show Canvas for missing info
-              const missingParams = result.response?.reasoning.missingParams || [];
-              
-              if (missingParams.length > 0) {
-                // Use speech synthesis to ask for missing info
-                if ('speechSynthesis' in window) {
-                  const utterance = new SpeechSynthesisUtterance(
-                    `I need more information: ${missingParams.join(', ')}`
-                  );
-                  utterance.rate = 1.0;
-                  utterance.pitch = 1.0;
-                  window.speechSynthesis.speak(utterance);
-                }
-
-                showToast(
-                  `ℹ️ Please provide: ${missingParams.join(', ')}`,
-                  'info'
-                );
-              }
-            } else {
-              // ERROR
-              playErrorSound();
-              showToast('Could not process voice command', 'error');
-            }
-          }, 300);
-        }
+        }, 250);
       }
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event: any) => {
       setIsListening(false);
       playErrorSound();
-      showToast('Voice recognition failed', 'error');
+      showToast(`Voice recognition failed${event?.error ? `: ${event.error}` : ''}`, 'error');
     };
 
     recognition.onend = () => {
@@ -438,7 +477,14 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     };
 
     recognitionRef.current = recognition;
-    recognition.start();
+    try {
+      recognition.start();
+    } catch (error) {
+      setIsListening(false);
+      playErrorSound();
+      showToast('Could not start microphone', 'error');
+      console.error('Speech recognition start failed:', error);
+    }
   };
 
   useEffect(() => {
