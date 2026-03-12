@@ -5,6 +5,8 @@ import { GatekeeperModal } from "../components/modals/GatekeeperModal"
 import { ReminderToasts } from "../components/ReminderToasts"
 import NativeReminderNotifications from "../components/NativeReminderNotifications"
 import { Omnibar } from "../components/Omnibar/Omnibar"
+import { FloatingOmnibarFab } from "../components/Omnibar/FloatingOmnibarFab"
+import { FABShowToggle } from "../components/Omnibar/FABShowToggle"
 import { ToastContainer, showToast } from "../components/Toast"
 import {
     useExternalCalendarObserver,
@@ -12,13 +14,9 @@ import {
     useProactiveInsights,
     useWidgetDataBridge
 } from "../modules/intelligence"
-import { useOmnibar } from "../components/Omnibar/useOmnibar"
-import "../components/Omnibar/FloatingOmnibarFab.css"
-import athenaLogo from "../assets/img/Athena-logo.png"
 
 // Base component that maintains the navbar and footer throughout the page and the scroll to top functionality.
 export const Layout = () => {
-    const { openOmnibar } = useOmnibar();
     const { insights } = useProactiveInsights();
     useInsightNotificationBridge(true);
     useExternalCalendarObserver(true);
@@ -48,17 +46,8 @@ export const Layout = () => {
             <NativeReminderNotifications />
             <Omnibar defaultHub="WorkHub" onActionExecuted={handleOmnibarActionExecuted} />
             <ToastContainer />
-            <button
-                type="button"
-                className={`omnibar-fab ${highInsightsCount > 0 ? 'has-alert' : ''}`}
-                onClick={openOmnibar}
-                aria-label="Open Athenea Omnibar"
-            >
-                <img className="omnibar-fab-logo" src={athenaLogo} alt="Athenea" />
-                {highInsightsCount > 0 && (
-                    <span className="omnibar-fab-badge">{highInsightsCount > 9 ? '9+' : highInsightsCount}</span>
-                )}
-            </button>
+            <FloatingOmnibarFab highInsightsCount={highInsightsCount} />
+            <FABShowToggle />
         </ScrollToTop>
     )
 }

@@ -1,7 +1,6 @@
 import type { CanvasArtifact } from '../types';
 import type { DynamicInsight, ProactiveAnalysisResult } from './types';
 import { getGhostWriteSnapshot } from '../ghostWrite';
-import { getWelcomeOnboardingInsight, isOnboardingCompleted } from './welcomeOnboarding';
 
 const COMPLETED_STATUSES = new Set(['completed', 'done', 'paid', 'resolved']);
 
@@ -75,12 +74,82 @@ const buildRecordPaymentArtifact = (payment: any): CanvasArtifact => ({
   }
 });
 
+const buildCreateCollaboratorArtifact = (): CanvasArtifact => ({
+  type: 'form',
+  props: {
+    title: 'Create Collaborator',
+    description: 'Register a collaborator to assign tasks and work orders from WorkHub.',
+    fields: [
+      {
+        id: 'name',
+        label: 'Name',
+        type: 'text',
+        value: '',
+        required: true
+      },
+      {
+        id: 'email',
+        label: 'Email',
+        type: 'text',
+        value: '',
+        required: true
+      },
+      {
+        id: 'role',
+        label: 'Role',
+        type: 'text',
+        value: '',
+        required: false
+      },
+      {
+        id: 'area',
+        label: 'Area',
+        type: 'text',
+        value: '',
+        required: false
+      },
+      {
+        id: 'phone',
+        label: 'Phone',
+        type: 'text',
+        value: '',
+        required: false
+      }
+    ],
+    actionLabel: 'Create Collaborator',
+    cancelLabel: 'Later'
+  }
+});
+
 export function analyzeStoreForInsights(storeState: any): ProactiveAnalysisResult {
   const now = dayStart(new Date());
   const insights: DynamicInsight[] = [];
 
-  if (!isOnboardingCompleted()) {
-    insights.push(getWelcomeOnboardingInsight());
+  const collaborators = firstArray(
+    storeState?.collaborators?.collaborators,
+    storeState?.collaborators
+  );
+  const activeCollaborators = collaborators.filter(
+    (collaborator: any) => String(collaborator?.status || 'active').toLowerCase() !== 'inactive'
+  );
+
+  if (activeCollaborators.length === 0) {
+    insights.push({
+      id: 'work-create-first-collaborator',
+      hub: 'WorkHub',
+      severity: 'medium',
+      title: 'Create your first collaborator',
+      description: 'Add a collaborator to start assigning tasks and tracking execution in WorkHub.',
+      suggestedPrompt: 'Create collaborator',
+      artifact: buildCreateCollaboratorArtifact(),
+      action: {
+        type: 'collaborators/addCollaborator',
+        payload: {
+          status: 'active'
+        }
+      },
+      toastMessage: 'WorkHub is ready for team mode. Add your first collaborator.'
+    });
   }
 
   const tasks = firstArray(

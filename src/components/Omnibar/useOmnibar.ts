@@ -5,11 +5,10 @@
  * Handles:
  * - Opening/closing the omnibar
  * - Managing search state
- * - Keyboard shortcuts (Ctrl+K)
  * - Modal visibility
  */
 
-import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 interface UseOmnibarReturn {
   isOpen: boolean;
@@ -24,7 +23,7 @@ interface UseOmnibarReturn {
 
 /**
  * useOmnibar Hook
- * Manages global Omnibar state with keyboard shortcuts
+ * Manages global Omnibar state
  */
 export function useOmnibar(): UseOmnibarReturn {
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
@@ -65,24 +64,6 @@ export function useOmnibar(): UseOmnibarReturn {
     setGlobalState({ ...globalState, prompt: '', requestVoice: false });
   }, []);
 
-  /**
-   * Handle Ctrl+K / Cmd+K shortcut
-   */
-  useEffect(() => {
-    keyboardSubscribers += 1;
-    if (keyboardSubscribers === 1) {
-      window.addEventListener('keydown', globalKeydownHandler);
-    }
-
-    return () => {
-      keyboardSubscribers -= 1;
-      if (keyboardSubscribers <= 0) {
-        keyboardSubscribers = 0;
-        window.removeEventListener('keydown', globalKeydownHandler);
-      }
-    };
-  }, []);
-
   return {
     isOpen,
     prompt: snapshot.prompt,
@@ -102,7 +83,6 @@ let globalState = {
   prompt: '',
   requestVoice: false
 };
-let keyboardSubscribers = 0;
 const listeners = new Set<() => void>();
 
 function emitChange() {
@@ -135,18 +115,4 @@ export function openOmnibarExternally(prompt = '', requestVoice = false) {
     prompt: String(prompt || ''),
     requestVoice
   });
-}
-
-function globalKeydownHandler(event: KeyboardEvent) {
-  const isCmdK = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k';
-
-  if (isCmdK) {
-    event.preventDefault();
-    setGlobalState({ ...globalState, isOpen: !globalState.isOpen, requestVoice: false });
-    return;
-  }
-
-  if (event.key === 'Escape' && globalState.isOpen) {
-    setGlobalState({ ...globalState, isOpen: false, requestVoice: false });
-  }
 }

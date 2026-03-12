@@ -6,6 +6,7 @@ import { useTasks } from "../context/TasksContext";
 import { useLanguage } from '../context/LanguageContext';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import DashboardWidget from '../components/DashboardWidget';
+import { selectFinancialSnapshot } from '../store/selectors/financialSelectors';
 
 const PRIORITY_BUCKETS = [
   "Critical",
@@ -22,6 +23,7 @@ export const Dashboard = () => {
   const { notes } = useSelector((state) => state.notes);
   const { todos } = useSelector((state) => state.todos);
   const { payments } = useSelector((state) => state.payments);
+  const budget = useSelector((state) => state.budget);
   const { tasks } = useTasks();
   const { t } = useLanguage();
   const { user, role } = useCurrentUser();
@@ -89,15 +91,24 @@ export const Dashboard = () => {
       .map((todo) => buildReminder(todo, 'todo', 'dueDate', '/todos'))
       .filter(Boolean);
 
+    const financialSnapshot = selectFinancialSnapshot({ payments: { payments }, budget });
+    const financeWindowDays = financialSnapshot.healthScore < 35 || financialSnapshot.saldoLibre < 0 ? 14 : 7;
+
     const upcomingPayments = payments
+      .filter((payment) => (payment?.status || 'pending') !== 'paid')
       .map((payment) => buildReminder(payment, 'payment', 'nextDueDate', '/payments'))
       .filter(Boolean);
 
     return [...upcomingNotes, ...upcomingTodos, ...upcomingPayments]
-      .filter((reminder) => reminder.diffDays <= 7)
+      .filter((reminder) => {
+        if (reminder.type === 'payment') {
+          return reminder.diffDays <= financeWindowDays;
+        }
+        return reminder.diffDays <= 7;
+      })
       .sort((a, b) => a.diffDays - b.diffDays)
       .slice(0, 8);
-  }, [notes, todos, payments, t]);
+  }, [notes, todos, payments, budget, t]);
 
   const getReminderLabel = (diffDays) => {
     if (diffDays < 0) return t('Overdue');

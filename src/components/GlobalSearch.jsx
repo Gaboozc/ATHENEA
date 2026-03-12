@@ -27,23 +27,10 @@ export const GlobalSearch = ({ isOpen, onClose }) => {
   }, [isOpen]);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Ctrl+K or Cmd+K to open search
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        if (!isOpen) {
-          onClose(); // Actually opens it via parent
-        }
-      }
-      // Escape to close
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+    if (isOpen) {
+      inputRef.current?.focus();
+    }
+  }, [isOpen]);
 
   const searchResults = useMemo(() => {
     if (!query.trim()) return [];
@@ -237,7 +224,7 @@ export const GlobalSearch = ({ isOpen, onClose }) => {
               <p>{t('Start typing to search...')}</p>
               <div className="search-tips">
                 <span>💡 {t('Search across all your data')}</span>
-                <span>⌨️ Press Ctrl+K or Cmd+K anytime</span>
+                <span>🔍 {t('Use search icon to find anything')}</span>
               </div>
             </div>
           )}

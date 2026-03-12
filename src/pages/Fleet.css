@@ -323,8 +323,12 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.8);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   z-index: 9999;
 }
 
@@ -335,8 +339,125 @@
   padding: 24px;
   max-width: 500px;
   width: 90%;
-  max-height: 90vh;
+  max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  margin-top: max(8px, env(safe-area-inset-top, 0px));
+  margin-bottom: max(8px, env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
+}
+
+.fleet-tasks-panel {
+  margin-top: 20px;
+}
+
+.fleet-task-assigner {
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  background: #0f2235;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.fleet-task-assigner h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: #d4af37;
+}
+
+.fleet-task-assigner-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.fleet-task-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #0b0b0b;
+}
+
+.fleet-task-row-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.fleet-task-row-main strong {
+  color: #c9cdd2;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fleet-task-row-main span {
+  color: #9aa3ad;
+  font-size: 11px;
+}
+
+.fleet-task-row select {
+  min-width: 140px;
+  background: #0f2235;
+  color: #c9cdd2;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.fleet-task-complete {
+  border: 1px solid #1ec9ff;
+  background: rgba(30, 201, 255, 0.1);
+  color: #1ec9ff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.fleet-task-complete:disabled {
+  border-color: #27272a;
+  color: #9aa3ad;
+  background: transparent;
+  cursor: default;
+}
+
+.fleet-empty-state.compact {
+  padding: 20px;
+}
+
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 10px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .modal-content {
+    width: 100%;
+    max-height: calc(100dvh - 18px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    padding: 16px;
+  }
+
+  .modal-actions {
+    position: sticky;
+    bottom: 0;
+    background: #0f2235;
+    padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .fleet-task-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .fleet-task-row select,
+  .fleet-task-complete {
+    width: 100%;
+  }
 }
 
 .modal-content h2 {

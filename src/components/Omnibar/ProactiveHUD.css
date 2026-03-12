@@ -1,0 +1,177 @@
+/* ProactiveHUD: Phase 5 clean minimal surface */
+
+.proactive-hud {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(84, 108, 188, 0.32);
+  background: linear-gradient(145deg, rgba(9, 16, 32, 0.96), rgba(14, 22, 40, 0.96));
+  position: relative;
+  overflow: hidden;
+}
+
+.arc-core {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.arc-pulse {
+  position: absolute;
+  width: 112px;
+  height: 112px;
+  border-radius: 999px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(79, 157, 255, 0.26);
+  animation: hudPulse 3s ease-in-out infinite;
+}
+
+.arc-pulse-urgent {
+  border-color: rgba(255, 105, 97, 0.35);
+  animation-duration: 1.8s;
+}
+
+.arc-pulse-supportive {
+  border-color: rgba(110, 197, 122, 0.3);
+}
+
+.swarm-processing-dots {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 10px;
+}
+
+.swarm-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  opacity: 0.2;
+  animation: thoughtBlink 1.2s infinite ease-in-out;
+}
+
+.swarm-dot-blue {
+  background: #4f9dff;
+  animation-delay: 0s;
+}
+
+.swarm-dot-gold {
+  background: #f3c54a;
+  animation-delay: 0.2s;
+}
+
+.swarm-dot-green {
+  background: #41d467;
+  animation-delay: 0.4s;
+}
+
+.hud-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hud-section.neural-response {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(83, 108, 189, 0.32);
+  background: rgba(8, 14, 28, 0.76);
+}
+
+.neural-message-text {
+  margin: 0;
+  color: #e7eeff;
+  font-size: 0.93rem;
+  line-height: 1.55;
+}
+
+.action-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action-chip-btn {
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 0.42rem 0.78rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #f9fbff;
+  cursor: pointer;
+  transition: transform 0.16s ease, filter 0.16s ease;
+}
+
+.action-chip-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.action-chip-btn:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.action-chip-cortana {
+  border-color: rgba(79, 157, 255, 0.5);
+  background: linear-gradient(140deg, rgba(33, 99, 184, 0.85), rgba(58, 128, 224, 0.8));
+}
+
+.action-chip-jarvis {
+  border-color: rgba(243, 197, 74, 0.55);
+  background: linear-gradient(140deg, rgba(171, 129, 28, 0.85), rgba(206, 162, 44, 0.82));
+}
+
+.action-chip-shodan {
+  border-color: rgba(65, 212, 103, 0.55);
+  background: linear-gradient(140deg, rgba(34, 132, 61, 0.88), rgba(45, 166, 78, 0.84));
+}
+
+.action-chip-swarm {
+  border-color: rgba(122, 145, 214, 0.48);
+  background: linear-gradient(140deg, rgba(63, 87, 156, 0.82), rgba(78, 106, 186, 0.82));
+}
+
+.hud-command-feedback {
+  font-size: 0.79rem;
+  color: #c8f5d6;
+  border: 1px solid rgba(65, 212, 103, 0.35);
+  border-radius: 8px;
+  padding: 0.45rem 0.65rem;
+  background: rgba(20, 68, 35, 0.35);
+}
+
+@keyframes thoughtBlink {
+  0%, 100% { opacity: 0.2; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+@keyframes hudPulse {
+  0%, 100% { opacity: 0.14; transform: translate(-50%, -50%) scale(0.92); }
+  50% { opacity: 0.28; transform: translate(-50%, -50%) scale(1.05); }
+}
+
+@media (max-width: 768px) {
+  .proactive-hud {
+    padding: 14px;
+    border-radius: 12px;
+  }
+
+  .neural-message-text {
+    font-size: 0.88rem;
+  }
+
+  .action-chip-btn {
+    font-size: 0.74rem;
+  }
+}

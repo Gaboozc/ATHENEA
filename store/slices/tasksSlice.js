@@ -1,7 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  tasks: []
+  tasks: [],
+  timeEntries: []
 };
 
 const tasksSlice = createSlice({
@@ -34,6 +35,24 @@ const tasksSlice = createSlice({
         target.completedAt = new Date().toISOString();
         target.updatedAt = new Date().toISOString();
       }
+    },
+    logTime: (state, action) => {
+      const payload = action.payload || {};
+      const entry = {
+        id: payload.id || `time-${Date.now()}`,
+        taskId: payload.taskId || null,
+        hoursWorked: Number(payload.hoursWorked || 0),
+        notes: payload.notes || '',
+        timestamp: payload.timestamp || new Date().toISOString()
+      };
+      state.timeEntries.unshift(entry);
+
+      if (!entry.taskId) return;
+      const target = state.tasks.find((task) => task.id === entry.taskId);
+      if (!target) return;
+
+      target.loggedHours = Number(target.loggedHours || 0) + entry.hoursWorked;
+      target.updatedAt = new Date().toISOString();
     }
   },
   extraReducers: (builder) => {
@@ -54,8 +73,26 @@ const tasksSlice = createSlice({
         target.updatedAt = new Date().toISOString();
       }
     });
+    builder.addCase('tasks/logTime', (state, action) => {
+      const payload = action.payload || {};
+      const entry = {
+        id: payload.id || `time-${Date.now()}`,
+        taskId: payload.taskId || null,
+        hoursWorked: Number(payload.hoursWorked || 0),
+        notes: payload.notes || '',
+        timestamp: payload.timestamp || new Date().toISOString()
+      };
+      state.timeEntries.unshift(entry);
+
+      if (!entry.taskId) return;
+      const target = state.tasks.find((task) => task.id === entry.taskId);
+      if (!target) return;
+
+      target.loggedHours = Number(target.loggedHours || 0) + entry.hoursWorked;
+      target.updatedAt = new Date().toISOString();
+    });
   }
 });
 
-export const { addTask, rescheduleTask, completeTask } = tasksSlice.actions;
+export const { addTask, rescheduleTask, completeTask, logTime } = tasksSlice.actions;
 export default tasksSlice.reducer;

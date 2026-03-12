@@ -1,287 +1,253 @@
-/* Settings Page */
+/* Settings: User Core & Telemetry */
 .settings-page {
+  --core-bg: #f4f8ff;
+  --core-panel: #ffffff;
+  --core-ink: #0f1f3a;
+  --core-muted: #4a5a78;
+  --core-line: #d7e2f5;
+  --core-accent: #1e5dff;
+  --core-accent-2: #0ea5e9;
+
   padding: 2rem;
-  max-width: 1200px;
+  max-width: 1100px;
   margin: 0 auto;
   padding-bottom: 4rem;
+  color: var(--core-ink);
+  background:
+    radial-gradient(circle at 15% 0%, rgba(30, 93, 255, 0.08) 0%, transparent 38%),
+    radial-gradient(circle at 85% 20%, rgba(14, 165, 233, 0.08) 0%, transparent 36%),
+    var(--core-bg);
 }
 
 .settings-header {
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--core-line);
+  border-radius: 14px;
+  background: linear-gradient(140deg, #ffffff 0%, #eef5ff 100%);
 }
 
 .settings-header h1 {
-  font-size: 1.8rem;
-  margin-bottom: 0.5rem;
-  color: #1a1a1a;
+  margin: 0 0 0.4rem 0;
+  font-size: 1.9rem;
+  color: #0e2144;
 }
 
 .settings-header p {
-  color: #666;
+  margin: 0;
+  color: var(--core-muted);
   font-size: 0.95rem;
 }
 
-/* Message Banner */
 .settings-message {
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-  font-size: 0.95rem;
-  font-weight: 500;
-  animation: slideDown 0.3s ease;
+  padding: 0.9rem 1.15rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 
 .settings-message.success {
-  background: #d1fae5;
-  color: #065f46;
-  border: 1px solid #10b981;
+  color: #14532d;
+  border: 1px solid #86efac;
+  background: #dcfce7;
 }
 
 .settings-message.error {
+  color: #7f1d1d;
+  border: 1px solid #fca5a5;
   background: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #ef4444;
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Settings Section */
 .settings-section {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: var(--core-panel);
+  border: 1px solid var(--core-line);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 12px 28px rgba(15, 31, 58, 0.08);
 }
 
 .settings-section h2 {
-  font-size: 1.3rem;
-  margin-bottom: 0.5rem;
-  color: #1a1a1a;
+  margin: 0 0 0.4rem 0;
+  font-size: 1.2rem;
+  color: #0e2144;
 }
 
 .section-description {
-  color: #666;
+  margin: 0;
+  color: var(--core-muted);
   font-size: 0.9rem;
-  margin-bottom: 1.5rem;
 }
 
-/* Storage Stats */
-.storage-stats {
-  margin-top: 1.5rem;
-}
-
-.storage-info {
-  margin-bottom: 1.5rem;
-}
-
-.storage-bar {
-  width: 100%;
-  height: 12px;
-  background: #e5e7eb;
-  border-radius: 6px;
-  overflow: hidden;
-  margin-bottom: 0.75rem;
-}
-
-.storage-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #4a90e2 0%, #357abd 100%);
-  border-radius: 6px;
-  transition: width 0.3s ease;
-}
-
-.storage-text {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.storage-details {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.detail-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  background: #f9fafb;
-  border-radius: 8px;
-}
-
-.detail-label {
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.detail-value {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-
-/* Settings Actions */
 .settings-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 1.5rem;
+  gap: 0.75rem;
+  margin-top: 1rem;
 }
 
 .settings-button {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
+  border: 1px solid transparent;
+  border-radius: 9px;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
+  padding: 0.7rem 1.15rem;
+  transition: all 0.2s ease;
 }
 
 .settings-button.primary {
-  background: #4a90e2;
-  color: white;
+  background: linear-gradient(135deg, var(--core-accent), var(--core-accent-2));
+  color: #ffffff;
 }
 
 .settings-button.primary:hover {
-  background: #357abd;
+  filter: brightness(1.05);
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(74, 144, 226, 0.3);
 }
 
 .settings-button.secondary {
-  background: #f3f4f6;
-  color: #1a1a1a;
-  border: 1px solid #e5e7eb;
+  background: #eef4ff;
+  color: #11306a;
+  border-color: #bfd3fb;
 }
 
 .settings-button.secondary:hover {
-  background: #e5e7eb;
-  transform: translateY(-1px);
+  background: #e2ecff;
 }
 
 .settings-button.danger {
-  background: #ef4444;
-  color: white;
+  background: #dc2626;
+  color: #ffffff;
 }
 
 .settings-button.danger:hover {
-  background: #dc2626;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+  background: #b91c1c;
 }
 
 .settings-button:disabled {
-  opacity: 0.5;
+  opacity: 0.55;
   cursor: not-allowed;
-}
-
-.settings-button:disabled:hover {
   transform: none;
-  box-shadow: none;
 }
 
-/* Import Section */
-.import-section {
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid #e5e7eb;
+.webhook-config {
+  margin-top: 1rem;
 }
 
-.import-section h3 {
-  font-size: 1.1rem;
-  margin-bottom: 0.5rem;
-  color: #1a1a1a;
+.webhook-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #11306a;
+}
+
+.webhook-input,
+.import-textarea {
+  width: 100%;
+  border: 1px solid #bfd3fb;
+  border-radius: 9px;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.9rem;
+  font-family: Consolas, 'Courier New', monospace;
+  color: #0f1f3a;
+  background: #f8fbff;
+}
+
+.webhook-input:focus,
+.import-textarea:focus {
+  outline: none;
+  border-color: #6fa2ff;
+  box-shadow: 0 0 0 3px rgba(111, 162, 255, 0.2);
+}
+
+.webhook-info {
+  margin-bottom: 1rem;
+  border: 1px solid #b8e7ff;
+  border-radius: 10px;
+  background: #f0faff;
+  padding: 0.9rem 1rem;
 }
 
 .help-text {
-  font-size: 0.85rem;
-  color: #666;
-  margin-bottom: 1rem;
+  margin: 0 0 0.75rem 0;
+  font-size: 0.86rem;
+  color: #23546d;
+}
+
+.help-list {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.help-list li {
+  font-size: 0.84rem;
+  color: #164e63;
+}
+
+.help-list code {
+  background: #ffffff;
+  border: 1px solid #b8e7ff;
+  border-radius: 4px;
+  padding: 0.1rem 0.3rem;
+}
+
+.import-section {
+  margin-top: 1rem;
 }
 
 .import-textarea {
-  width: 100%;
+  margin: 0.65rem 0;
   min-height: 150px;
-  padding: 1rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  font-family: 'Courier New', monospace;
-  font-size: 0.85rem;
   resize: vertical;
-  margin-bottom: 1rem;
-  transition: border-color 0.2s;
 }
 
-.import-textarea:focus {
-  outline: none;
-  border-color: #4a90e2;
+.advanced-system-core {
+  border-style: dashed;
+  border-color: #a6bbdf;
+  background: linear-gradient(180deg, #fbfdff 0%, #f3f8ff 100%);
 }
 
-.import-textarea::placeholder {
-  color: #9ca3af;
+.advanced-core-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #b9cced;
+  background: #e9f1ff;
+  color: #102d63;
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  font-size: 0.93rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-/* Danger Zone */
+.advanced-core-toggle:hover {
+  background: #dce8ff;
+}
+
 .danger-zone {
-  border: 2px solid #fecaca;
-  background: #fef2f2;
+  border: 1px solid #fecaca;
+  background: #fff1f1;
 }
 
 .danger-zone h2 {
   color: #991b1b;
 }
 
-/* App Info */
-.app-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  background: #f9fafb;
-  border-radius: 8px;
-}
-
-.info-label {
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.info-value {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-
-/* Mobile Responsiveness */
 @media (max-width: 768px) {
   .settings-page {
     padding: 1rem;
   }
 
+  .settings-header,
   .settings-section {
-    padding: 1.5rem;
+    padding: 1rem;
   }
 
   .settings-actions {
@@ -290,15 +256,5 @@
 
   .settings-button {
     width: 100%;
-    text-align: center;
-  }
-
-  .storage-text {
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .storage-details {
-    grid-template-columns: 1fr;
   }
 }

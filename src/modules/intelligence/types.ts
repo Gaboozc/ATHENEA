@@ -67,6 +67,7 @@ export interface IntelligenceResponse {
     matchedSkill: SkillManifest | null;
     confidence: number;                 // 0-100 confidence score
     reasoning: string;                  // "Why did I pick this skill?"
+    responderPersona?: 'jarvis' | 'cortana' | 'shodan' | 'swarm';
     allRequiredParamsPresent?: boolean; // For autonomous execution
     missingParams?: string[];           // List of missing required params
   };

@@ -183,9 +183,12 @@
   inset: 0;
   background: rgba(2, 6, 12, 0.8);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 24px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   z-index: 999;
 }
 
@@ -197,6 +200,50 @@
   padding: 24px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
   color: #c9cdd2;
+  margin-top: max(8px, env(safe-area-inset-top, 0px));
+  margin-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+}
+
+.project-create-main-fields {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.project-create-main-fields.is-disabled {
+  opacity: 0.55;
+}
+
+.project-create-personal-toggle {
+  border: 1px dashed #1ec9ff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(30, 201, 255, 0.08);
+}
+
+.project-create-personal-hint {
+  font-size: 12px;
+  color: #9dd9eb;
+  border-left: 3px solid #1ec9ff;
+  padding: 8px 10px;
+  background: rgba(15, 34, 53, 0.5);
+}
+
+.project-personal-badge {
+  display: inline-flex;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #86efac;
+  border: 1px solid #22c55e;
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin-bottom: 12px;
 }
 
 .project-create-header {
@@ -227,6 +274,31 @@
 .project-create-form {
   display: grid;
   gap: 16px;
+}
+
+.project-create-economic {
+  border: 1px solid #1b3f5d;
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(15, 34, 53, 0.55);
+  display: grid;
+  gap: 12px;
+}
+
+.project-create-economic h3 {
+  margin: 0;
+  color: #1ec9ff;
+  font-size: 14px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.project-create-economic p {
+  margin: 0;
+  color: #9aa3ad;
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .project-create-form label {
@@ -573,5 +645,24 @@
 
   .project-card {
     padding: 18px;
+  }
+
+  .project-create-overlay {
+    padding: 12px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .project-create-card {
+    width: 100%;
+    border-radius: 14px;
+    padding: 16px;
+    max-height: calc(100dvh - 20px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  }
+
+  .project-create-actions {
+    position: sticky;
+    bottom: 0;
+    background: #0b0b0b;
+    padding: 10px 0 calc(8px + env(safe-area-inset-bottom, 0px));
   }
 }

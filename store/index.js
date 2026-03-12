@@ -16,11 +16,34 @@ import collaboratorsReducer from './slices/collaboratorsSlice';
 import workOrdersReducer from './slices/workOrdersSlice';
 import statsReducer from './slices/statsSlice';
 import tasksReducer from './slices/tasksSlice';
+import aiMemoryReducer from '../src/store/slices/aiMemorySlice';
+import userSettingsReducer from '../src/store/slices/userSettingsSlice';
+import sensorDataReducer from '../src/store/slices/sensorDataSlice';
+import userIdentityReducer from '../src/store/slices/userIdentitySlice';
+import { aiObserverMiddleware } from '../src/store/middleware/aiObserverMiddleware';
+import { actionHistoryMiddleware } from '../src/store/middleware/actionHistoryMiddleware';
+import goalsReducer from './slices/goalsSlice';
+import budgetCycleReducer from './slices/budgetCycleSlice';
+import { budgetGuardMiddleware } from '../src/store/middleware/budgetGuardMiddleware';
+import { financeDeletionAuditMiddleware } from '../src/store/middleware/financeDeletionAuditMiddleware';
 
 const placeholderSlice = createSlice({
-  name: 'placeholder',
-  initialState: {},
-  reducers: {}
+  name: 'app',
+  initialState: {
+    intelligence: {
+      lastQuery: '',
+      lastHub: 'WorkHub',
+      lastExecutedAt: null
+    }
+  },
+  reducers: {},
+  extraReducers: (builder) => {
+    builder.addCase('intelligence/executeSearch', (state, action) => {
+      state.intelligence.lastQuery = String(action.payload?.query || '');
+      state.intelligence.lastHub = action.payload?.hub || 'WorkHub';
+      state.intelligence.lastExecutedAt = new Date().toISOString();
+    });
+  }
 });
 
 const rootReducer = combineReducers({
@@ -38,7 +61,13 @@ const rootReducer = combineReducers({
   workOrders: workOrdersReducer,
   stats: statsReducer,
   tasks: tasksReducer,
-  app: placeholderSlice.reducer
+  aiMemory: aiMemoryReducer,
+  userSettings: userSettingsReducer,
+  userIdentity: userIdentityReducer,
+  sensorData: sensorDataReducer,
+  app: placeholderSlice.reducer,
+  goals: goalsReducer,
+  budgetCycle: budgetCycleReducer,
 });
 
 const persistConfig = {
@@ -58,7 +87,13 @@ const persistConfig = {
     'collaborators',
     'workOrders',
     'stats',
-    'tasks'
+    'tasks',
+    'sensorData',
+    'userSettings',
+    'userIdentity',
+    'aiMemory',
+    'goals',
+    'budgetCycle',
   ]
 };
 
@@ -71,7 +106,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE']
       }
-    })
+    }).concat(aiObserverMiddleware, actionHistoryMiddleware, budgetGuardMiddleware, financeDeletionAuditMiddleware)
 });
 
 export const persistor = persistStore(store);

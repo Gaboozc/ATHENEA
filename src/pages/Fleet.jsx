@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
+import { useTasks } from '../context/TasksContext';
 import CollaboratorCard from '../components/CollaboratorCard';
 import {
   addCollaborator,
@@ -19,6 +20,7 @@ import './Fleet.css';
 export const Fleet = () => {
   const dispatch = useDispatch();
   const { t } = useLanguage();
+  const { tasks, updateTaskAssignment, updateTaskStatus } = useTasks();
   const { collaborators } = useSelector((state) => state.collaborators);
   const { workOrders } = useSelector((state) => state.workOrders);
   const { projects } = useSelector((state) => state.projects);
@@ -67,6 +69,15 @@ export const Fleet = () => {
   const activeWorkOrdersCount = useMemo(() => {
     return (workOrders || []).filter((wo) => wo.status !== 'completed').length;
   }, [workOrders]);
+
+  const collaboratorTasks = useMemo(() => {
+    const activeCollaboratorIds = new Set((activeCollaborators || []).map((collab) => collab.id));
+    return (tasks || []).filter((task) => task.assigneeId && activeCollaboratorIds.has(task.assigneeId));
+  }, [activeCollaborators, tasks]);
+
+  const unassignedTasks = useMemo(() => {
+    return (tasks || []).filter((task) => !task.assigneeId && String(task.status || '').toLowerCase() !== 'completed');
+  }, [tasks]);
 
   const getCollaboratorWorkOrders = (collabId) => {
     return (workOrders || []).filter((wo) => wo.collaboratorId === collabId);
@@ -176,6 +187,16 @@ export const Fleet = () => {
     dispatch(setWorkOrderStatus({ id, status: 'completed' }));
   };
 
+  const handleAssignTaskToCollaborator = (taskId, collaboratorId) => {
+    if (!taskId || !collaboratorId) return;
+    updateTaskAssignment(taskId, collaboratorId);
+  };
+
+  const handleCompleteCollaboratorTask = (taskId) => {
+    if (!taskId) return;
+    updateTaskStatus(taskId, 'Completed');
+  };
+
   const handleProjectsSelectionChange = (event) => {
     const selectedIds = Array.from(event.target.selectedOptions).map((option) => option.value);
     setCollaboratorForm({ ...collaboratorForm, projectIds: selectedIds });
@@ -205,6 +226,71 @@ export const Fleet = () => {
           <span className="fleet-kpi-label">{t('Active Projects')}</span>
           <strong className="fleet-kpi-value">{activeProjects.length}</strong>
         </article>
+      </section>
+
+      <section className="fleet-full-width fleet-tasks-panel">
+        <div className="fleet-section-header">
+          <h2>{t('Collaborator Tasks')}</h2>
+          <span>{collaboratorTasks.length} {t('Assigned')}</span>
+        </div>
+
+        {unassignedTasks.length > 0 && activeCollaborators.length > 0 && (
+          <div className="fleet-task-assigner">
+            <h3>{t('Assign pending tasks')}</h3>
+            <div className="fleet-task-assigner-grid">
+              {unassignedTasks.slice(0, 8).map((task) => (
+                <div key={task.id} className="fleet-task-row">
+                  <div className="fleet-task-row-main">
+                    <strong>{task.title}</strong>
+                    <span>{task.projectName || t('No project')}</span>
+                  </div>
+                  <select
+                    defaultValue=""
+                    onChange={(event) => handleAssignTaskToCollaborator(task.id, event.target.value)}
+                  >
+                    <option value="">{t('Assign to')}</option>
+                    {activeCollaborators.map((collab) => (
+                      <option key={collab.id} value={collab.id}>
+                        {collab.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {collaboratorTasks.length === 0 ? (
+          <div className="fleet-empty-state compact">
+            <h3>{t('No collaborator tasks assigned yet.')}</h3>
+          </div>
+        ) : (
+          <div className="fleet-task-assigner-grid">
+            {collaboratorTasks.map((task) => {
+              const assignee = activeCollaborators.find((collab) => collab.id === task.assigneeId);
+              const isCompleted = String(task.status || '').toLowerCase() === 'completed';
+              return (
+                <div key={task.id} className="fleet-task-row">
+                  <div className="fleet-task-row-main">
+                    <strong>{task.title}</strong>
+                    <span>
+                      {(assignee?.name || t('Unassigned'))} · {task.projectName || t('No project')} · {task.status || 'Active'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="fleet-task-complete"
+                    disabled={isCompleted}
+                    onClick={() => handleCompleteCollaboratorTask(task.id)}
+                  >
+                    {isCompleted ? t('Completed') : t('Mark Completed')}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section className="fleet-full-width">

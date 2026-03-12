@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { addCategory, addExpense, deleteExpense } from '../../store/slices/budgetSlice';
+import { selectFinancialSnapshot } from '../store/selectors/financialSelectors';
 import './FinanceHub.css';
 
 export const FinanceHub = () => {
@@ -10,7 +11,8 @@ export const FinanceHub = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { payments } = useSelector((state) => state.payments);
-  const { categories, expenses } = useSelector((state) => state.budget);
+  const { categories: budgetCategories, expenses } = useSelector((state) => state.budget);
+  const financialSnapshot = useSelector(selectFinancialSnapshot);
   const [categoryName, setCategoryName] = useState('');
   const [categoryLimit, setCategoryLimit] = useState('');
   const [expenseAmount, setExpenseAmount] = useState('');
@@ -19,7 +21,10 @@ export const FinanceHub = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
   const upcomingPayments = useMemo(() => {
-    return [...(payments || [])].sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate)).slice(0, 5);
+    return [...(payments || [])]
+      .filter((payment) => (payment?.status || 'pending') !== 'paid')
+      .sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate))
+      .slice(0, 5);
   }, [payments]);
 
   const nextSevenTotal = useMemo(() => {
@@ -38,7 +43,7 @@ export const FinanceHub = () => {
 
   const monthlyTotal = useMemo(() => {
     return (payments || [])
-      .filter((payment) => payment.frequency === 'monthly')
+      .filter((payment) => payment.frequency === 'monthly' && (payment?.status || 'pending') !== 'paid')
       .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   }, [payments]);
 
@@ -78,8 +83,8 @@ export const FinanceHub = () => {
   }, [monthlyExpenses]);
 
   const totalBudget = useMemo(() => {
-    return categories.reduce((sum, category) => sum + Number(category.limit || 0), 0);
-  }, [categories]);
+    return budgetCategories.reduce((sum, category) => sum + Number(category.limit || 0), 0);
+  }, [budgetCategories]);
 
   const handleAddCategory = (event) => {
     event.preventDefault();
@@ -114,10 +119,17 @@ export const FinanceHub = () => {
 
       <section className="financehub-actions">
         <button onClick={() => navigate('/payments')}>{t('Go to Payments')}</button>
+        <button onClick={() => navigate('/finance/history')}>{t('Historial')}</button>
+        <button onClick={() => navigate('/finance/goals')}>{t('Metas')}</button>
+        <button onClick={() => navigate('/finance/budgeting')}>{t('Budgeting')}</button>
         <button onClick={() => navigate('/calendar')}>{t('Go to Calendar')}</button>
       </section>
 
       <section className="financehub-stats">
+        <div className="financehub-stat financehub-stat-saldo">
+          <span>{t('Saldo Libre')}</span>
+          <strong>{Number(financialSnapshot.saldoLibre || 0).toFixed(2)}</strong>
+        </div>
         <div className="financehub-stat">
           <span>{t('Next 7 days')}</span>
           <strong>{nextSevenTotal.toFixed(2)}</strong>
@@ -189,7 +201,7 @@ export const FinanceHub = () => {
                 onChange={(e) => setExpenseCategory(e.target.value)}
               >
                 <option value="">{t('Select category')}</option>
-                {categories.map((category) => (
+                {budgetCategories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
                   </option>
@@ -208,11 +220,11 @@ export const FinanceHub = () => {
 
         <div className="financehub-card">
           <h3>{t('Categories')}</h3>
-          {categories.length === 0 ? (
+          {budgetCategories.length === 0 ? (
             <div className="financehub-empty">{t('No categories yet.')}</div>
           ) : (
             <ul>
-              {categories.map((category) => {
+              {budgetCategories.map((category) => {
                 const spent = monthlyExpenses
                   .filter((expense) => expense.categoryId === category.id)
                   .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);

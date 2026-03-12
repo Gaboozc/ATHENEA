@@ -22,7 +22,7 @@ export const workHubSkills: SkillManifest[] = [
     description: 'Create a new work project with goals and timeline',
     icon: '📁',
     hub: 'WorkHub',
-    keywords: ['project', 'create project', 'new project', 'start project', 'begin project'],
+    keywords: ['project', 'create project', 'new project', 'start project', 'begin project', 'collaborator', 'colaborador'],
     action: 'projects/create',
     paramSchema: {
       title: {
@@ -56,7 +56,7 @@ export const workHubSkills: SkillManifest[] = [
     description: 'Add a new task to your work or a project',
     icon: '✅',
     hub: 'WorkHub',
-    keywords: ['add', 'task', 'do', 'create', 'todo', 'need to'],
+    keywords: ['add', 'task', 'do', 'create', 'todo', 'to do', 'need to', 'project task'],
     action: 'tasks/add',
     paramSchema: {
       title: {
@@ -68,7 +68,7 @@ export const workHubSkills: SkillManifest[] = [
       projectId: {
         type: 'string',
         required: false,
-        description: 'Parent project ID'
+        description: 'Active project'
       },
       priority: {
         type: 'select',
@@ -128,7 +128,7 @@ export const personalHubSkills: SkillManifest[] = [
     description: 'Create a new personal note or thought',
     icon: '📝',
     hub: 'PersonalHub',
-    keywords: ['note', 'remember', 'write', 'create', 'save', 'jot'],
+    keywords: ['note', 'remember', 'write', 'create', 'save', 'jot', 'personal note', 'to do note'],
     action: 'notes/create',
     paramSchema: {
       title: {
@@ -190,7 +190,7 @@ export const personalHubSkills: SkillManifest[] = [
     description: 'Add to your personal todo list',
     icon: '📌',
     hub: 'PersonalHub',
-    keywords: ['todo', 'to-do', 'add', 'personal', 'list', 'item'],
+    keywords: ['todo', 'to-do', 'to do', 'add', 'personal', 'list', 'item', 'routine', 'rutina'],
     action: 'todos/add',
     paramSchema: {
       text: {
@@ -219,7 +219,7 @@ export const financeHubSkills: SkillManifest[] = [
     description: 'Log a money expense',
     icon: '💸',
     hub: 'FinanceHub',
-    keywords: ['spent', 'expense', 'cost', 'paid', 'bill', 'charge', 'money'],
+    keywords: ['spent', 'expense', 'cost', 'paid', 'bill', 'charge', 'money', 'spend', 'draw', 'finance', 'financial', 'budgeting'],
     action: 'payments/addExpense',
     paramSchema: {
       description: {
@@ -292,7 +292,7 @@ export const financeHubSkills: SkillManifest[] = [
     description: 'Create a budget limit for a category',
     icon: '📊',
     hub: 'FinanceHub',
-    keywords: ['budget', 'limit', 'spend', 'monthly', 'budget', 'set'],
+    keywords: ['budget', 'budgeting', 'budget limit', 'monthly budget', 'set budget', 'presupuesto', 'limite de presupuesto', 'establecer presupuesto', 'finance budget'],
     action: 'payments/setBudget',
     paramSchema: {
       category: {
@@ -311,6 +311,28 @@ export const financeHubSkills: SkillManifest[] = [
         required: false,
         description: 'Budget period',
         enum: ['weekly', 'monthly', 'quarterly', 'yearly']
+      }
+    }
+  },
+
+  {
+    id: 'query_budget_status',
+    name: 'Consulta Inteligente de Gasto',
+    description: 'Jarvis analiza tu presupuesto y responde si puedes gastar una cantidad específica',
+    icon: '🤖',
+    hub: 'FinanceHub',
+    keywords: [
+      'puedo gastar', 'puedo comprar', 'tengo para', 'me alcanza',
+      'can i spend', 'should i spend', 'do i have budget', 'cuanto tengo',
+      'cuanto me queda', 'budget check', 'verificar presupuesto',
+      'analizar gasto', 'jarvis puedo', 'jarvis cuanto', 'puedo gastar el'
+    ],
+    action: 'agent/query',
+    paramSchema: {
+      amount: {
+        type: 'number',
+        required: false,
+        description: 'Amount to check'
       }
     }
   }
@@ -356,6 +378,27 @@ export const crossHubSkills: SkillManifest[] = [
         type: 'boolean',
         required: false,
         description: 'Force Google OAuth consent during sync'
+      }
+    }
+  },
+
+  {
+    id: 'open_calendar',
+    name: 'Open Calendar',
+    description: 'Open the calendar to a specific date or view financial/work projection for a day',
+    icon: '📅',
+    hub: 'WorkHub',
+    keywords: [
+      'calendar', 'open calendar', 'show calendar', 'ver calendario', 'abrir calendario',
+      'show me friday', 'viernes', 'lunes', 'martes', 'miércoles',
+      'jueves', 'sábado', 'domingo', 'agenda', 'this week', 'semana'
+    ],
+    action: 'navigation/openCalendar',
+    paramSchema: {
+      targetDate: {
+        type: 'date',
+        required: false,
+        description: 'Target date to navigate to'
       }
     }
   }

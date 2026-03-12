@@ -38,7 +38,7 @@ export function runWelcomeOnboardingToast(showToast: ShowToastFn): void {
   if (isWelcomeToastShown()) return;
 
   showToast(
-    'Welcome to ATHENEA. Press Ctrl+K (or tap the floating logo) to open Omnibar.',
+    'Welcome to ATHENEA. Tap the floating logo to open Omnibar.',
     'info',
     5200,
     '🧠'
@@ -52,9 +52,35 @@ export function getWelcomeOnboardingInsight(): DynamicInsight {
     hub: 'WorkHub',
     severity: 'medium',
     title: 'Welcome to ATHENEA',
-    description: 'Open Omnibar to run your first command. Try: "Create note My first win".',
-    suggestedPrompt: 'Create note My first win',
-    skillId: 'create_note',
-    toastMessage: 'Tip: use Omnibar to execute your first command and unlock your workflow.'
+    description: 'Open Omnibar to run your first work command. Recommended: create your first task.',
+    suggestedPrompt: 'Add task Plan sprint kickoff',
+    skillId: 'add_task',
+    toastMessage: 'Tip: start with a WorkHub command to unlock your workflow momentum.'
   };
+}
+
+export function getWelcomeOnboardingInsights(): DynamicInsight[] {
+  return [
+    getWelcomeOnboardingInsight(),
+    {
+      id: 'onboarding-work-project',
+      hub: 'WorkHub',
+      severity: 'low',
+      title: 'Kick off a project',
+      description: 'Create your first project workspace and define a clear objective.',
+      suggestedPrompt: 'Create project ATHENEA Work Sprint',
+      skillId: 'create_project',
+      toastMessage: 'Project scaffold ready to launch from Omnibar.'
+    },
+    {
+      id: 'onboarding-work-time',
+      hub: 'WorkHub',
+      severity: 'low',
+      title: 'Track execution time',
+      description: 'Log your first work session to start measuring delivery rhythm.',
+      suggestedPrompt: 'Log 1 hour worked on sprint setup',
+      skillId: 'log_time',
+      toastMessage: 'Time tracking shortcut ready in WorkHub.'
+    }
+  ];
 }

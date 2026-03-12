@@ -88,7 +88,6 @@ export const Navbar = () => {
 			label: t('Personal'),
 			items: [
 				{ label: t('Personal Hub'), path: '/personal' },
-				{ label: t('Inbox'), path: '/inbox' },
 				{ label: t('Notes'), path: '/notes' },
 				{ label: t('Todos'), path: '/todos' },
 				{ label: t('Notifications'), path: '/notifications' },
@@ -99,6 +98,9 @@ export const Navbar = () => {
 			items: [
 				{ label: t('Finance Hub'), path: '/finance' },
 				{ label: t('Payments'), path: '/payments' },
+				{ label: t('Historial'), path: '/finance/history' },
+				{ label: t('Metas'), path: '/finance/goals' },
+				{ label: t('Budgeting'), path: '/finance/budgeting' },
 			],
 		},
 	];
@@ -257,6 +259,26 @@ export const Navbar = () => {
 								className={`navbar-mobile-link${location.pathname.startsWith('/calendar') ? ' is-active' : ''}`}
 							>
 								{t('Calendar')}
+							</Link>
+							<Link
+								to="/settings"
+								onClick={() => {
+									closeMobileMenu();
+									setExpandedMobileGroup(null);
+								}}
+								className={`navbar-mobile-link${location.pathname.startsWith('/settings') ? ' is-active' : ''}`}
+							>
+								{t('Settings')}
+							</Link>
+							<Link
+								to="/identity"
+								onClick={() => {
+									closeMobileMenu();
+									setExpandedMobileGroup(null);
+								}}
+								className={`navbar-mobile-link${location.pathname.startsWith('/identity') ? ' is-active' : ''}`}
+							>
+								{t('Identity')}
 							</Link>
 						</div>
 						<div className="navbar-mobile-group" style={{ borderTop: '1px solid #27272a', paddingTop: '12px', marginTop: '12px' }}>

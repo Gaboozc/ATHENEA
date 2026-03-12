@@ -88,10 +88,23 @@
 
 .personalhub-form input {
   border-radius: 10px;
-  border: 1px solid #27272a;
-  background: #0b0b0b;
-  color: #e2e8f0;
+  border: 1px solid #3e5d7d;
+  background: #122a42;
+  color: #f5f8ff;
+  -webkit-text-fill-color: #f5f8ff;
   padding: 0.5rem 0.75rem;
+  font-size: 0.95rem;
+}
+
+.personalhub-form input::placeholder {
+  color: #b9c8d9;
+  -webkit-text-fill-color: #b9c8d9;
+}
+
+.personalhub-form input:focus {
+  outline: none;
+  border-color: #1ec9ff;
+  box-shadow: 0 0 0 3px rgba(30, 201, 255, 0.2);
 }
 
 .personalhub-days {
@@ -134,7 +147,7 @@
   color: #1ec9ff;
   border-radius: 999px;
   padding: 0.35rem 0.9rem;
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   cursor: pointer;

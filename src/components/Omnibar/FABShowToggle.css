@@ -1,0 +1,62 @@
+.fab-show-toggle {
+  position: fixed;
+  bottom: max(20px, calc(env(safe-area-inset-bottom, 0px) + 12px));
+  right: 20px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, rgb(102, 126, 234) 0%, rgb(80, 120, 240) 100%);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  z-index: 998;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transition: all 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.fab-show-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.5);
+}
+
+.fab-show-toggle:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.fab-show-toggle-icon {
+  font-size: 14px;
+  display: inline-block;
+  animation: fabShowTogglePulse 2s infinite;
+}
+
+@keyframes fabShowTogglePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.fab-show-toggle-text {
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 640px) {
+  .fab-show-toggle {
+    padding: 7px 11px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .fab-show-toggle-icon {
+    font-size: 12px;
+  }
+}

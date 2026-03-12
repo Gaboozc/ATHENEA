@@ -17,23 +17,32 @@ if (new URLSearchParams(window.location.search).get('clear') === 'true') {
     window.location.href = window.location.pathname;
 }
 
+// Ensure direct URLs (e.g. /finance/budgeting) work with hash-based routing.
+if (typeof window !== 'undefined') {
+    const { pathname, search, hash, origin } = window.location;
+    const hasHashRoute = typeof hash === 'string' && hash.startsWith('#/');
+    const isDirectAppPath = pathname && pathname !== '/' && pathname !== '/index.html';
+    if (!hasHashRoute && isDirectAppPath) {
+        window.location.replace(`${origin}/#${pathname}${search || ''}`);
+    }
+}
+
 const Main = () => {
     return (
-        <React.StrictMode>  
-            {/* Provide Redux state to all components */}
-            <Provider store={store}>
-                <PersistGate loading={null} persistor={persistor}>
-                    <AppInitializer>
-                        <LanguageProvider>
-                            <TasksProvider>
-                                {/* Set up routing for the application */} 
-                                <RouterProvider router={router} />
-                            </TasksProvider>
-                        </LanguageProvider>
-                    </AppInitializer>
-                </PersistGate>
-            </Provider>
-        </React.StrictMode>
+        <>
+        <Provider store={store}>
+            <PersistGate loading={null} persistor={persistor}>
+                <AppInitializer>
+                    <LanguageProvider>
+                        <TasksProvider>
+                            {/* Set up routing for the application */}
+                            <RouterProvider router={router} />
+                        </TasksProvider>
+                    </LanguageProvider>
+                </AppInitializer>
+            </PersistGate>
+        </Provider>
+        </>
     );
 }
 

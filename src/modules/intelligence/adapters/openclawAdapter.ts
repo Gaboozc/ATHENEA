@@ -102,14 +102,16 @@ export class OpenClawAdapter {
       'add_todo': this.mapAddTodo.bind(this),
 
       // ========== FINANCE HUB ==========
-      'add_expense': this.mapAddExpense.bind(this),
-      'add_income': this.mapAddIncome.bind(this),
+      'record_expense': this.mapAddExpense.bind(this),
+      'record_income': this.mapAddIncome.bind(this),
       'set_budget': this.mapSetBudget.bind(this),
       'pay_debt': this.mapPayDebt.bind(this),
 
       // ========== GLOBAL ==========
       'search': this.mapSearch.bind(this),
-      'create_event': this.mapCreateEvent.bind(this)
+      'create_event': this.mapCreateEvent.bind(this),
+      'sync_calendar': this.mapSyncCalendar.bind(this),
+      'open_calendar': this.mapOpenCalendar.bind(this)
     };
 
     return mappers[skillId] || null;
@@ -199,7 +201,8 @@ export class OpenClawAdapter {
     return {
       type: 'todos/addTodo', // CORRECTED: was 'todos/add'
       payload: {
-        text: params.text,
+        title: params.text || params.title || 'Untitled Todo',
+        notes: params.notes || '',
         status: 'pending',
         progress: 0,
         createdAt: new Date().toISOString()
@@ -242,7 +245,7 @@ export class OpenClawAdapter {
       type: 'payments/setBudget', // Check if this exists in Redux
       payload: {
         category: params.category,
-        amount: this.transformAmount(params.amount),
+        amount: this.transformAmount(params.limit ?? params.amount ?? 0),
         period: params.period || 'monthly'
       }
     };
@@ -282,6 +285,24 @@ export class OpenClawAdapter {
         endTime: this.transformDate(params.endTime, ctx),
         location: params.location || '',
         createdAt: new Date().toISOString()
+      }
+    };
+  }
+
+  private mapSyncCalendar(params: any, ctx: SmartResolverContext): ReduxAction {
+    return {
+      type: 'calendar/syncExternalEvents',
+      payload: {
+        forceInteractiveAuth: Boolean(params.forceInteractiveAuth)
+      }
+    };
+  }
+
+  private mapOpenCalendar(params: any, ctx: SmartResolverContext): ReduxAction {
+    return {
+      type: 'navigation/openCalendar',
+      payload: {
+        targetDate: this.transformDate(params.targetDate, ctx) ?? null
       }
     };
   }
@@ -413,6 +434,10 @@ export class OpenClawAdapter {
       'calendar/addEvent',
       'calendar/updateEvent',
       'calendar/deleteEvent',
+      'calendar/syncExternalEvents',
+
+      // Navigation
+      'navigation/openCalendar',
 
       // Intelligence
       'intelligence/executeSearch'

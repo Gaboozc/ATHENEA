@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { useTasks } from '../context/TasksContext';
 import { addProject, deleteProject, updateProject } from '../../store/slices/projectsSlice';
+import { recordIncome } from '../../store/slices/paymentsSlice';
+import { addIncome } from '../../store/slices/budgetSlice';
 import { useLanguage } from '../context/LanguageContext';
 import './Projects.css';
 
@@ -15,8 +17,10 @@ export const Projects = () => {
   const { t } = useLanguage();
   const [showCancelled, setShowCancelled] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [projectTypeFilter, setProjectTypeFilter] = useState('all');
   const [formData, setFormData] = useState({
     name: '',
+    isPersonalProject: false,
     description: '',
     status: 'planning',
     clientName: '',
@@ -24,7 +28,11 @@ export const Projects = () => {
     startDate: '',
     endDate: '',
     maintenancePlan: '',
-    isSubscription: false
+    isSubscription: false,
+    totalAmount: '',
+    advanceAmount: '',
+    subscriptionAmount: '',
+    subscriptionStartDate: ''
   });
   const [errors, setErrors] = useState({});
 
@@ -107,6 +115,7 @@ export const Projects = () => {
     setErrors({});
     setFormData({
       name: '',
+      isPersonalProject: false,
       description: '',
       status: 'planning',
       clientName: '',
@@ -114,17 +123,51 @@ export const Projects = () => {
       startDate: '',
       endDate: '',
       maintenancePlan: '',
-      isSubscription: false
+      isSubscription: false,
+      totalAmount: '',
+      advanceAmount: '',
+      subscriptionAmount: '',
+      subscriptionStartDate: ''
     });
     setShowCreateModal(true);
   };
 
   const handleFormChange = (event) => {
     const { name, value, type, checked } = event.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    setFormData((prev) => {
+      const nextValue = type === 'checkbox' ? checked : value;
+      if (name !== 'isPersonalProject') {
+        return {
+          ...prev,
+          [name]: nextValue
+        };
+      }
+
+      // Personal projects only require name; all other inputs are intentionally reset.
+      if (checked) {
+        return {
+          ...prev,
+          isPersonalProject: true,
+          description: '',
+          status: 'planning',
+          clientName: '',
+          siteAddress: '',
+          startDate: '',
+          endDate: '',
+          maintenancePlan: '',
+          isSubscription: false,
+          totalAmount: '',
+          advanceAmount: '',
+          subscriptionAmount: '',
+          subscriptionStartDate: ''
+        };
+      }
+
+      return {
+        ...prev,
+        isPersonalProject: false
+      };
+    });
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
@@ -132,10 +175,33 @@ export const Projects = () => {
 
   const validateForm = () => {
     const nextErrors = {};
+    const totalAmount = Number(formData.totalAmount || 0);
+    const advanceAmount = Number(formData.advanceAmount || 0);
+    const subscriptionAmount = Number(formData.subscriptionAmount || 0);
+
     if (!formData.name.trim()) nextErrors.name = t('Project name is required');
+    if (formData.isPersonalProject) {
+      return nextErrors;
+    }
     if (!formData.clientName.trim()) nextErrors.clientName = t('Client name is required');
     if (!formData.siteAddress.trim()) nextErrors.siteAddress = t('Site address is required');
     if (!formData.startDate) nextErrors.startDate = t('Start date is required');
+    if (!formData.totalAmount || totalAmount <= 0) {
+      nextErrors.totalAmount = t('Total amount must be greater than 0');
+    }
+    if (advanceAmount < 0) {
+      nextErrors.advanceAmount = t('Advance amount cannot be negative');
+    }
+    if (totalAmount > 0 && advanceAmount > totalAmount) {
+      nextErrors.advanceAmount = t('Advance amount cannot exceed total amount');
+    }
+    if (formData.isSubscription && subscriptionAmount <= 0) {
+      nextErrors.subscriptionAmount = t('Monthly subscription amount is required');
+    }
+    if (formData.isSubscription && !formData.subscriptionStartDate) {
+      nextErrors.subscriptionStartDate = t('Subscription first payment date is required');
+    }
+
     return nextErrors;
   };
 
@@ -147,23 +213,119 @@ export const Projects = () => {
       return;
     }
 
+    const isPersonal = Boolean(formData.isPersonalProject);
+    const personalStartDate = new Date().toISOString().slice(0, 10);
     const payload = {
       name: formData.name,
-      description: formData.description,
+      description: isPersonal ? t('Personal project') : formData.description,
       status: formData.status,
-      clientName: formData.clientName,
-      siteAddress: formData.siteAddress,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      maintenancePlan: formData.isSubscription ? formData.maintenancePlan : ''
+      clientName: isPersonal ? t('Personal') : formData.clientName,
+      siteAddress: isPersonal ? t('Personal') : formData.siteAddress,
+      startDate: isPersonal ? personalStartDate : formData.startDate,
+      endDate: isPersonal ? '' : formData.endDate,
+      maintenancePlan: !isPersonal && formData.isSubscription ? formData.maintenancePlan : '',
+      isPersonalProject: isPersonal,
+      economic: {
+        totalAmount: isPersonal ? 0 : Number(formData.totalAmount || 0),
+        advanceAmount: isPersonal ? 0 : Number(formData.advanceAmount || 0),
+        isSubscription: !isPersonal && Boolean(formData.isSubscription),
+        subscriptionAmount: !isPersonal && formData.isSubscription ? Number(formData.subscriptionAmount || 0) : 0,
+        subscriptionStartDate: !isPersonal && formData.isSubscription ? formData.subscriptionStartDate : ''
+      }
     };
 
     dispatch(addProject(payload));
+
+    const nowIso = new Date().toISOString();
+    const advanceAmount = Number(formData.advanceAmount || 0);
+    const totalAmount = Number(formData.totalAmount || 0);
+    const projectLabel = formData.name.trim() || t('Project');
+
+    if (!isPersonal && advanceAmount > 0) {
+      const advanceDate = formData.startDate
+        ? new Date(`${formData.startDate}T09:00:00`).toISOString()
+        : nowIso;
+
+      dispatch(recordIncome({
+        amount: advanceAmount,
+        description: `Work income: ${projectLabel} (advance)`,
+        source: 'work',
+        date: advanceDate,
+        status: 'paid',
+        frequency: 'once',
+        notes: `Client: ${formData.clientName}`
+      }));
+
+      dispatch(addIncome({ amount: advanceAmount }));
+
+      dispatch({
+        type: 'actionHistory/record',
+        payload: {
+          hub: 'FinanceHub',
+          actionType: 'project-income-advance',
+          type: 'user-command',
+          agent: 'user',
+          description: `Project advance recorded for ${projectLabel}: ${advanceAmount.toFixed(2)}`,
+          success: true,
+          payload: {
+            amount: advanceAmount,
+            project: projectLabel,
+            totalAmount,
+            clientName: formData.clientName
+          }
+        }
+      });
+    }
+
+    if (!isPersonal && formData.isSubscription && Number(formData.subscriptionAmount || 0) > 0) {
+      const subscriptionDate = formData.subscriptionStartDate
+        ? new Date(`${formData.subscriptionStartDate}T09:00:00`).toISOString()
+        : nowIso;
+
+      dispatch(recordIncome({
+        amount: Number(formData.subscriptionAmount || 0),
+        description: `Work income: ${projectLabel} (subscription)`,
+        source: 'work',
+        date: subscriptionDate,
+        status: 'pending',
+        frequency: 'monthly',
+        notes: formData.maintenancePlan || `Client: ${formData.clientName}`
+      }));
+
+      dispatch({
+        type: 'actionHistory/record',
+        payload: {
+          hub: 'FinanceHub',
+          actionType: 'project-income-subscription-scheduled',
+          type: 'user-command',
+          agent: 'user',
+          description: `Monthly work income scheduled for ${projectLabel}: ${Number(formData.subscriptionAmount || 0).toFixed(2)}`,
+          success: true,
+          payload: {
+            amount: Number(formData.subscriptionAmount || 0),
+            project: projectLabel,
+            firstPaymentDate: subscriptionDate
+          }
+        }
+      });
+    }
+
     setShowCreateModal(false);
   };
 
   const activeProjects = projects.filter((project) => project.status !== 'cancelled');
   const cancelledProjects = projects.filter((project) => project.status === 'cancelled');
+  const matchesProjectTypeFilter = (project) => {
+    if (projectTypeFilter === 'personal') {
+      return Boolean(project.isPersonalProject);
+    }
+    if (projectTypeFilter === 'client') {
+      return !Boolean(project.isPersonalProject);
+    }
+    return true;
+  };
+  const filteredActiveProjects = activeProjects.filter(matchesProjectTypeFilter);
+  const filteredCancelledProjects = cancelledProjects.filter(matchesProjectTypeFilter);
   const canCreateTask = activeProjects.length > 0;
 
   const handleOpenTaskModal = () => {
@@ -227,8 +389,28 @@ export const Projects = () => {
           )}
         </div>
       </div>
+
+      <div className="workstream-filter">
+        <div>
+          <div className="workstream-filter-label">{t('Project Type')}</div>
+          <select
+            value={projectTypeFilter}
+            onChange={(event) => setProjectTypeFilter(event.target.value)}
+            aria-label={t('Filter projects by type')}
+          >
+            <option value="all">{t('All Projects')}</option>
+            <option value="personal">{t('Personal Projects')}</option>
+            <option value="client">{t('Client Projects')}</option>
+          </select>
+        </div>
+        <p className="workstream-hint">
+          {t('Showing')} {filteredActiveProjects.length} {t('active')} · {filteredCancelledProjects.length} {t('cancelled')}
+        </p>
+      </div>
+
       <div className="projects-grid">
-        {activeProjects.map((project) => {
+        {filteredActiveProjects.map((project) => {
+          const economic = project.economic || {};
           const projectTasks = visibleTasks
             .filter((task) => task.projectId === project.id)
             .map((task) => ({
@@ -270,6 +452,10 @@ export const Projects = () => {
             </div>
 
             <p className="project-description">{project.description}</p>
+
+            {project.isPersonalProject && (
+              <div className="project-personal-badge">{t('Personal Project')}</div>
+            )}
 
             {mergedTasks.length > 0 && (
               <div className="project-tasks">
@@ -320,6 +506,27 @@ export const Projects = () => {
                   </span>
                 </div>
               )}
+              {Number(economic.totalAmount || 0) > 0 && (
+                <div className="info-item">
+                  <span className="info-label">{t('Total Amount:')}</span>
+                  <span className="info-value">{Number(economic.totalAmount).toFixed(2)}</span>
+                </div>
+              )}
+              {Number(economic.advanceAmount || 0) > 0 && (
+                <div className="info-item">
+                  <span className="info-label">{t('Advance:')}</span>
+                  <span className="info-value">{Number(economic.advanceAmount).toFixed(2)}</span>
+                </div>
+              )}
+              {economic.isSubscription && Number(economic.subscriptionAmount || 0) > 0 && (
+                <div className="info-item">
+                  <span className="info-label">{t('Subscription:')}</span>
+                  <span className="info-value">
+                    {Number(economic.subscriptionAmount).toFixed(2)}
+                    {economic.subscriptionStartDate ? ` · ${new Date(economic.subscriptionStartDate).toLocaleDateString()}` : ''}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="progress-section">
@@ -357,7 +564,7 @@ export const Projects = () => {
         <div className="projects-cancelled-header">
           <div>
             <h2>{t('Cancelled Projects')}</h2>
-            <p>{cancelledProjects.length} {t('total')}</p>
+            <p>{filteredCancelledProjects.length} {t('total')}</p>
           </div>
           <button
             type="button"
@@ -369,10 +576,10 @@ export const Projects = () => {
         </div>
         {showCancelled && (
           <div className="projects-grid">
-            {cancelledProjects.length === 0 ? (
+            {filteredCancelledProjects.length === 0 ? (
               <div className="empty-state">{t('No cancelled projects.')}</div>
             ) : (
-              cancelledProjects.map((project) => (
+              filteredCancelledProjects.map((project) => (
                 <div
                   key={project.id}
                   className="project-card is-cancelled"
@@ -417,9 +624,9 @@ export const Projects = () => {
         )}
       </div>
 
-      {activeProjects.length === 0 && (
+      {filteredActiveProjects.length === 0 && (
         <div className="empty-state">
-          <p>{t('No projects yet')}</p>
+          <p>{t('No projects match this filter')}</p>
         </div>
       )}
 
@@ -450,6 +657,21 @@ export const Projects = () => {
                 />
                 {errors.name && <span className="form-error">{errors.name}</span>}
               </label>
+
+              <label className="settings-toggle project-create-personal-toggle">
+                <span>{t('Personal Project')}</span>
+                <input
+                  name="isPersonalProject"
+                  type="checkbox"
+                  checked={formData.isPersonalProject}
+                  onChange={handleFormChange}
+                />
+              </label>
+
+              <fieldset
+                className={`project-create-main-fields${formData.isPersonalProject ? ' is-disabled' : ''}`}
+                disabled={formData.isPersonalProject}
+              >
 
               <label>
                 {t('Description')}
@@ -550,6 +772,79 @@ export const Projects = () => {
                 </label>
               )}
 
+              <section className="project-create-economic">
+                <h3>{t('Economic Section')}</h3>
+                <p>{t('Track project income in Finance Budget and History.')}</p>
+
+                <div className="project-create-row">
+                  <label>
+                    {t('Total Amount *')}
+                    <input
+                      name="totalAmount"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.totalAmount}
+                      onChange={handleFormChange}
+                      placeholder={t('e.g., 2500')}
+                      className={errors.totalAmount ? 'is-error' : ''}
+                    />
+                    {errors.totalAmount && <span className="form-error">{errors.totalAmount}</span>}
+                  </label>
+                  <label>
+                    {t('Advance Amount')}
+                    <input
+                      name="advanceAmount"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.advanceAmount}
+                      onChange={handleFormChange}
+                      placeholder={t('e.g., 500')}
+                      className={errors.advanceAmount ? 'is-error' : ''}
+                    />
+                    {errors.advanceAmount && <span className="form-error">{errors.advanceAmount}</span>}
+                  </label>
+                </div>
+
+                {formData.isSubscription && (
+                  <div className="project-create-row">
+                    <label>
+                      {t('Monthly Subscription Amount *')}
+                      <input
+                        name="subscriptionAmount"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.subscriptionAmount}
+                        onChange={handleFormChange}
+                        placeholder={t('e.g., 150')}
+                        className={errors.subscriptionAmount ? 'is-error' : ''}
+                      />
+                      {errors.subscriptionAmount && <span className="form-error">{errors.subscriptionAmount}</span>}
+                    </label>
+                    <label>
+                      {t('First Payment Date *')}
+                      <input
+                        name="subscriptionStartDate"
+                        type="date"
+                        value={formData.subscriptionStartDate}
+                        onChange={handleFormChange}
+                        className={errors.subscriptionStartDate ? 'is-error' : ''}
+                      />
+                      {errors.subscriptionStartDate && <span className="form-error">{errors.subscriptionStartDate}</span>}
+                    </label>
+                  </div>
+                )}
+              </section>
+              </fieldset>
+
+              {formData.isPersonalProject && (
+                <div className="project-create-personal-hint">
+                  {t('Personal mode enabled: only project name is required.')}
+                </div>
+              )}
+
               <div className="project-create-actions">
                 <button
                   type="button"
@@ -566,6 +861,7 @@ export const Projects = () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };

@@ -15,6 +15,23 @@ const PRIORITY_LEVELS = [
   'Backlog'
 ];
 
+const buildSubscriptionTimeline = (startDate, amount, months = 12) => {
+  const base = new Date(startDate || '');
+  if (Number.isNaN(base.getTime()) || Number(amount || 0) <= 0) {
+    return [];
+  }
+
+  return Array.from({ length: months }).map((_, index) => {
+    const due = new Date(base);
+    due.setMonth(base.getMonth() + index);
+    return {
+      id: `subscription-${index}`,
+      date: due,
+      amount: Number(amount || 0)
+    };
+  });
+};
+
 export const ProjectDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -38,7 +55,13 @@ export const ProjectDetails = () => {
     startDate: project?.startDate || '',
     endDate: project?.endDate || '',
     maintenancePlan: project?.maintenancePlan || '',
-    isSubscription: Boolean(project?.maintenancePlan)
+    isSubscription: Boolean(project?.economic?.isSubscription || project?.maintenancePlan),
+    totalAmount: String(project?.economic?.totalAmount || ''),
+    advanceAmount: String(project?.economic?.advanceAmount || ''),
+    subscriptionAmount: String(project?.economic?.subscriptionAmount || ''),
+    subscriptionStartDate: project?.economic?.subscriptionStartDate
+      ? String(project.economic.subscriptionStartDate).slice(0, 10)
+      : ''
   }));
   const isCancelled = project?.status === 'cancelled';
   const projectWorkstream = workstreams.find(
@@ -118,6 +141,16 @@ export const ProjectDetails = () => {
   );
   const filteredTasks = activeTasks.filter((task) =>
     task.title.toLowerCase().includes(search.toLowerCase())
+  );
+  const economic = project?.economic || {};
+  const totalAmount = Number(economic.totalAmount || 0);
+  const advanceAmount = Number(economic.advanceAmount || 0);
+  const hasSubscription = Boolean(economic.isSubscription) && Number(economic.subscriptionAmount || 0) > 0;
+  const paidProgress = Math.min(totalAmount, Math.max(0, advanceAmount));
+  const subscriptionTimeline = buildSubscriptionTimeline(
+    economic.subscriptionStartDate,
+    economic.subscriptionAmount,
+    12
   );
   const completedTasksCount = activeTasks.filter(
     (task) => task.status === 'Completed'
@@ -237,6 +270,13 @@ export const ProjectDetails = () => {
 
   const saveProjectSettings = () => {
     if (!canManageProject) return;
+    const nextEconomic = {
+      totalAmount: Number(formState.totalAmount || 0),
+      advanceAmount: Number(formState.advanceAmount || 0),
+      isSubscription: Boolean(formState.isSubscription),
+      subscriptionAmount: formState.isSubscription ? Number(formState.subscriptionAmount || 0) : 0,
+      subscriptionStartDate: formState.isSubscription ? formState.subscriptionStartDate : ''
+    };
     dispatch(updateProject({
       id: project.id,
       status: formState.status,
@@ -244,7 +284,8 @@ export const ProjectDetails = () => {
       siteAddress: formState.siteAddress,
       startDate: formState.startDate,
       endDate: formState.endDate,
-      maintenancePlan: formState.isSubscription ? formState.maintenancePlan : ''
+      maintenancePlan: formState.isSubscription ? formState.maintenancePlan : '',
+      economic: nextEconomic
     }));
     setShowSettings(false);
   };
@@ -355,6 +396,52 @@ export const ProjectDetails = () => {
                 />
               </label>
             )}
+            <label>
+              <span>{t('Total Amount')}</span>
+              <input
+                name="totalAmount"
+                value={formState.totalAmount}
+                onChange={handleFormChange}
+                type="number"
+                min="0"
+                step="0.01"
+              />
+            </label>
+            <label>
+              <span>{t('Advance Amount')}</span>
+              <input
+                name="advanceAmount"
+                value={formState.advanceAmount}
+                onChange={handleFormChange}
+                type="number"
+                min="0"
+                step="0.01"
+              />
+            </label>
+            {formState.isSubscription && (
+              <>
+                <label>
+                  <span>{t('Monthly Subscription Amount')}</span>
+                  <input
+                    name="subscriptionAmount"
+                    value={formState.subscriptionAmount}
+                    onChange={handleFormChange}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                  />
+                </label>
+                <label>
+                  <span>{t('First Payment Date')}</span>
+                  <input
+                    name="subscriptionStartDate"
+                    value={formState.subscriptionStartDate}
+                    onChange={handleFormChange}
+                    type="date"
+                  />
+                </label>
+              </>
+            )}
           </div>
           <div className="project-settings-actions">
             <button
@@ -405,6 +492,14 @@ export const ProjectDetails = () => {
                 {project.maintenancePlan ? project.maintenancePlan : t('Not subscribed')}
               </span>
             </div>
+            <div>
+              <span className="label">{t('Total Amount')}</span>
+              <span className="value">{totalAmount > 0 ? totalAmount.toFixed(2) : t('Not defined')}</span>
+            </div>
+            <div>
+              <span className="label">{t('Advance')}</span>
+              <span className="value">{advanceAmount > 0 ? advanceAmount.toFixed(2) : t('Not defined')}</span>
+            </div>
           </div>
         </section>
 
@@ -439,6 +534,39 @@ export const ProjectDetails = () => {
           </div>
         </section>
       </div>
+
+      <section className="project-card project-finance-timeline">
+        <h2>{t('Subscription Billing Timeline')}</h2>
+        {totalAmount > 0 && (
+          <div className="project-finance-summary">
+            <div>
+              <span className="label">{t('Contract Total')}</span>
+              <span className="value">{totalAmount.toFixed(2)}</span>
+            </div>
+            <div>
+              <span className="label">{t('Registered Advance')}</span>
+              <span className="value">{advanceAmount.toFixed(2)}</span>
+            </div>
+            <div>
+              <span className="label">{t('Progress')}</span>
+              <span className="value">{totalAmount > 0 ? Math.round((paidProgress / totalAmount) * 100) : 0}%</span>
+            </div>
+          </div>
+        )}
+
+        {!hasSubscription || subscriptionTimeline.length === 0 ? (
+          <div className="tasks-empty">{t('No monthly subscription schedule for this project.')}</div>
+        ) : (
+          <ul className="project-finance-list">
+            {subscriptionTimeline.map((entry) => (
+              <li key={entry.id}>
+                <span>{entry.date.toLocaleDateString()}</span>
+                <strong>{Number(entry.amount).toFixed(2)}</strong>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="project-card tasks-panel">
         <div className="tasks-header">

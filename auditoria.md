@@ -1,238 +1,180 @@
-# Auditoria Tecnica - ATHENEA (`single-person`)
+# Reporte Omnibar y ATHENEA con OpenClaw
 
-## 1. Resumen Ejecutivo
-- Fecha de auditoria: 2026-03-08
-- Branch auditado: `single-person`
-- Commit remoto actual: `3f63c7d` (`origin/single-person`)
-- Estado local al momento de auditar: hay cambios sin commit encima del ultimo push (9 archivos modificados, enfocados en Omnibar/mic/inteligencia)
+Fecha: 2026-03-09
 
-Estado general del proyecto:
-- Aplicacion web compila: `npm run build` OK.
-- Tests unitarios existentes: `npm run test -- --run` OK (1 archivo, 5 tests).
-- APK Android compila: `gradlew assembleDebug` OK.
-- Instalacion por ADB previamente validada en dispositivo: OK (instalada correctamente antes de esta auditoria).
-- Funcionalidad IA/autonomia: implementada a nivel de UI/bridge, pero con inconsistencias importantes en mapeo de acciones Redux.
+## 1. Omnibar - Estado actual de funcionamiento
 
-## 2. Metodologia de Verificacion
-Se reviso con evidencia directa:
-- Git: branch, commit, status.
-- Build/test: Vite, Vitest, Gradle Android.
-- Codigo fuente critico: Omnibar, useIntelligence, Bridge, parser/smartResolver, calendar sync, widget bridge, store/slices.
-- Diagnostico de workspace: `get_errors`.
+### 1.1 Como esta funcionando hoy
 
-## 3. Inventario Tecnico Implementado (Hecho)
+- Activacion global por `Ctrl+K` o `Cmd+K`.
+- Abre como modal flotante con tabs por hub: `WorkHub`, `PersonalHub`, `FinanceHub`.
+- Acepta comandos por texto y por voz.
+- Procesa comandos con la arquitectura hibrida del Bridge.
+- Ejecuta acciones automaticamente cuando la confianza es alta (>= 90).
+- Si faltan parametros o la confianza no alcanza, muestra canvas de confirmacion.
+- Registra historial de acciones y muestra feedback con toasts y audio.
 
-### 3.1 Stack y arquitectura
-- Frontend: React 18 + Vite + TypeScript/JS mixto.
-- Estado: Redux Toolkit + redux-persist (`store/index.js`).
-- Mobile: Capacitor Android (`@capacitor/android`).
-- Notificaciones locales: `@capacitor/local-notifications`.
-- Voz nativa (agregado): `@capacitor-community/speech-recognition`.
+### 1.2 Funcionalidades implementadas
 
-### 3.2 Modulo de Inteligencia (hecho)
-Implementado en `src/modules/intelligence/`:
-- `Bridge.ts`: analiza prompt, selecciona skill, arma `reduxAction`, construye artifact.
-- `skills.ts`: manifiesto de skills por hub (Work, Personal, Finance + cross-hub).
-- `useIntelligence.ts`: auto-dispatch por confianza (>=90) + fallback a canvas.
-- `utils/parser.ts`: extraccion de parametros.
-- `utils/smartResolver.ts`: resolucion inteligente de fechas/IDs/categoria/prioridad/monto.
-- `utils/audioFeedback.ts`: earcons (success/error) con Web Audio API.
-- `components/IntelligenceCanvas.tsx`: capa de confirmacion manual.
+- UI premium del Omnibar:
+  - Overlay con blur.
+  - Contenedor con gradiente y jerarquia visual.
+  - Tabs con color por hub.
+  - Estados visuales de foco, hover y loading.
+- Input inteligente:
+  - Campo de texto con placeholder segun hub.
+  - Boton de envio con estado de carga.
+- Voz:
+  - Flujo nativo Android con `@capacitor-community/speech-recognition`.
+  - `partialResults` en tiempo real.
+  - Modo silencioso (`popup: false`).
+  - Timeout de sesion y limpieza de listeners.
+  - Fallback web con `SpeechRecognition` cuando no es nativo.
+- Integracion IA:
+  - Conecta con `useIntelligence` y `Bridge`.
+  - Soporta auto-ejecucion por confianza.
+  - Soporta confirmacion manual con `IntelligenceCanvas`.
+- Proactividad:
+  - Muestra `Dynamic Insights` por hub.
+  - Muestra sugerencias de skills relevantes por contexto.
+- Trazabilidad:
+  - Guarda acciones en `actionHistoryStore`.
+  - Soporta callback `onActionExecuted`.
 
-### 3.3 Omnibar (hecho)
-- `src/components/Omnibar/Omnibar.tsx`:
-  - Input texto + flujo autonomo.
-  - Boton mic + speech flow.
-  - Toasts de feedback.
-- `src/components/Omnibar/useOmnibar.ts`: estado global de apertura/cierre.
-- `src/components/Omnibar/FloatingOmnibarFab.css`: FAB de acceso rapido (reposicionado hacia arriba en cambios locales).
+### 1.3 Problemas actuales del Omnibar
 
-### 3.4 Google Calendar Sync (hecho)
-- Servicio OAuth/API: `src/services/googleCalendar.ts`.
-- Thunk de sincronizacion: `store/slices/calendarSlice.js` (`syncExternalEvents`).
-- Integracion en Omnibar/AppInitializer para disparo de sync.
+#### Criticos
 
-### 3.5 Widget Android nativo (hecho)
-- `WidgetBridgePlugin.java`: puente Capacitor <-> SharedPreferences/widget.
-- `AtheneaWidgetProvider.java`: render de widget y pending intents.
-- `AtheneaWidgetActionReceiver.java`: acciones del widget.
-- Layout y recursos widget: XML/drawables en `android/app/src/main/res/...`.
-- Registro en `AndroidManifest.xml`.
+1. Varias acciones generadas por IA no mutan Redux por desalineacion de `action type` vs reducers reales.
+2. La experiencia de voz puede ser inconsistente si hay errores de sesion concurrente o limpieza incompleta en escenarios borde.
 
-### 3.6 Pipeline GitHub Actions (hecho)
-- `/.github/workflows/build-apk.yml` (debug build).
-- `/.github/workflows/build-release-apk.yml` (release build con secrets).
+#### Altos
 
-## 4. Lo que Funciona Correctamente (validado)
+1. Primer uso de ONNX puede introducir latencia visible por carga inicial del modelo.
+2. Al faltar parametros, la experiencia depende de que el canvas cubra correctamente todos los casos de formulario.
+3. En entorno Android, no siempre hay herramientas de diagnostico listas (`adb` fuera de PATH en una de las sesiones), lo que limita trazas de runtime.
 
-### 4.1 Build y pruebas
-- `npm run build` -> OK.
-- `npm run test -- --run` -> OK (5/5 tests).
-- `android/gradlew assembleDebug` -> OK.
+#### Medios
 
-### 4.2 Integracion Android base
-- APK debug se genera correctamente.
-- Instalacion via ADB (flujo ya probado en sesion) funciona.
-- Manifest incluye receivers/widget y MainActivity registra plugin de widget.
+1. Tamano de bundle elevado por runtime ONNX.
+2. Ajustes finos pendientes en thresholds de confianza para minimizar falsos positivos/negativos.
+3. Cobertura de testing automatizado aun baja para flujos IA/voz end-to-end.
 
-### 4.3 Flujo de calendario (infraestructura)
-- Thunk `calendar/syncExternalEvents` existe y actualiza estado `calendar.events`.
-- Mapeo de eventos de Google a formato interno implementado.
-- Manejo de token expirado y errores API implementado.
+## 2. ATHENEA + OpenClaw - Estado actual
 
-### 4.4 Flujo de voz (estado de codigo actual)
-- Existe soporte Web Speech API.
-- Existe fallback nativo Capacitor (cambios locales actuales).
-- Plugin nativo instalado y sincronizado con Android.
-- Android build sigue pasando tras integrar plugin.
+### 2.1 Como esta funcionando la integracion hoy
 
-## 5. Lo que Funciona con Condiciones
+ATHENEA ya opera en modo hibrido local con 4 capas:
 
-### 5.1 Google Calendar OAuth
-Condiciones obligatorias:
-- Debe existir `VITE_GOOGLE_CLIENT_ID` en `.env`.
-- Debe estar configurado OAuth Client en Google Cloud.
+1. `FAST_PATH` (regex): rapido para casos comunes.
+2. `SMART_PATH` (ONNX): matching semantico offline.
+3. `OPENCLAW_GATEWAY` (opcional): solo entra si esta configurado `VITE_OPENCLAW_GATEWAY_URL`.
+4. `FALLBACK` (keywords): ultima red de seguridad.
 
-Estado real ahora:
-- `.env` ausente en workspace auditado.
-- Resultado: en estado actual, sync con Google no puede autenticarse en runtime hasta configurar ese valor.
+Situacion real actual:
 
-### 5.2 Autonomia IA
-- Mecanismo de confianza y auto-ejecucion existe.
-- Pero su efectividad depende de que el `action type` generado por cada skill tenga reducer real.
-- Hoy hay varias skills cuyo action no coincide con Redux handlers reales.
+- Fast Path: funcionando.
+- Smart Path ONNX: funcionando.
+- OpenClaw Gateway: implementado en codigo, pero depende de configuracion externa.
+- Fallback: funcionando.
 
-## 6. No Funciona Apropiadamente (bugs/inconsistencias)
+### 2.2 Funcionalidades actuales de ATHENEA con la arquitectura hibrida
 
-### 6.1 Mismatch entre `skills.action` y reducers reales (principal)
-En `skills.ts` hay acciones que se despachan pero no tienen handler equivalente en slices:
+- Inferencia local offline para gran parte de los comandos.
+- Seleccion de skill por score de confianza.
+- Extraccion de parametros y enriquecimiento contextual.
+- Generacion de artifact previo a ejecucion.
+- Ejecucion autonoma para alta confianza.
+- Confirmacion manual cuando faltan datos o hay ambiguedad.
+- Sugerencias contextuales por hora/dia/estado del hub.
 
-- `projects/create` (skill) vs reducer real esperado por slice: `projects/addProject`.
-- `tasks/add` vs `tasks/addTask`.
-- `tasks/logTime` (sin handler en tasksSlice).
-- `notes/create` vs `notes/addNote`.
-- `todos/add` vs `todos/addTodo`.
-- `payments/addExpense` (sin handler especifico en paymentsSlice).
-- `payments/addIncome` (sin handler especifico en paymentsSlice).
-- `payments/setBudget` (sin handler en paymentsSlice/budgetSlice con ese type).
-- `intelligence/search` (no hay reducer/epic/thunk asociado).
+### 2.3 Problemas y brechas de ATHENEA + OpenClaw
 
-Impacto:
-- La IA puede "creer" que ejecuto una accion (toast/historial), pero Redux no muta estado en varios casos.
-- Esto afecta directamente la promesa de "autonomous flow" end-to-end.
+#### Ya detectados
 
-### 6.2 `smartResolver.resolvePaymentId` usa ruta de estado incorrecta
-- Implementacion consulta `state.finance?.finances`.
-- Store real usa `payments` slice (`state.payments.payments`).
-- Resultado: resolucion automatica de `paymentId` probablemente falla siempre.
+1. OpenClaw no esta al 100 porque la capa gateway depende de variables y despliegue externo que aun no estan completos en runtime.
+2. Varias skills tienen mapeos de accion no alineados con reducers reales.
+3. Hay rutas de resolucion en smart resolver que requieren ajuste para algunos dominios (por ejemplo pagos/fechas en escenarios especificos).
+4. Falta mayor cobertura de pruebas automatizadas para validar flujo completo IA -> accion Redux -> estado esperado.
 
-### 6.3 `resolveSmartDate` en enriquecimiento no cubre fechas faltantes
-- `enrichParameters` llama `resolveSmartDate(undefined, context)` cuando no habia fecha.
-- `resolveSmartDate` retorna `undefined` si no recibe `dateString`.
-- Resultado: no infiere fecha solo desde contexto en ese camino; depende de la extraccion previa.
+#### Configuracion que falta para operar OpenClaw completo
 
-### 6.4 Semantica reminder/tarea no unificada
-- Se movio reminder a `tasks/addTask` (cambio local) para evitar crear proyectos por error.
-- Esto mejora ejecucion, pero el dominio "reminder" como entidad separada no existe formalmente.
-- Puede generar UX inconsistente (recordatorio termina siendo tarea con campos de tarea).
+1. Definir y verificar `VITE_OPENCLAW_GATEWAY_URL`.
+2. Definir `VITE_OPENCLAW_API_KEY` (si aplica).
+3. Levantar y asegurar gateway OpenClaw accesible desde ATHENEA.
+4. Alinear autenticacion/token del gateway con configuracion real de OpenClaw.
+5. Verificar contrato de request/response del endpoint `/agent` con casos reales.
 
-## 7. No Funciona en lo Absoluto (hard failures actuales)
+### 2.4 FASE 2.3 - Filtro Tactico (cerrada)
 
-### 7.1 Conexion Google Calendar sin configurar OAuth
-- Sin `VITE_GOOGLE_CLIENT_ID`, la conexion falla por diseno.
-- Error esperado: `Missing VITE_GOOGLE_CLIENT_ID...`.
+Implementado en esta iteracion:
 
-### 7.2 Skills sin handler Redux
-Estas skills, en su estado actual, no ejecutan mutacion real (disparan type inexistente):
-- `create_project` (action actual: `projects/create`).
-- `add_task` (action actual: `tasks/add`).
-- `log_time`.
-- `create_note` (action actual: `notes/create`).
-- `add_todo` (action actual: `todos/add`).
-- `record_expense`.
-- `record_income`.
-- `set_budget`.
-- `search`.
+1. `NotificationAnalyzer.ts` con reglas tacticas por patron:
+  - Finanzas: deteccion por moneda/pago/retiro + extraccion de monto y comercio.
+  - Agenda: deteccion por reunion/hoy a las/link/cita + extraccion de temporalidad.
+2. Priorizacion por contexto:
+  - En modo `focused`, solo interrupciones `critical` llegan a la UI.
+  - Con bateria critica (<10%), se bloquea todo salvo `critical`.
+  - Si comercio detectado coincide con `knownCommerceKeywords` y hay zona activa, sube prioridad.
+3. UI dedicada:
+  - Nueva `InterceptCard.tsx` en `ProactiveHUD` con acciones `[EJECUTAR PROTOCOLO]` y `[DESCARTAR]`.
+4. Integracion de voz PersonaEngine:
+  - Saludo tactico actualizado a: "Señor, he interceptado un movimiento en su cuenta de [Banco]. ¿Actualizamos el Hub de Finanzas?".
 
-Nota:
-- `sync_calendar` si tiene handler (`calendar/syncExternalEvents`).
-- `add_reminder` en cambios locales se ajusto a `tasks/addTask` y si tendria mutacion real.
+### 2.5 FASE 2.4 - Caja Negra y Aprendizaje de Patrones (cerrada)
 
-## 8. Matriz de Estado por Area
+Implementado en esta iteracion:
 
-### 8.1 Core App
-- Routing general: Implementado.
-- Redux persistencia: Implementado.
-- Build web: Funciona.
-- Build Android: Funciona.
+1. Behavioral Database local persistente:
+  - Nuevo modulo `src/modules/intelligence/BlackBox.ts`.
+  - Guarda frecuencia de apertura de Hubs por dia/hora.
+  - Guarda tiempo de respuesta promedio a `InterceptCard`.
+  - Guarda correlacion productividad vs bateria/zona.
+2. Pattern Recognition Engine:
+  - Deteccion de rutina `FinanceHub` tras interceptacion bancaria.
+  - Deteccion de rutina `HOME -> tareas de descanso`.
+  - Deteccion de rutina `Lunes mañana -> WorkHub`.
+3. Proactive Pre-loading:
+  - Nuevo `predictiveBuffer` en `aiMemorySlice`.
+  - BlackBox publica prediccion (`nextHub`, `priority`, `reason`) en tiempo real.
+  - `ProactiveHUD` muestra sugerencia de prioridad alta antes de accion del usuario.
+4. PersonaEngine Evolution:
+  - Saludo contextual usa memoria predictiva.
+  - Si patron alto de lunes/trabajo: "Señor, basándome en sus últimos lunes, he preparado el entorno de trabajo...".
 
-### 8.2 Omnibar/IA
-- UI Omnibar: Funciona.
-- Canvas confirmacion: Funciona.
-- Auto-dispatch confianza: Parcial (depende de action mapping).
-- Sonidos earcons: Implementado; validacion runtime en dispositivo pendiente tras ultimos cambios.
-- Mic web: Implementado.
-- Mic Android nativo (fallback): Implementado en codigo + plugin; validacion final en dispositivo pendiente tras patch local.
+Estado de validacion:
+- Build web OK tras integracion de BlackBox.
+- Sin errores de diagnostico en archivos modificados de 2.4.
 
-### 8.3 Google Calendar
-- Servicio OAuth/API: Implementado.
-- Sync thunk: Implementado.
-- Configuracion actual del entorno: Incompleta (`.env` faltante).
+## 3. Que falta para estar al 100
 
-### 8.4 Widget Android
-- Provider/receiver/plugin: Implementado.
-- Bridge JS: Implementado.
-- Registro manifest: Implementado.
-- Validacion funcional integral en dispositivo: parcial (infra OK, pruebas de interaccion completa no documentadas en esta auditoria).
+### 3.1 Omnibar al 100
 
-### 8.5 CI/CD
-- Workflows de build: Implementados.
-- `build-release-apk.yml`: VS Code marca warnings de contexto `secrets`; esto suele ser falso positivo del validador local YAML, no necesariamente fallo real en GitHub Actions.
+1. Cerrar desalineaciones de `action types` para que toda accion inferida muta estado real.
+2. Reforzar estabilidad del flujo de voz en casos borde y sesiones interrumpidas.
+3. Reducir latencia de primer uso ONNX (precarga o estrategia lazy mas fina).
+4. Completar testing automatizado de:
+   - texto,
+   - voz,
+   - auto-ejecucion,
+   - confirmacion manual,
+   - errores y recoveries.
 
-## 9. Estado Git del Branch al Momento
-- Remoto (`origin/single-person`) en commit `3f63c7d`.
-- Cambios locales sin commit en:
-  - `android/app/capacitor.build.gradle`
-  - `android/capacitor.settings.gradle`
-  - `package.json`
-  - `package-lock.json`
-  - `src/components/Omnibar/FloatingOmnibarFab.css`
-  - `src/components/Omnibar/Omnibar.tsx`
-  - `src/modules/intelligence/Bridge.ts`
-  - `src/modules/intelligence/skills.ts`
+### 3.2 ATHENEA + OpenClaw al 100
 
-Interpretacion:
-- El estado real de trabajo contiene fixes recientes que aun no estan en GitHub.
+1. Completar despliegue/configuracion de gateway OpenClaw en entorno operativo.
+2. Validar autenticacion segura del gateway de punta a punta.
+3. Confirmar que capa 3 (gateway) responde con skill/confianza en todos los casos complejos esperados.
+4. Alinear completamente skill mapping con Redux reducers reales.
+5. Ejecutar QA integral en dispositivo Android y Web con evidencias reproducibles.
 
-## 10. Riesgos Tecnicos Prioritarios
+## 4. Nivel de completitud estimado
 
-### Critico
-1. Mapeo de `skills.action` vs reducers incompatibles en multiples skills.
-2. Dependencia de OAuth sin `.env` configurado (calendario no conectable en runtime).
+- Omnibar (UI + UX + flujo base): alto, funcional en produccion controlada.
+- Inteligencia local (FastPath + ONNX): alto, funcional.
+- OpenClaw gateway remoto: parcial, listo en codigo pero no plenamente operacional sin configuracion final.
+- Flujo autonomo end-to-end total: parcial-alto, limitado por mapeos Redux y pendientes de gateway/testing.
 
-### Alto
-3. Resolver de pagos con ruta de estado incorrecta.
-4. Falta de pruebas automatizadas del modulo IA (solo hay tests de `priorityEngine`).
+## 5. Conclusion ejecutiva
 
-### Medio
-5. Flujo de reminder acoplado a tasks sin modelo dedicado.
-6. Warnings Gradle de deprecacion (no rompe hoy, si en futuras versiones).
-
-## 11. Recomendaciones (orden de ejecucion)
-
-1. Corregir action mapping de todas las skills a action types existentes (o agregar `extraReducers` para los types actuales).
-2. Definir contrato unico de dominio para reminder (o mantenerlo como task pero consistente en UI/labels).
-3. Corregir `smartResolver`:
-   - `resolvePaymentId` -> usar `state.payments.payments`.
-   - inferencia de fecha cuando `dateString` venga vacio.
-4. Agregar pruebas del modulo IA:
-   - matching de skills,
-   - extraccion/validacion de parametros,
-   - dispatch real sobre store.
-5. Configurar `.env` con `VITE_GOOGLE_CLIENT_ID` y probar flujo Google end-to-end en dispositivo.
-6. Commit/push de los fixes locales actuales para no perder divergencia con remoto.
-
-## 12. Conclusiones
-ATHENEA en `single-person` tiene una base tecnica robusta (build/test/android/widget/infra IA) y un avance fuerte en autonomia y UX. Sin embargo, hoy existe una brecha funcional central: varias acciones de IA no mutan Redux por desalineacion de `action types`. Eso impide considerar el flujo autonomo como "100% operativo" en produccion.
-
-Con los ajustes de mapeo y configuracion OAuth, el sistema puede pasar de "infra implementada" a "ejecucion end-to-end confiable".
+El Omnibar ya funciona bien para uso real con entrada por texto/voz, inferencia hibrida y confirmacion inteligente. La base de ATHENEA con OpenClaw esta bien planteada y parcialmente operativa: el modo local hibrido funciona, pero para llegar al 100 falta cerrar la capa gateway en entorno real, terminar la alineacion de acciones Redux y completar validacion end-to-end automatizada y en dispositivo.

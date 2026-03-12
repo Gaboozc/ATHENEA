@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { label: "Dashboard", path: "/dashboard" },
   { label: "Projects", path: "/projects" },
   { label: "Stats", path: "/stats" },
+  { label: "Identity", path: "/identity" },
   { label: "Settings", path: "/settings" }
 ];
 

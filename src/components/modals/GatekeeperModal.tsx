@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
 import { getPriorityLevel, PriorityFactors, PriorityLevel } from "../../utils/priorityEngine";
 import { useTasks } from "../../context/TasksContext";
 import { useLanguage } from "../../context/LanguageContext";
@@ -8,7 +7,6 @@ import {
   getUniversalQuestionSet,
   UniversalQuestion
 } from "../../utils/universalQuestions";
-import { useCurrentUser } from "../../hooks/useCurrentUser";
 import "./GatekeeperModal.css";
 
 type GatekeeperPayload = {
@@ -48,55 +46,23 @@ const DEFAULT_FACTORS: PriorityFactors = {
 
 export const GatekeeperModal = () => {
   const { addTask } = useTasks();
-  const { user } = useCurrentUser();
-  const navigate = useNavigate();
   const { language, t } = useLanguage();
   const { projects } = useSelector((state: { projects: { projects: any[] } }) => state.projects);
-  const { workstreams: orgWorkstreams = [], currentOrgId } = useSelector(
-    (state: {
-      organizations?: { workstreams?: any[]; currentOrgId: string | null };
-    }) => state.organizations || { workstreams: [], currentOrgId: null }
-  );
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [selectedWorkstreams, setSelectedWorkstreams] = useState<string[]>([]);
   const [selectedQuestions, setSelectedQuestions] = useState<UniversalQuestion[]>([]);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const workstreams = useMemo(() => {
-    if (!currentOrgId) return [];
-    return orgWorkstreams.filter(
-      (stream) => stream.orgId === currentOrgId && stream.enabled
-    );
-  }, [currentOrgId, orgWorkstreams]);
-  const requiresManagerApproval = useMemo(
-    () =>
-      selectedWorkstreams.some((streamId) => {
-        const stream = workstreams.find((entry) => entry.id === streamId);
-        return stream?.require_manager_approval;
-      }),
-    [selectedWorkstreams, workstreams]
-  );
   const availableProjects = useMemo(() => {
     if (!projects || projects.length === 0) return [];
-    const scopedProjects = currentOrgId
-      ? projects.filter((project) => !project.orgId || project.orgId === currentOrgId)
-      : [];
-    return scopedProjects.filter((project) => project.status !== "cancelled");
-  }, [currentOrgId, projects]);
-  const selectedWorkstreamId = selectedWorkstreams[0] || "";
-  const filteredProjects = useMemo(() => {
-    if (!selectedWorkstreamId) return [];
-    return availableProjects.filter(
-      (project) => project.workstreamId === selectedWorkstreamId
-    );
-  }, [availableProjects, selectedWorkstreamId]);
+    return projects.filter((project) => project.status !== "cancelled");
+  }, [projects]);
   const maxScore = useMemo(
     () => selectedQuestions.reduce((sum, question) => sum + question.value, 0),
     [selectedQuestions]
@@ -117,6 +83,10 @@ export const GatekeeperModal = () => {
 
   useEffect(() => {
     const handleOpen = () => {
+      setStep(1);
+      setSelectedProjectId(availableProjects[0]?.id || "");
+      setTitle("");
+      setDescription("");
       setSelectedQuestions([]);
       setCheckedIds(new Set());
       setIsOpen(true);
@@ -126,14 +96,13 @@ export const GatekeeperModal = () => {
     return () => {
       window.removeEventListener("athenea:gatekeeper:open", handleOpen as EventListener);
     };
-  }, []);
+  }, [availableProjects]);
 
   const resetState = () => {
     setStep(1);
     setSelectedProjectId("");
     setTitle("");
     setDescription("");
-    setSelectedWorkstreams([]);
     setSelectedQuestions([]);
     setCheckedIds(new Set());
     setIsSaving(false);
@@ -147,7 +116,7 @@ export const GatekeeperModal = () => {
   };
 
   const goNext = () => {
-    setStep((prev) => Math.min(prev + 1, 4));
+    setStep((prev) => Math.min(prev + 1, 3));
   };
 
   const goBack = () => {
@@ -157,25 +126,10 @@ export const GatekeeperModal = () => {
   const selectedProject = availableProjects.find((project) => project.id === selectedProjectId);
 
   useEffect(() => {
-    if (!isOpen || step !== 4) return;
+    if (!isOpen || step !== 3) return;
     setSelectedQuestions(getUniversalQuestionSet());
     setCheckedIds(new Set());
-  }, [isOpen, selectedWorkstreams, step]);
-
-  useEffect(() => {
-    if (workstreams.length === 0) {
-      setSelectedWorkstreams([]);
-      return;
-    }
-    setSelectedWorkstreams((prev) =>
-      prev.filter((streamId) => workstreams.some((stream) => stream.id === streamId))
-    );
-  }, [workstreams]);
-
-  const toggleWorkstream = (id: string) => {
-    setSelectedProjectId("");
-    setSelectedWorkstreams([id]);
-  };
+  }, [isOpen, step]);
 
   const toggleCheck = (id: string) => {
     setCheckedIds((prev) => {
@@ -203,11 +157,11 @@ export const GatekeeperModal = () => {
       const payload: GatekeeperPayload = {
         projectId: selectedProjectId,
         projectName: selectedProject?.name || "",
-        status: requiresManagerApproval ? "pending_approval" : "Active",
+        status: "Active",
         title: title.trim(),
         description: description.trim(),
-        workstreams: selectedWorkstreams,
-          targetTeams: selectedWorkstreams,
+        workstreams: selectedProject?.workstreamId ? [selectedProject.workstreamId] : [],
+        targetTeams: selectedProject?.workstreamId ? [selectedProject.workstreamId] : [],
         factors: DEFAULT_FACTORS,
         totalScore: normalizedScore,
         level: priorityLevel,
@@ -242,10 +196,9 @@ export const GatekeeperModal = () => {
     }
   };
 
-  const isStepOneValid = selectedWorkstreams.length > 0;
-  const isStepTwoValid = selectedProjectId.length > 0 && Boolean(selectedProject);
-  const isStepThreeValid = title.trim().length > 0;
-  const isStepFourValid = checkedIds.size > 0;
+  const isStepOneValid = selectedProjectId.length > 0 && Boolean(selectedProject);
+  const isStepTwoValid = title.trim().length > 0;
+  const isStepThreeValid = checkedIds.size > 0;
 
   if (!isOpen) return null;
 
@@ -255,7 +208,7 @@ export const GatekeeperModal = () => {
         <header className="gatekeeper-header">
           <div>
             <h2>{t("Gatekeeper Intake")}</h2>
-            <p>{t("Step")} {step} {t("of")} 4</p>
+            <p>{t("Step")} {step} {t("of")} 3</p>
           </div>
           <button className="gatekeeper-close" onClick={closeModal} aria-label={t("Close")}> 
             {t("Close")}
@@ -264,55 +217,15 @@ export const GatekeeperModal = () => {
 
         {step === 1 && (
           <section className="gatekeeper-step">
-            {workstreams.length === 0 ? (
+            {availableProjects.length === 0 ? (
               <div className="gatekeeper-empty">
-                <p>{t("No workstreams configured yet.")}</p>
+                <p>{t("No active projects available. Create a project before logging tasks.")}</p>
                 <button
                   type="button"
                   className="gatekeeper-secondary"
                   onClick={() => {
                     closeModal();
-                    navigate("/workstreams");
-                  }}
-                >
-                  {t("Manage Workstreams")}
-                </button>
-              </div>
-            ) : (
-              <>
-                <p className="gatekeeper-hint">{t("Select a workstream")}</p>
-                <div className="gatekeeper-tags">
-                  {workstreams.map((stream) => (
-                    <button
-                      key={stream.id}
-                      type="button"
-                      className={
-                        selectedWorkstreams.includes(stream.id)
-                          ? "gatekeeper-tag is-active"
-                          : "gatekeeper-tag"
-                      }
-                      onClick={() => toggleWorkstream(stream.id)}
-                    >
-                      {stream.label}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </section>
-        )}
-
-        {step === 2 && (
-          <section className="gatekeeper-step">
-            {filteredProjects.length === 0 ? (
-              <div className="gatekeeper-empty">
-                <p>{t("No active projects available. Create a workstream project before logging tasks.")}</p>
-                <button
-                  type="button"
-                  className="gatekeeper-secondary"
-                  onClick={() => {
-                    closeModal();
-                    navigate("/projects");
+                    window.location.hash = "#/projects";
                   }}
                 >
                   {t("Create Project")}
@@ -322,7 +235,7 @@ export const GatekeeperModal = () => {
               <>
                 <p className="gatekeeper-hint">{t("Associate this task with a project.")}</p>
                 <div className="gatekeeper-projects">
-                  {filteredProjects.map((project) => (
+                  {availableProjects.map((project) => (
                     <button
                       key={project.id}
                       type="button"
@@ -345,7 +258,7 @@ export const GatekeeperModal = () => {
           </section>
         )}
 
-        {step === 3 && (
+        {step === 2 && (
           <section className="gatekeeper-step">
             <label className="gatekeeper-field">
               <span>{t("Task Title")}</span>
@@ -368,7 +281,7 @@ export const GatekeeperModal = () => {
           </section>
         )}
 
-        {step === 4 && (
+        {step === 3 && (
           <section className="gatekeeper-step">
             <p className="gatekeeper-hint">{t("Select the signals that apply.")}</p>
             <div className="gatekeeper-checks">
@@ -403,7 +316,7 @@ export const GatekeeperModal = () => {
               {t("Task analyzed and prioritized by ATHENEA core.")}
             </span>
           )}
-          {step < 4 && (
+          {step < 3 && (
             <button
               type="button"
               className="gatekeeper-primary"
@@ -417,12 +330,12 @@ export const GatekeeperModal = () => {
               {t("Continue")}
             </button>
           )}
-          {step === 4 && (
+          {step === 3 && (
             <button
               type="button"
               className="gatekeeper-primary"
               onClick={handleSave}
-              disabled={isSaving || !isStepOneValid || !isStepFourValid}
+              disabled={isSaving || !isStepOneValid || !isStepThreeValid}
             >
               {isSaving ? t("Saving...") : t("Save")}
             </button>

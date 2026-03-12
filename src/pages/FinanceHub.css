@@ -60,6 +60,15 @@
 .financehub-stat strong {
   font-size: 1.4rem;
   color: #1ec9ff;
+
+.financehub-stat-saldo {
+  border-color: #0891b2;
+  box-shadow: 0 0 0 1px rgba(8, 145, 178, 0.25);
+}
+
+.financehub-stat-saldo strong {
+  color: #67e8f9;
+}
 }
 
 .financehub-list {
@@ -136,10 +145,25 @@
 .financehub-form input,
 .financehub-form select {
   border-radius: 10px;
-  border: 1px solid #27272a;
-  background: #0f2235;
-  color: #e2e8f0;
+  border: 1px solid #3e5d7d;
+  background: #122a42;
+  color: #f5f8ff;
+  -webkit-text-fill-color: #f5f8ff;
   padding: 0.55rem 0.75rem;
+  font-size: 0.95rem;
+}
+
+.financehub-form input::placeholder {
+  color: #b9c8d9;
+  -webkit-text-fill-color: #b9c8d9;
+}
+
+.financehub-form input:focus,
+.financehub-form select:focus,
+.financehub-month:focus {
+  outline: none;
+  border-color: #1ec9ff;
+  box-shadow: 0 0 0 3px rgba(30, 201, 255, 0.2);
 }
 
 .financehub-form button,
@@ -149,7 +173,7 @@
   color: #1ec9ff;
   border-radius: 999px;
   padding: 0.35rem 0.9rem;
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   cursor: pointer;

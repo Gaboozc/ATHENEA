@@ -102,6 +102,10 @@ const CanvasForm: React.FC<CanvasFormProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const firstMissingRequiredFieldId = (props.fields || []).find((field: CanvasField) => {
+    return field.required && !formData[field.id];
+  })?.id;
+
   const handleFieldChange = (fieldId: string, value: any) => {
     setFormData(prev => ({
       ...prev,
@@ -150,6 +154,7 @@ const CanvasForm: React.FC<CanvasFormProps> = ({
             value={formData[field.id]}
             onChange={(value) => handleFieldChange(field.id, value)}
             error={errors[field.id]}
+            autoFocus={field.id === firstMissingRequiredFieldId}
           />
         ))}
 
@@ -184,9 +189,10 @@ interface FormFieldProps {
   value: any;
   onChange: (value: any) => void;
   error?: string;
+  autoFocus?: boolean;
 }
 
-const FormField: React.FC<FormFieldProps> = ({ field, value, onChange, error }) => {
+const FormField: React.FC<FormFieldProps> = ({ field, value, onChange, error, autoFocus = false }) => {
   return (
     <div className={`form-field ${error ? 'form-field-error' : ''}`}>
       <label className="form-label">
@@ -201,12 +207,14 @@ const FormField: React.FC<FormFieldProps> = ({ field, value, onChange, error }) 
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
           rows={4}
+          autoFocus={autoFocus}
         />
       ) : field.type === 'select' ? (
         <select
           className="form-input form-select"
           value={value || ''}
           onChange={(e) => onChange(e.target.value)}
+          autoFocus={autoFocus}
         >
           <option value="">Select {field.label}...</option>
           {(field.options || []).map((opt) => (
@@ -229,6 +237,7 @@ const FormField: React.FC<FormFieldProps> = ({ field, value, onChange, error }) 
           value={value || ''}
           onChange={(e) => onChange(parseFloat(e.target.value))}
           placeholder={field.placeholder}
+          autoFocus={autoFocus}
         />
       ) : field.type === 'date' ? (
         <input
@@ -236,6 +245,7 @@ const FormField: React.FC<FormFieldProps> = ({ field, value, onChange, error }) 
           className="form-input"
           value={value || ''}
           onChange={(e) => onChange(e.target.value)}
+          autoFocus={autoFocus}
         />
       ) : (
         <input
@@ -244,6 +254,7 @@ const FormField: React.FC<FormFieldProps> = ({ field, value, onChange, error }) 
           value={value || ''}
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
+          autoFocus={autoFocus}
         />
       )}
 

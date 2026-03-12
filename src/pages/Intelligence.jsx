@@ -28,10 +28,25 @@ const SEVERITY_COLORS = {
   info: '#6b7280'
 };
 
+const normalizeHub = (rawHub) => {
+  const value = String(rawHub || '').trim().toLowerCase();
+  if (!value) return 'FinanceHub';
+  if (value.includes('work')) return 'WorkHub';
+  if (value.includes('personal')) return 'PersonalHub';
+  if (value.includes('finance')) return 'FinanceHub';
+  return 'FinanceHub';
+};
+
+const hubLabel = (hub) => {
+  if (hub === 'WorkHub') return 'Work';
+  if (hub === 'PersonalHub') return 'Personal';
+  return 'Finance';
+};
+
 export const Intelligence = () => {
   const { tasks } = useTasks();
   const { t } = useLanguage();
-  const { projects } = useSelector((state) => state.projects);
+  const { projects } = useSelector((state) => state.projects || { projects: [] });
   const { openOmnibar } = useOmnibar();
   const { allInsights } = useProactiveInsights();
   const { recentHistory } = useActionHistory();
@@ -41,25 +56,31 @@ export const Intelligence = () => {
   const [selectedSeverity, setSelectedSeverity] = useState('all');
   const [viewMode, setViewMode] = useState('live'); // 'live' or 'analytics'
 
-  const scopedProjects = projects;
+  const scopedProjects = Array.isArray(projects) ? projects : [];
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+  const safeInsights = Array.isArray(allInsights) ? allInsights : [];
+  const safeRecentHistory = Array.isArray(recentHistory) ? recentHistory : [];
   
-  const systemHealth = useMemo(() => getSystemHealth(tasks), [tasks]);
-  const priorityMetrics = useMemo(() => getPriorityDistribution(tasks), [tasks]);
+  const systemHealth = useMemo(() => getSystemHealth(safeTasks), [safeTasks]);
+  const priorityMetrics = useMemo(() => getPriorityDistribution(safeTasks), [safeTasks]);
   const projectHealth = useMemo(
-    () => getProjectHealth(scopedProjects, tasks),
-    [scopedProjects, tasks]
+    () => getProjectHealth(scopedProjects, safeTasks),
+    [scopedProjects, safeTasks]
   );
   const throughput = useMemo(
-    () => getThroughput(scopedProjects, tasks),
-    [scopedProjects, tasks]
+    () => getThroughput(scopedProjects, safeTasks),
+    [scopedProjects, safeTasks]
   );
 
   // Filter insights
   const filteredInsights = useMemo(() => {
-    let filtered = allInsights;
+    let filtered = safeInsights.map((insight) => ({
+      ...insight,
+      normalizedHub: normalizeHub(insight?.hub),
+    }));
 
     if (selectedHub !== 'all') {
-      filtered = filtered.filter(insight => insight.hub === selectedHub);
+      filtered = filtered.filter((insight) => insight.normalizedHub === selectedHub);
     }
 
     if (selectedSeverity !== 'all') {
@@ -67,10 +88,32 @@ export const Intelligence = () => {
     }
 
     // Sort by timestamp (newest first)
-    return filtered.sort((a, b) => 
+    return [...filtered].sort((a, b) => 
       new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
-  }, [allInsights, selectedHub, selectedSeverity]);
+  }, [safeInsights, selectedHub, selectedSeverity]);
+
+  const filteredRecentHistory = useMemo(() => {
+    const byHub = selectedHub === 'all'
+      ? safeRecentHistory
+      : safeRecentHistory.filter((action) => normalizeHub(action?.hub) === selectedHub);
+
+    return byHub.slice(0, 20);
+  }, [safeRecentHistory, selectedHub]);
+
+  const noInsightsMessage = useMemo(() => {
+    if (selectedHub === 'all') return t('No active insights. Your system is running smoothly!');
+    if (selectedHub === 'WorkHub') return 'No hay ningun registro aun para Work.';
+    if (selectedHub === 'PersonalHub') return 'No hay ningun registro aun para Personal.';
+    return 'No hay ningun registro aun para Finance.';
+  }, [selectedHub, t]);
+
+  const noActionsMessage = useMemo(() => {
+    if (selectedHub === 'all') return t('No actions executed yet.');
+    if (selectedHub === 'WorkHub') return 'No hay ningun registro aun para Work.';
+    if (selectedHub === 'PersonalHub') return 'No hay ningun registro aun para Personal.';
+    return 'No hay ningun registro aun para Finance.';
+  }, [selectedHub, t]);
 
   const handleInsightClick = (insight) => {
     // Open Omnibar with the insight's suggested prompt
@@ -125,8 +168,8 @@ export const Intelligence = () => {
           <section className="intel-action-history">
             <h2>⚡ Recent Actions</h2>
             <div className="action-history-list">
-              {recentHistory.length > 0 ? (
-                recentHistory.map((action) => (
+              {filteredRecentHistory.length > 0 ? (
+                filteredRecentHistory.map((action) => (
                   <div key={action.id} className={`action-item ${action.success ? 'success' : 'failed'}`}>
                     <div className="action-icon">
                       {action.type === 'voice-command' ? '🎤' : 
@@ -145,7 +188,7 @@ export const Intelligence = () => {
                   </div>
                 ))
               ) : (
-                <div className="intel-empty">{t('No actions executed yet.')}</div>
+                <div className="intel-empty">{noActionsMessage}</div>
               )}
             </div>
           </section>
@@ -211,9 +254,9 @@ export const Intelligence = () => {
                           {insight.severity.toUpperCase()}
                         </span>
                         <span className="hub-badge">
-                          {insight.hub === 'WorkHub' ? '💼' : 
-                           insight.hub === 'PersonalHub' ? '📝' : '💰'} 
-                          {insight.hub.replace('Hub', '')}
+                          {insight.normalizedHub === 'WorkHub' ? '💼' : 
+                           insight.normalizedHub === 'PersonalHub' ? '📝' : '💰'} 
+                          {hubLabel(insight.normalizedHub)}
                         </span>
                       </div>
                       <span className="feed-insight-time">{formatTimestamp(insight.timestamp)}</span>
@@ -232,7 +275,7 @@ export const Intelligence = () => {
               ) : (
                 <div className="intel-empty">
                   <div className="empty-icon">🎯</div>
-                  <div className="empty-text">{t('No active insights. Your system is running smoothly!')}</div>
+                  <div className="empty-text">{noInsightsMessage}</div>
                 </div>
               )}
             </div>

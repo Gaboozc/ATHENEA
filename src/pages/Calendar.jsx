@@ -1,8 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addEvent, updateEvent, deleteEvent } from '../../store/slices/calendarSlice';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
+import { useAgentCalendar } from '../hooks/useAgentCalendar';
+import { selectFinancialSnapshot } from '../store/selectors/financialSelectors';
 import './Calendar.css';
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -62,6 +64,13 @@ export const Calendar = () => {
     color: '#1ec9ff',
     type: 'event',
   });
+
+  // ── Agent-aware calendar overlay ─────────────────────────────────────────
+  const agentDayMeta = useAgentCalendar();
+  const financialSnapshot = useSelector(selectFinancialSnapshot);
+
+  // Separate state: day detail modal (intelligence report)
+  const [showDayDetail, setShowDayDetail] = useState(false);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -137,9 +146,14 @@ export const Calendar = () => {
 
   const handleDateClick = (day) => {
     setSelectedDate(day.fullDate);
-    setShowModal(true);
+    setShowDayDetail(true);
+  };
+
+  const handleOpenCreateForm = useCallback((date) => {
+    const d = date || selectedDate || new Date();
+    const dateStr = d.toISOString().split('T')[0];
+    setSelectedDate(d);
     setEditingEvent(null);
-    const dateStr = day.fullDate.toISOString().split('T')[0];
     setFormData({
       title: '',
       description: '',
@@ -151,7 +165,9 @@ export const Calendar = () => {
       color: '#1ec9ff',
       type: 'event',
     });
-  };
+    setShowDayDetail(false);
+    setShowModal(true);
+  }, [selectedDate]);
 
   const handleEditEvent = (event, triggerEvent) => {
     triggerEvent?.stopPropagation?.();
@@ -170,6 +186,7 @@ export const Calendar = () => {
       color: event.color,
       type: event.type,
     });
+    setShowDayDetail(false);
     setShowModal(true);
   };
 
@@ -239,7 +256,46 @@ export const Calendar = () => {
     );
   }, [selectedDate, events]);
 
+  // Agent meta for selected day
+  const selectedDayMeta = useMemo(() => {
+    if (!selectedDate) return null;
+    const dateStr = selectedDate.toISOString().split('T')[0];
+    return agentDayMeta[dateStr] || null;
+  }, [selectedDate, agentDayMeta]);
+
+  // Projected saldo libre: current month saldo libre minus pending payments
+  // that fall between today and the selected date (inclusive).
+  const projectedSaldoLibre = useMemo(() => {
+    if (!selectedDate || !financialSnapshot) return null;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const selStr   = selectedDate.toISOString().split('T')[0];
+    // Sum all pending payment commitments from today up to selectedDate
+    let deductions = 0;
+    Object.entries(agentDayMeta).forEach(([ds, meta]) => {
+      if (ds >= todayStr && ds <= selStr) {
+        deductions += (meta.jarvis?.payments || []).reduce(
+          (sum, p) => sum + Number(p.amount || 0), 0
+        );
+      }
+    });
+    return financialSnapshot.saldoLibre - (selStr > todayStr ? deductions : 0);
+  }, [selectedDate, agentDayMeta, financialSnapshot]);
+
   const todayEvents = getEventsForDate(new Date());
+
+  // Helper: derive background class from agent layers
+  const getDayAgentClass = (dateStr) => {
+    const meta = agentDayMeta[dateStr];
+    if (!meta) return '';
+    // Cortana saturation overrides finance tint (workload is most visually significant)
+    if (meta.cortana.workloadLevel === 'high')   return 'agent-cortana-saturated';
+    if (meta.cortana.workloadLevel === 'medium') return 'agent-cortana-busy';
+    if (meta.jarvis.pressureLevel === 'high')    return 'fin-has-commitment';
+    if (meta.jarvis.pressureLevel === 'low')     return 'fin-low-activity';
+    if (meta.activityCount >= 3)                 return 'fin-high-activity';
+    if (meta.activityCount >= 1)                 return 'fin-low-activity';
+    return '';
+  };
 
   return (
     <div className="calendar-container">
@@ -248,24 +304,7 @@ export const Calendar = () => {
           <h1>{t('Calendar')}</h1>
           <p>{t('Manage your events, deadlines, and reminders.')}</p>
         </div>
-        <button className="calendar-create-btn" onClick={() => {
-          setShowModal(true);
-          setEditingEvent(null);
-          const todayDate = new Date();
-          const today = todayDate.toISOString().split('T')[0];
-          setSelectedDate(todayDate);
-          setFormData({
-            title: '',
-            description: '',
-            startDate: today,
-            startTime: '09:00',
-            endDate: today,
-            endTime: '10:00',
-            allDay: true,
-            color: '#1ec9ff',
-            type: 'event',
-          });
-        }}>
+        <button className="calendar-create-btn" onClick={() => handleOpenCreateForm(null)}>
           {t('New Event')}
         </button>
       </header>
@@ -295,11 +334,13 @@ export const Calendar = () => {
             const dayEvents = getEventsForDate(day.fullDate);
             const isToday = day.fullDate.toDateString() === new Date().toDateString();
             const dayTypes = [...new Set(dayEvents.map((event) => event.type))].slice(0, 4);
-            
+            const dateStr = day.fullDate.toISOString().split('T')[0];
+            const agentMeta = agentDayMeta[dateStr];
+
             return (
               <div
                 key={index}
-                className={`calendar-day ${!day.isCurrentMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}`}
+                className={`calendar-day ${!day.isCurrentMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${day.isCurrentMonth ? getDayAgentClass(dateStr) : ''}`}
                 onClick={() => handleDateClick(day)}
               >
                 <span className="calendar-day-number">{day.date}</span>
@@ -337,6 +378,46 @@ export const Calendar = () => {
                     </div>
                   )}
                 </div>
+
+                {/* ── Three-layer Agent Indicator Row ── */}
+                {agentMeta && (
+                  <div className="cal-agent-indicator-row">
+                    {/* Jarvis: payment pressure (blue) */}
+                    {agentMeta.jarvis.payments.length > 0 && (
+                      <span
+                        className="cal-agent-dot jarvis-pressure"
+                        title={`Jarvis: ${agentMeta.jarvis.payments.length} pago(s) pendiente(s)`}
+                      >💳</span>
+                    )}
+                    {agentMeta.jarvis.goals.length > 0 && (
+                      <span
+                        className="cal-agent-dot jarvis-goal"
+                        title={`Jarvis: ${agentMeta.jarvis.goals.length} meta(s) con deadline`}
+                      >🎯</span>
+                    )}
+                    {/* Cortana: workload saturation (amber/red) */}
+                    {agentMeta.cortana.workloadLevel !== 'none' && (
+                      <span
+                        className={`cal-agent-dot cortana-work cortana-${agentMeta.cortana.workloadLevel}`}
+                        title={`Cortana: carga ${agentMeta.cortana.workloadLevel}`}
+                      >📋</span>
+                    )}
+                    {/* Shodan: habit tracking (green/gray) */}
+                    {agentMeta.shodan.routines.length > 0 && (
+                      <span
+                        className={`cal-agent-dot shodan-habit ${agentMeta.shodan.habitDone ? 'shodan-done' : 'shodan-missed'}`}
+                        title={agentMeta.shodan.habitDone ? 'Shodan: hábitos cumplidos ✓' : 'Shodan: hábitos pendientes'}
+                      >{agentMeta.shodan.habitDone ? '✓' : '○'}</span>
+                    )}
+                    {/* Generic finance activity dots */}
+                    {agentMeta.activityCount >= 2 && (
+                      <span
+                        className="cal-fin-dot activity"
+                        title={`${agentMeta.activityCount} movimientos financieros`}
+                      />
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -375,6 +456,22 @@ export const Calendar = () => {
         </div>
       )}
 
+      {/* ── Day Detail Modal (Agent Intelligence Report) ── */}
+      {showDayDetail && selectedDate && (
+        <DayDetailModal
+          date={selectedDate}
+          meta={selectedDayMeta}
+          events={selectedDayEvents}
+          projectedSaldoLibre={projectedSaldoLibre}
+          onClose={() => setShowDayDetail(false)}
+          onNewEvent={() => handleOpenCreateForm(selectedDate)}
+          onEditEvent={handleEditEvent}
+          onDeleteEvent={handleDeleteEvent}
+          onEventClick={handleEventClick}
+          t={t}
+        />
+      )}
+
       {showModal && (
         <div className="calendar-modal-overlay" onClick={() => setShowModal(false)}>
           <div className="calendar-modal" onClick={(e) => e.stopPropagation()}>
@@ -382,38 +479,6 @@ export const Calendar = () => {
               <h2>{editingEvent ? t('Edit Event') : t('New Event')}</h2>
               <button onClick={() => setShowModal(false)}>✕</button>
             </div>
-            {selectedDate && (
-              <div className="calendar-selected-day">
-                <h3>{t('Events')} · {formatDateLabel(selectedDate)}</h3>
-                {selectedDayEvents.length === 0 ? (
-                  <p>{t('No events yet')}</p>
-                ) : (
-                  <ul className="calendar-selected-events">
-                    {selectedDayEvents.map((event) => (
-                      <li key={event.id}>
-                        <button
-                          type="button"
-                          className="calendar-selected-event-main"
-                          onClick={() => handleEventClick(event)}
-                        >
-                          <span className="calendar-event-icon" aria-hidden="true">
-                            {EVENT_ICONS[event.type] || '📌'}
-                          </span>
-                          <span className="calendar-selected-event-title">{event.title}</span>
-                          <span className="calendar-selected-event-time">
-                            {event.allDay ? t('All day') : new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </button>
-                        <div className="calendar-selected-event-actions">
-                          <button type="button" onClick={(e) => handleEditEvent(event, e)}>✏️</button>
-                          <button type="button" onClick={(e) => handleDeleteEvent(event.id, e)}>🗑️</button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
             <form onSubmit={handleSubmit}>
               <div className="calendar-form-group">
                 <label>{t('Title')}</label>
@@ -524,6 +589,314 @@ export const Calendar = () => {
               </div>
             </form>
           </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================================
+// DayDetailModal – Multi-Agent Intelligence Report
+// ============================================================================
+
+const AGENT_META = {
+  Jarvis:  { cls: 'jarvis',  icon: '🤖', label: 'Jarvis',  color: '#0ea5e9' },
+  Cortana: { cls: 'cortana', icon: '🟣', label: 'Cortana', color: '#a855f7' },
+  Shodan:  { cls: 'shodan',  icon: '🔴', label: 'Shodan',  color: '#ef4444' },
+  user:    { cls: 'user',    icon: '👤', label: 'User',    color: '#6b7280' },
+};
+
+// Map agenda item type → display metadata
+const ITEM_TYPE_META = {
+  event:         { icon: '📌', label: 'Evento'          },
+  'project-start': { icon: '▶️',  label: 'Inicio de Proyecto' },
+  'project-end':   { icon: '🏁', label: 'Fin de Proyecto'    },
+  task:          { icon: '✅', label: 'Tarea'           },
+  note:          { icon: '📝', label: 'Nota'            },
+  todo:          { icon: '📌', label: 'Todo'            },
+  routine:       { icon: '🔄', label: 'Rutina'          },
+  payment:       { icon: '💳', label: 'Pago'            },
+  goal:          { icon: '🎯', label: 'Meta'            },
+};
+
+const DayDetailModal = ({
+  date, meta, events, projectedSaldoLibre,
+  onClose, onNewEvent, onEditEvent, onDeleteEvent, onEventClick, t,
+}) => {
+  const dateLabel = date.toLocaleDateString(undefined, {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  });
+  const todayStr = new Date().toISOString().split('T')[0];
+  const dateStr  = date.toISOString().split('T')[0];
+  const isFuture = dateStr > todayStr;
+  const isToday  = dateStr === todayStr;
+
+  // Build unified timeline from agent items + calendar events
+  const timeline = useMemo(() => {
+    const items = [];
+
+    // Existing calendar events (already shown on tile)
+    events.forEach((ev) => {
+      items.push({
+        id: `ev-${ev.id}`,
+        type: 'event',
+        agent: null,
+        title: ev.title,
+        meta: ev,
+        color: ev.color,
+        sortKey: ev.allDay ? '00:00' : (new Date(ev.startDate).toTimeString().slice(0, 5)),
+      });
+    });
+
+    // Agent items from agentDayMeta
+    if (meta) {
+      meta.items.forEach((item) => {
+        // Don't duplicate calendar events already added above
+        if (item.type === 'event') return;
+        items.push({
+          ...item,
+          sortKey: '12:00',
+        });
+      });
+    }
+
+    // Sort: payments/goals first, then tasks, todos, projects, notes last
+    const ORDER = { payment: 0, goal: 1, 'project-end': 2, 'project-start': 3, task: 4, todo: 5, event: 6, note: 7, routine: 8 };
+    return items.sort((a, b) => (ORDER[a.type] ?? 9) - (ORDER[b.type] ?? 9));
+  }, [events, meta]);
+
+  // Conflict detection: Cortana says high workload + Jarvis says financial pressure
+  const hasConflict =
+    meta &&
+    meta.cortana.workloadLevel !== 'none' &&
+    meta.jarvis.pressureLevel !== 'none';
+
+  return (
+    <div className="calendar-modal-overlay" onClick={onClose}>
+      <div className="cal-daydetail-modal" onClick={(e) => e.stopPropagation()}>
+
+        {/* ── Header ──────────────────────────────────────────────────── */}
+        <div className="cal-daydetail-header">
+          <div>
+            <h2 className="cal-daydetail-title">
+              {isToday ? '📍 ' : isFuture ? '🔭 ' : '📁 '}
+              {dateLabel}
+            </h2>
+            <p className="cal-daydetail-subtitle">
+              {isToday ? 'Centro de Mando — Hoy' : isFuture ? 'Proyección Táctica' : 'Registro Histórico'}
+            </p>
+          </div>
+          <button className="cal-daydetail-close" onClick={onClose}>✕</button>
+        </div>
+
+        {/* ── Conflict banner ──────────────────────────────────────────── */}
+        {hasConflict && (
+          <div className="cal-conflict-banner">
+            ⚡ <strong>Conflicto detectado:</strong> Carga de trabajo elevada + presión financiera.
+            Cortana recomienda redistribuir tareas antes de comprometer gastos adicionales.
+          </div>
+        )}
+
+        {/* ── Saldo Libre Header (Jarvis) ──────────────────────────────── */}
+        {projectedSaldoLibre !== null && (
+          <div className={`cal-saldo-header ${projectedSaldoLibre >= 0 ? 'saldo-positive' : 'saldo-negative'}`}>
+            <span className="cal-saldo-label">
+              <span className="finance-agent-tag jarvis">🤖 Jarvis</span>
+              {isFuture ? ' — Saldo libre proyectado:' : isToday ? ' — Saldo libre hoy:' : ' — Saldo del día:'}
+            </span>
+            <span className="cal-saldo-amount">
+              {projectedSaldoLibre >= 0 ? '✅' : '⚠️'} {projectedSaldoLibre.toFixed(2)}
+            </span>
+          </div>
+        )}
+
+        {/* ── Agent status badges ─────────────────────────────────────── */}
+        {meta && (
+          <div className="cal-agent-badges">
+            {/* Jarvis */}
+            <div className="cal-agent-badge jarvis">
+              <span>🤖 Jarvis</span>
+              <span className={`cal-badge-level pressure-${meta.jarvis.pressureLevel}`}>
+                {meta.jarvis.pressureLevel === 'none' ? 'Sin presión' :
+                 meta.jarvis.pressureLevel === 'low'  ? '⚠️ Presión baja' :
+                                                        '🔴 Presión alta'}
+              </span>
+            </div>
+            {/* Cortana */}
+            <div className="cal-agent-badge cortana">
+              <span>🟣 Cortana</span>
+              <span className={`cal-badge-level workload-${meta.cortana.workloadLevel}`}>
+                {meta.cortana.workloadLevel === 'none'   ? 'Libre' :
+                 meta.cortana.workloadLevel === 'low'    ? '📋 Carga baja' :
+                 meta.cortana.workloadLevel === 'medium' ? '📋 Carga media' :
+                                                           '🔥 Saturado'}
+              </span>
+            </div>
+            {/* Shodan */}
+            <div className="cal-agent-badge shodan">
+              <span>🔴 Shodan</span>
+              <span className={`cal-badge-level habit-${meta.shodan.habitDone ? 'done' : 'pending'}`}>
+                {meta.shodan.habitDone ? '✓ Hábitos cumplidos' :
+                 meta.shodan.routines.length > 0 ? '○ Hábitos pendientes' :
+                                                   'Sin rutinas'}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* ── Intelligence Timeline ────────────────────────────────────── */}
+        <div className="cal-timeline-section">
+          <div className="cal-timeline-header">
+            📡 {t('Intelligence Feed')} ({timeline.length})
+          </div>
+
+          {timeline.length === 0 ? (
+            <div className="cal-timeline-empty">
+              {t('No events or agent signals for this day.')}
+            </div>
+          ) : (
+            <ul className="cal-timeline-list">
+              {timeline.map((item) => {
+                const agentInfo = item.agent ? AGENT_META[item.agent] : null;
+                const typeInfo  = ITEM_TYPE_META[item.type] || { icon: '📌', label: item.type };
+                const isCalEvent = item.type === 'event' && item.meta;
+
+                return (
+                  <li
+                    key={item.id}
+                    className={`cal-timeline-item ${item.overdue ? 'item-overdue' : ''}`}
+                    style={item.color ? { borderLeftColor: item.color } : undefined}
+                  >
+                    <span className="cal-timeline-type-icon">{typeInfo.icon}</span>
+                    <div className="cal-timeline-body">
+                      <span className="cal-timeline-title">{item.title}</span>
+                      {item.amount != null && (
+                        <span className="cal-timeline-amount">
+                          {Number(item.amount).toFixed(2)}{item.currency ? ` ${item.currency}` : ''}
+                        </span>
+                      )}
+                      {item.meta?.description && (
+                        <span className="cal-timeline-desc">{item.meta.description}</span>
+                      )}
+                    </div>
+                    <div className="cal-timeline-right">
+                      {agentInfo && (
+                        <span className={`finance-agent-tag ${agentInfo.cls}`}>
+                          {agentInfo.icon} {agentInfo.label}
+                        </span>
+                      )}
+                      {isCalEvent && (
+                        <div className="calendar-selected-event-actions">
+                          <button type="button" onClick={(e) => onEditEvent(item.meta, e)}>✏️</button>
+                          <button type="button" onClick={(e) => onDeleteEvent(item.meta.id, e)}>🗑️</button>
+                        </div>
+                      )}
+                      {isCalEvent && item.meta.relatedType && (
+                        <button
+                          type="button"
+                          className="cal-timeline-nav"
+                          onClick={() => onEventClick(item.meta)}
+                        >→</button>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        {/* ── Finance history agent log (existing FinanceDaySummary data) ── */}
+        {meta && (
+          <FinanceDaySummary data={meta} t={t} />
+        )}
+
+        {/* ── Footer action ───────────────────────────────────────────── */}
+        <div className="cal-daydetail-footer">
+          <button className="calendar-create-btn" onClick={onNewEvent}>
+            + {t('New Event')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Finance Day Summary Panel (legacy, reused inside DayDetailModal) ─────
+const AGENT_CONFIG = [
+  { key: 'Jarvis',  cls: 'jarvis',  icon: '🤖' },
+  { key: 'Shodan',  cls: 'shodan',  icon: '🔴' },
+  { key: 'Cortana', cls: 'cortana', icon: '🟣' },
+];
+
+const FinanceDaySummary = ({ data, t }) => {
+  const { pendingCommitments, expenseTotal, activityCount, agents } = data;
+  const hasAgentData = AGENT_CONFIG.some(({ key }) => (agents[key]?.length ?? 0) > 0);
+  const hasAnything = pendingCommitments.length > 0 || activityCount > 0 || hasAgentData;
+  if (!hasAnything) return null;
+
+  return (
+    <div className="cal-finance-summary">
+      <div className="cal-finance-summary-title">
+        💰 {t('Finance Log')}
+      </div>
+
+      {pendingCommitments.length > 0 && (
+        <div className="cal-finance-section">
+          <div className="cal-finance-section-header">
+            <span className="cal-fin-dot commitment" style={{ display: 'inline-block' }} />
+            {t('Pending Commitments')} ({pendingCommitments.length})
+          </div>
+          <ul className="cal-finance-list">
+            {pendingCommitments.map((p) => (
+              <li key={p.id}>
+                <span>💳 {p.name}</span>
+                <span className="cal-finance-amount commitment-amount">
+                  {Number(p.amount || 0).toFixed(2)}{p.currency ? ` ${p.currency}` : ''}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {activityCount > 0 && (
+        <div className="cal-finance-section">
+          <div className="cal-finance-section-header">
+            <span className="cal-fin-dot activity" style={{ display: 'inline-block' }} />
+            {t('Financial Activity')}
+          </div>
+          <div className="cal-finance-activity-row">
+            <span>{activityCount} {t('movements')}</span>
+            <span className="cal-finance-amount expense-amount">
+              {expenseTotal.toFixed(2)}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {hasAgentData && (
+        <div className="cal-finance-section">
+          <div className="cal-finance-section-header">⚡ {t('Agent Action Log')}</div>
+          {AGENT_CONFIG.map(({ key, cls, icon }) => {
+            const entries = agents[key] || [];
+            if (entries.length === 0) return null;
+            return (
+              <div key={key} className="cal-agent-group">
+                <span className={`finance-agent-tag ${cls}`}>{icon} {key}</span>
+                <ul className="cal-finance-list">
+                  {entries.slice(0, 5).map((e) => (
+                    <li key={e.id}>
+                      <span>{e.description || e.actionType}</span>
+                      <span className="cal-finance-ts">
+                        {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

@@ -629,3 +629,379 @@
     padding: 1rem;
   }
 }
+
+/* ── Finance calendar overlay ─────────────────────────────────────────── */
+
+/* Dot indicators row at the bottom of each day cell */
+.cal-fin-row {
+  display: flex;
+  gap: 3px;
+  padding: 3px 0 1px;
+  flex-wrap: wrap;
+  min-height: 10px;
+}
+
+.cal-fin-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cal-fin-dot.commitment { background: #3b82f6; box-shadow: 0 0 4px rgba(59, 130, 246, 0.6); }
+.cal-fin-dot.activity   { background: #f59e0b; box-shadow: 0 0 4px rgba(245, 158, 11, 0.6); }
+.cal-fin-dot.jarvis     { background: #0ea5e9; }
+.cal-fin-dot.shodan     { background: #ef4444; }
+.cal-fin-dot.cortana    { background: #a855f7; }
+
+/* Day cell background tints */
+.calendar-day.fin-has-commitment {
+  background: rgba(59, 130, 246, 0.07);
+  border-left: 2px solid rgba(59, 130, 246, 0.4);
+}
+
+.calendar-day.fin-high-activity {
+  background: rgba(245, 158, 11, 0.07);
+}
+
+.calendar-day.fin-low-activity {
+  background: rgba(245, 158, 11, 0.03);
+}
+
+/* Finance summary panel inside modal */
+.cal-finance-summary {
+  border-top: 1px solid #334155;
+  border-bottom: 1px solid #334155;
+  padding: 14px 1.5rem;
+  display: grid;
+  gap: 12px;
+}
+
+.cal-finance-summary-title {
+  font-weight: 600;
+  color: #67e8f9;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cal-finance-section { display: grid; gap: 6px; }
+
+.cal-finance-section-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.cal-finance-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 14px;
+  display: grid;
+  gap: 4px;
+}
+
+.cal-finance-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  gap: 8px;
+}
+
+.cal-finance-amount { font-weight: 600; white-space: nowrap; }
+.commitment-amount  { color: #60a5fa; }
+.expense-amount     { color: #fca5a5; }
+
+.cal-finance-activity-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  padding-left: 14px;
+}
+
+.cal-agent-group { display: grid; gap: 6px; margin-top: 6px; }
+.cal-finance-ts  { color: #64748b; font-size: 0.75rem; white-space: nowrap; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   AGENT COMMAND CENTER – New tile indicator styles
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* 3-layer agent indicator row inside each calendar tile */
+.cal-agent-indicator-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  min-height: 10px;
+  margin-top: 2px;
+}
+
+.cal-agent-dot {
+  font-size: 10px;
+  line-height: 1;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 2px rgba(0,0,0,.4));
+}
+
+/* Day cell background tints – agent layers */
+.calendar-day.agent-cortana-saturated {
+  background: rgba(239, 68, 68, 0.1);
+  border-left: 2px solid rgba(239, 68, 68, 0.45);
+}
+
+.calendar-day.agent-cortana-busy {
+  background: rgba(245, 158, 11, 0.08);
+  border-left: 2px solid rgba(245, 158, 11, 0.35);
+}
+
+.calendar-day.jarvis-pressure {
+  background: rgba(14, 165, 233, 0.07);
+  border-left: 2px solid rgba(14, 165, 233, 0.35);
+}
+
+/* Shodan habit completion states */
+.shodan-done   { color: #4ade80; }
+.shodan-missed { color: #6b7280; opacity: 0.6; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DAY DETAIL MODAL (DayDetailModal)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.cal-daydetail-modal {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 16px;
+  width: min(640px, 96vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 80px rgba(0,0,0,.7);
+}
+
+/* Header */
+.cal-daydetail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.4rem 1.5rem 0.9rem;
+  border-bottom: 1px solid #1e293b;
+}
+
+.cal-daydetail-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0 0 4px;
+  text-transform: capitalize;
+}
+
+.cal-daydetail-subtitle {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.cal-daydetail-close {
+  background: transparent;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.cal-daydetail-close:hover { background: #1e293b; color: #f1f5f9; }
+
+/* Conflict banner */
+.cal-conflict-banner {
+  margin: 0;
+  padding: 10px 1.5rem;
+  background: rgba(239, 68, 68, 0.12);
+  border-bottom: 1px solid rgba(239, 68, 68, 0.25);
+  font-size: 0.82rem;
+  color: #fca5a5;
+}
+
+/* Saldo Libre header */
+.cal-saldo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 1.5rem;
+  border-bottom: 1px solid #1e293b;
+}
+
+.cal-saldo-header.saldo-positive { background: rgba(74, 222, 128, 0.05); }
+.cal-saldo-header.saldo-negative { background: rgba(239, 68, 68, 0.07); }
+
+.cal-saldo-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.cal-saldo-amount {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.saldo-positive .cal-saldo-amount { color: #4ade80; }
+.saldo-negative .cal-saldo-amount { color: #f87171; }
+
+/* Agent status badges row */
+.cal-agent-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 1.5rem;
+  border-bottom: 1px solid #1e293b;
+}
+
+.cal-agent-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  flex: 1;
+  min-width: 140px;
+}
+
+.cal-badge-level {
+  font-weight: 600;
+  font-size: 0.76rem;
+  margin-left: auto;
+}
+
+.pressure-none   { color: #4ade80; }
+.pressure-low    { color: #fbbf24; }
+.pressure-high   { color: #f87171; }
+.workload-none   { color: #4ade80; }
+.workload-low    { color: #a3e635; }
+.workload-medium { color: #fbbf24; }
+.workload-high   { color: #f87171; }
+.habit-done      { color: #4ade80; }
+.habit-pending   { color: #fbbf24; }
+
+/* Intelligence timeline section */
+.cal-timeline-section {
+  padding: 0 0 8px;
+}
+
+.cal-timeline-header {
+  padding: 10px 1.5rem 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #67e8f9;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #1e293b;
+}
+
+.cal-timeline-empty {
+  padding: 16px 1.5rem;
+  color: #475569;
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.cal-timeline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cal-timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 1.5rem;
+  border-bottom: 1px solid #0f172a;
+  border-left: 3px solid transparent;
+  transition: background 0.12s;
+}
+.cal-timeline-item:hover { background: rgba(255,255,255,.03); }
+.cal-timeline-item.item-overdue { border-left-color: #ef4444; }
+
+.cal-timeline-type-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+
+.cal-timeline-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cal-timeline-title {
+  font-size: 0.84rem;
+  color: #e2e8f0;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cal-timeline-amount {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #60a5fa;
+}
+
+.cal-timeline-desc {
+  font-size: 0.75rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cal-timeline-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.cal-timeline-nav {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.cal-timeline-nav:hover { color: #38bdf8; }
+
+/* Footer */
+.cal-daydetail-footer {
+  padding: 12px 1.5rem;
+  border-top: 1px solid #1e293b;
+  display: flex;
+  justify-content: flex-end;
+}
+

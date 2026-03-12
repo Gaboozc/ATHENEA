@@ -1,27 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useDataExport } from '../hooks/useDataExport';
 import { cacheManager } from '../utils/cacheManager';
-import { useDispatch } from 'react-redux';
+import { IdentityPanel } from '../components/settings/IdentityPanel';
+import { simulateInterceptedNotification } from '../services/notificationListenerBridge';
+import { getActionBridge } from '../modules/actions/ActionBridge';
 import './Settings.css';
 
 /**
- * Settings Page with Cache Management and Data Export/Import
+ * User Core & Telemetry
+ * Immersive control center for Identity Core + outbound webhook telemetry.
  */
 const Settings = () => {
-  const dispatch = useDispatch();
   const { exportToJSON, exportToPDF, importFromJSON } = useDataExport();
-  const [cacheStats, setCacheStats] = useState(null);
   const [importText, setImportText] = useState('');
   const [message, setMessage] = useState(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [debugOpen, setDebugOpen] = useState(false);
+  const [debugLogs, setDebugLogs] = useState([]);
 
-  useEffect(() => {
-    refreshCacheStats();
-  }, []);
-
-  const refreshCacheStats = () => {
-    const stats = cacheManager.getCacheStats();
-    setCacheStats(stats);
+  const isProductionReadyFlagEnabled = () => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage.getItem('Production_Ready_Flag') === 'true';
+    }
+    return String(import.meta.env.VITE_PRODUCTION_READY_FLAG || '').toLowerCase() === 'true';
   };
+
+  const canShowDebugConsole = isProductionReadyFlagEnabled();
 
   const showMessage = (text, type = 'success') => {
     setMessage({ text, type });
@@ -75,26 +79,6 @@ const Settings = () => {
     }
   };
 
-  const handleOptimizeStorage = () => {
-    const result = cacheManager.optimizeStorage();
-    if (result.success) {
-      showMessage(`✓ Storage optimized! Saved ${(result.bytesSaved / 1024).toFixed(2)} KB`, 'success');
-      refreshCacheStats();
-    } else {
-      showMessage(`Error: ${result.message}`, 'error');
-    }
-  };
-
-  const handleClearOldCache = () => {
-    const result = cacheManager.clearOldCache(30);
-    if (result.success) {
-      showMessage(`✓ Cleared ${result.clearedCount} old cache items`, 'success');
-      refreshCacheStats();
-    } else {
-      showMessage(`Error: ${result.message}`, 'error');
-    }
-  };
-
   const handleBackupBeforeClear = () => {
     const result = cacheManager.createBackupBeforeClear();
     if (result.success) {
@@ -104,11 +88,26 @@ const Settings = () => {
     }
   };
 
+  const handleSimulateBankIntercept = async () => {
+    await simulateInterceptedNotification({
+      packageName: 'sim.test',
+      appName: 'Simulated App',
+      title: 'Notificacion simulada',
+      text: 'Evento de prueba sin monto',
+    });
+    showMessage('Simulacion enviada al pipeline de intercepcion.', 'success');
+  };
+
+  const handleRefreshDebugLogs = () => {
+    const logs = getActionBridge().getActionLog();
+    setDebugLogs(logs.slice(-20).reverse());
+  };
+
   return (
     <div className="settings-page">
       <div className="settings-header">
-        <h1>⚙️ Settings</h1>
-        <p>Manage your app data, cache, and preferences</p>
+        <h1>🧠 Neural Core</h1>
+        <p>ATHENEA personal, local y privada. Sin nube multiusuario.</p>
       </div>
 
       {message && (
@@ -117,132 +116,111 @@ const Settings = () => {
         </div>
       )}
 
-      {/* Storage Stats */}
-      {cacheStats && (
-        <div className="settings-section">
-          <h2>💾 Storage Information</h2>
-          <div className="storage-stats">
-            <div className="storage-info">
-              <div className="storage-bar">
-                <div 
-                  className="storage-fill" 
-                  style={{ width: `${Math.min(cacheStats.usagePercent, 100)}%` }}
-                ></div>
+      <div className="settings-section">
+        <IdentityPanel />
+      </div>
+
+      {canShowDebugConsole && (
+        <div className="settings-section advanced-system-core">
+          <button
+            className="advanced-core-toggle"
+            type="button"
+            aria-expanded={debugOpen}
+            onClick={() => setDebugOpen((prev) => !prev)}
+          >
+            <span>Debug Console</span>
+            <span>{debugOpen ? '−' : '+'}</span>
+          </button>
+
+          {debugOpen && (
+            <div className="import-section" style={{ marginTop: '1rem' }}>
+              <h3>Simulation & Internal Logs</h3>
+              <p className="help-text">
+                Herramientas internas movidas fuera de la Omnibar principal.
+              </p>
+              <div className="settings-actions">
+                <button className="settings-button secondary" onClick={handleSimulateBankIntercept}>
+                  Simular Banco
+                </button>
+                <button className="settings-button secondary" onClick={handleRefreshDebugLogs}>
+                  Refrescar ActionBridge Log
+                </button>
               </div>
-              <div className="storage-text">
-                <span>{cacheStats.totalSize.mb} MB used</span>
-                <span>{cacheStats.usagePercent}% of {cacheStats.limit.mb} MB</span>
-              </div>
+
+              <textarea
+                className="import-textarea"
+                readOnly
+                value={JSON.stringify(debugLogs, null, 2)}
+                rows={8}
+                placeholder="No debug logs yet..."
+              />
             </div>
-            <div className="storage-details">
-              <div className="detail-item">
-                <span className="detail-label">Total Items:</span>
-                <span className="detail-value">{cacheStats.itemCount}</span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Size:</span>
-                <span className="detail-value">{cacheStats.totalSize.kb} KB</span>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       )}
 
-      {/* Data Export/Import */}
-      <div className="settings-section">
-        <h2>📥 Data Backup & Restore</h2>
-        <p className="section-description">
-          Create backups of all your data for safekeeping or device migration
-        </p>
-        
-        <div className="settings-actions">
-          <button className="settings-button primary" onClick={handleExportPDF}>
-            📄 Export Complete PDF Backup
-          </button>
-          <button className="settings-button secondary" onClick={handleExportJSON}>
-            💾 Export JSON Backup
-          </button>
-        </div>
+      {/* Advanced System Core (collapsed by default) */}
+      <div className="settings-section advanced-system-core">
+        <button
+          className="advanced-core-toggle"
+          type="button"
+          aria-expanded={advancedOpen}
+          onClick={() => setAdvancedOpen((prev) => !prev)}
+        >
+          <span>Advanced System Core</span>
+          <span>{advancedOpen ? '−' : '+'}</span>
+        </button>
 
-        <div className="import-section">
-          <h3>📤 Restore from Backup</h3>
-          <p className="help-text">
-            Paste your JSON backup code below (from PDF or JSON file)
-          </p>
-          <textarea
-            className="import-textarea"
-            value={importText}
-            onChange={(e) => setImportText(e.target.value)}
-            placeholder='Paste your backup JSON here...'
-            rows={6}
-          />
-          <button 
-            className="settings-button primary"
-            onClick={handleImport}
-            disabled={!importText.trim()}
-          >
-            Import & Restore Data
-          </button>
-        </div>
-      </div>
+        {advancedOpen && (
+          <>
+            <div className="import-section" style={{ marginTop: '1.25rem', borderTop: 'none', paddingTop: 0 }}>
+              <h3>📥 Data Backup & Restore</h3>
+              <p className="help-text">
+                Export or recover full state snapshots.
+              </p>
 
-      {/* Cache Management */}
-      <div className="settings-section">
-        <h2>🧹 Cache Management</h2>
-        <p className="section-description">
-          Optimize storage and clear unnecessary cache
-        </p>
-        
-        <div className="settings-actions">
-          <button className="settings-button secondary" onClick={handleOptimizeStorage}>
-            ✨ Optimize Storage
-          </button>
-          <button className="settings-button secondary" onClick={handleClearOldCache}>
-            🗑️ Clear Old Cache (30+ days)
-          </button>
-          <button className="settings-button secondary" onClick={() => {
-            refreshCacheStats();
-            showMessage('✓ Stats refreshed', 'success');
-          }}>
-            🔄 Refresh Stats
-          </button>
-        </div>
-      </div>
+              <div className="settings-actions">
+                <button className="settings-button primary" onClick={handleExportPDF}>
+                  📄 Export Complete PDF Backup
+                </button>
+                <button className="settings-button secondary" onClick={handleExportJSON}>
+                  💾 Export JSON Backup
+                </button>
+              </div>
 
-      {/* Danger Zone */}
-      <div className="settings-section danger-zone">
-        <h2>⚠️ Danger Zone</h2>
-        <p className="section-description">
-          Irreversible actions - proceed with caution
-        </p>
-        
-        <div className="settings-actions">
-          <button className="settings-button secondary" onClick={handleBackupBeforeClear}>
-            💾 Create Emergency Backup
-          </button>
-          <button className="settings-button danger" onClick={handleClearAll}>
-            🔥 Clear All Data (Cannot Undo!)
-          </button>
-        </div>
-      </div>
+              <textarea
+                className="import-textarea"
+                value={importText}
+                onChange={(e) => setImportText(e.target.value)}
+                placeholder="Paste your backup JSON here..."
+                rows={6}
+              />
+              <button
+                className="settings-button primary"
+                onClick={handleImport}
+                disabled={!importText.trim()}
+              >
+                Import & Restore Data
+              </button>
+            </div>
 
-      {/* App Info */}
-      <div className="settings-section">
-        <h2>ℹ️ App Information</h2>
-        <div className="app-info">
-          <div className="info-row">
-            <span className="info-label">Version:</span>
-            <span className="info-value">1.0.0</span>
-          </div>
-          <div className="info-row">
-            <span className="info-label">Platform:</span>
-            <span className="info-value">Web / Mobile (Offline)</span>
-          </div>
-          <div className="info-row">
-            <span className="info-label">Storage:</span>
-            <span className="info-value">localStorage</span>
-          </div>
-        </div>
+            <div className="settings-section danger-zone" style={{ marginTop: '1rem', marginBottom: 0 }}>
+              <h2>⚠️ Danger Zone</h2>
+              <p className="section-description">
+                Irreversible actions. Proceed with caution.
+              </p>
+
+              <div className="settings-actions">
+                <button className="settings-button secondary" onClick={handleBackupBeforeClear}>
+                  💾 Create Emergency Backup
+                </button>
+                <button className="settings-button danger" onClick={handleClearAll}>
+                  🔥 Clear All Data (Cannot Undo!)
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

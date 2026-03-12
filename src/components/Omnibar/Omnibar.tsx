@@ -3,7 +3,7 @@
  * 
  * Global AI assistant command palette with AUTONOMOUS EXECUTION
  * - Appears as a floating modal at the top of the screen
- * - Activated with Ctrl+K / Cmd+K
+ * - Activated from ATHENEA floating action button
  * - Shows IntelligenceCanvas with Artifact preview
  * - Integrates with Redux for real data mutations
  * - Auto-executes high-confidence commands (>= 90%)
@@ -18,17 +18,19 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
+import { useLanguage } from '../../context/LanguageContext';
 import { syncExternalEvents } from '../../../store/slices/calendarSlice.js';
 import {
   useIntelligence,
   IntelligenceCanvas,
   getSkillsByHub,
-  useProactiveInsights,
   actionHistoryStore
 } from '../../modules/intelligence';
 import type { CanvasArtifact, DynamicInsight } from '../../modules/intelligence';
 import { useOmnibar } from './useOmnibar';
-import { markOnboardingCompleted } from '../../modules/intelligence/proactive/welcomeOnboarding';
+import { ProactiveHUD } from './ProactiveHUD.tsx';
+import { WarRoomView } from './WarRoomView';
+import { isOnboardingCompleted, markOnboardingCompleted } from '../../modules/intelligence/proactive/welcomeOnboarding';
 import { playSuccessSound, playErrorSound } from '../../modules/intelligence/utils/audioFeedback';
 import './Omnibar.css';
 
@@ -55,16 +57,63 @@ interface ToastMessage {
   type: 'success' | 'error' | 'info';
 }
 
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'agent';
+  text: string;
+  agentName?: string;
+  agentIcon?: string;
+  artifact?: CanvasArtifact;
+  actionLabel?: string;
+  timestamp: number;
+}
+
+interface HubShortcut {
+  id: string;
+  label: string;
+  prompt: string;
+}
+
 export const Omnibar: React.FC<OmnibarProps> = ({
   defaultHub = 'WorkHub',
   onActionExecuted
 }) => {
   const dispatch = useDispatch();
+  const { t, language } = useLanguage();
   const { isOpen, closeOmnibar, prompt, requestVoice, clearPrompt } = useOmnibar();
-  const { insightsByHub } = useProactiveInsights();
+
+  // Domain-based routing with explicit prompt override:
+  // mention wins ("cortana", "shodan", "jarvis").
+  const getAgentInfo = (
+    hub?: 'WorkHub' | 'PersonalHub' | 'FinanceHub',
+    promptText?: string
+  ) => {
+    const lower = String(promptText || '').toLowerCase();
+    if (/\bcortana\b/i.test(lower)) return { name: 'Cortana', icon: '🧿' };
+    if (/\bshodan\b/i.test(lower)) return { name: 'SHODAN', icon: '👁️' };
+    if (/\bjarvis\b/i.test(lower)) return { name: 'Jarvis', icon: '🤖' };
+
+    if (hub === 'FinanceHub') return { name: 'Jarvis', icon: '🤖' };
+    if (hub === 'PersonalHub') return { name: 'SHODAN', icon: '👁️' };
+    return { name: 'Cortana', icon: '🧿' };
+  };
+
+  const getAgentInfoFromPersona = (
+    persona?: 'jarvis' | 'cortana' | 'shodan' | 'swarm' | null,
+    fallbackHub?: 'WorkHub' | 'PersonalHub' | 'FinanceHub',
+    promptText?: string
+  ) => {
+    if (persona === 'jarvis') return { name: 'Jarvis', icon: '🤖' };
+    if (persona === 'shodan') return { name: 'SHODAN', icon: '👁️' };
+    if (persona === 'cortana') return { name: 'Cortana', icon: '🧿' };
+    if (persona === 'swarm') return { name: 'ATHENEA', icon: '🎯' };
+    return getAgentInfo(fallbackHub, promptText);
+  };
 
   // Local state
   const [inputValue, setInputValue] = useState('');
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const chatEndRef = useRef<HTMLDivElement>(null);
   const [selectedHub, setSelectedHub] = useState<'WorkHub' | 'PersonalHub' | 'FinanceHub'>(defaultHub);
   const [activeInsight, setActiveInsight] = useState<DynamicInsight | null>(null);
   const [activeInsightArtifact, setActiveInsightArtifact] = useState<CanvasArtifact | null>(null);
@@ -73,6 +122,8 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const nativeSpeechRef = useRef<any>(null);
+  const nativeVoiceInFlightRef = useRef(false);
 
   // Intelligence module
   const {
@@ -99,18 +150,78 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     }, 4000);
   };
 
+  const cleanupNativeVoice = async () => {
+    const speech = nativeSpeechRef.current;
+    if (!speech) {
+      setIsListening(false);
+      nativeVoiceInFlightRef.current = false;
+      return;
+    }
+
+    try {
+      await speech.stop();
+    } catch {
+      // Ignore stop errors when no active session exists.
+    }
+
+    try {
+      await speech.removeAllListeners();
+    } catch {
+      // Ignore listener cleanup errors in teardown path.
+    }
+
+    setIsListening(false);
+    nativeVoiceInFlightRef.current = false;
+  };
+
+  useEffect(() => {
+    return () => {
+      cleanupNativeVoice().catch(() => {
+        // Ignore cleanup errors during unmount.
+      });
+    };
+  }, []);
+
   // Focus input when modal opens
   useEffect(() => {
     if (isOpen && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
+    // Reset chat history when Omnibar re-opens
+    if (isOpen) setChatMessages([]);
   }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      dispatch({ type: 'aiObserver/omnibarOpened', payload: { at: Date.now() } });
+    } else {
+      dispatch({ type: 'aiObserver/omnibarClosed', payload: { at: Date.now() } });
+    }
+  }, [dispatch, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    dispatch({ type: 'aiObserver/hubVisited', payload: { hub: selectedHub, at: Date.now() } });
+  }, [dispatch, isOpen, selectedHub]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    dispatch({
+      type: 'aiObserver/omnibarInputChanged',
+      payload: { text: inputValue, at: Date.now(), hub: selectedHub },
+    });
+  }, [dispatch, inputValue, isOpen, selectedHub]);
 
   useEffect(() => {
     if (!isOpen || !prompt) return;
     setInputValue(prompt);
     clearPrompt();
   }, [clearPrompt, isOpen, prompt]);
+
+  // Auto-scroll chat to latest message
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
 
   // Close when clicking outside modal
   useEffect(() => {
@@ -127,27 +238,50 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   }, [isOpen, closeOmnibar]);
 
   /**
-   * Handle prompt submission
-   * Now supports AUTONOMOUS EXECUTION
+   * Handle prompt submission — Chat mode
+   * User messages appear as bubbles; agent answers inline.
+   * Action skills still show Canvas to confirm before dispatch.
    */
   const handleSubmitPrompt = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim()) return;
+    const userText = inputValue.trim();
+    if (!userText) return;
 
-    const result = await sendPrompt(inputValue, selectedHub, { autoExecute: true });
+    // Push user bubble immediately
+    const userMsg: ChatMessage = {
+      id: `u_${Date.now()}`,
+      role: 'user',
+      text: userText,
+      timestamp: Date.now(),
+    };
+    setChatMessages((prev) => [...prev, userMsg]);
+    setInputValue('');
+
+    const result = await sendPrompt(userText, selectedHub, { autoExecute: true });
+    const resolvedHub = (result.response?.reasoning.matchedSkill?.hub || selectedHub) as 'WorkHub' | 'PersonalHub' | 'FinanceHub';
+    const agent = getAgentInfoFromPersona(
+      result.response?.reasoning.responderPersona || null,
+      resolvedHub,
+      userText
+    );
 
     if (result.executed) {
-      // Action was executed automatically!
-      const skillName = result.response?.reasoning.matchedSkill?.name || 'Action';
+      // Action auto-executed → show confirmation bubble
+      const skillName = result.response?.reasoning.matchedSkill?.name || t('Action');
       const params = result.response?.reduxAction?.payload;
-      const title = params?.title || params?.text || params?.description || '';
-      
-      showToast(
-        `✅ ${skillName} completed: ${title}`,
-        'success'
-      );
+      const detail = params?.title || params?.text || params?.description || '';
+      const agentMsg: ChatMessage = {
+        id: `a_${Date.now()}`,
+        role: 'agent',
+        agentName: agent.name,
+        agentIcon: agent.icon,
+        text: language === 'es'
+          ? `✅ **${skillName}** ejecutado${detail ? `: _${detail}_` : ''}.`
+          : `✅ **${skillName}** executed${detail ? `: _${detail}_` : ''}.`,
+        timestamp: Date.now(),
+      };
+      setChatMessages((prev) => [...prev, agentMsg]);
 
-      // Record in history
       actionHistoryStore.recordAction({
         type: 'user-command',
         hub: selectedHub,
@@ -155,22 +289,83 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         reduxActionType: result.response?.reduxAction?.type || '',
         description: `Auto-executed: ${skillName}`,
         payload: params,
-        success: true
+        success: true,
       });
+    } else if (result.needsConfirmation && result.response?.artifact) {
+      const artifact = result.response.artifact;
 
-      // Close omnibar and clear input
-      setTimeout(() => {
-        setInputValue('');
-        closeOmnibar();
-      }, 800);
-    } else if (result.needsConfirmation) {
-      // Show canvas for manual confirmation
-      // (already handled by useIntelligence setting currentArtifact)
+      if (artifact.type === 'text') {
+        // Pure conversational response — show as agent chat bubble
+        const agentMsg: ChatMessage = {
+          id: `a_${Date.now()}`,
+          role: 'agent',
+          agentName: agent.name,
+          agentIcon: agent.icon,
+          text: artifact.props?.description || result.response?.userMessage || '',
+          timestamp: Date.now(),
+        };
+        setChatMessages((prev) => [...prev, agentMsg]);
+        // dismiss pending Canvas so no form shows
+        cancelAction();
+      } else {
+        // Action that needs form confirmation — show Canvas bubble
+        const agentMsg: ChatMessage = {
+          id: `a_${Date.now()}`,
+          role: 'agent',
+          agentName: agent.name,
+          agentIcon: agent.icon,
+          text: result.response?.userMessage || `${t('I need some details for')} **${result.response?.reasoning.matchedSkill?.name}**.`,
+          artifact,
+          timestamp: Date.now(),
+        };
+        setChatMessages((prev) => [...prev, agentMsg]);
+      }
     } else if (!result.response?.success) {
-      // Error occurred
       playErrorSound();
-      showToast(result.response?.userMessage || 'Could not process request', 'error');
+      const agentMsg: ChatMessage = {
+        id: `a_${Date.now()}`,
+        role: 'agent',
+        agentName: agent.name,
+        agentIcon: agent.icon,
+        text: `⚠️ ${result.response?.userMessage || t('Did not understand that request.')}`,
+        timestamp: Date.now(),
+      };
+      setChatMessages((prev) => [...prev, agentMsg]);
     }
+  };
+
+  const handleRunInsightPrompt = async (insight: DynamicInsight) => {
+    if (insight.artifact && insight.action && !insight.skillId) {
+      setActiveInsight(insight);
+      setActiveInsightArtifact(insight.artifact);
+      showToast('Complete this form to execute the insight', 'info');
+      return;
+    }
+
+    if (!insight.suggestedPrompt?.trim()) {
+      showToast('This insight has no executable prompt yet', 'info');
+      return;
+    }
+
+    setInputValue(insight.suggestedPrompt);
+    const result = await sendPrompt(insight.suggestedPrompt, selectedHub, { autoExecute: true });
+
+    if (result.executed) {
+      const skillName = result.response?.reasoning.matchedSkill?.name || insight.title;
+      showToast(`✅ ${skillName}`, 'success');
+      markOnboardingCompleted();
+      return;
+    }
+
+    if (result.needsConfirmation) {
+      setActiveInsight(insight);
+      if (insight.artifact) {
+        setActiveInsightArtifact(insight.artifact);
+      }
+      return;
+    }
+
+    showToast(result.response?.userMessage || 'Could not run this insight', 'error');
   };
 
   /**
@@ -324,19 +519,6 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     const processTranscript = async (normalizedTranscript: string) => {
       setInputValue(normalizedTranscript);
 
-      // Auto-process voice commands with clear intent.
-      const commandKeywords = [
-        'create', 'add', 'new', 'schedule', 'record', 'sync', 'set',
-        'pay', 'mark', 'update', 'delete', 'remove', 'reminder',
-        'start', 'finish', 'complete', 'cancel', 'buy', 'call', 'send'
-      ];
-
-      const startsWithCommand = commandKeywords.some(keyword =>
-        normalizedTranscript.toLowerCase().startsWith(keyword)
-      );
-
-      if (!startsWithCommand) return;
-
       actionHistoryStore.recordAction({
         type: 'voice-command',
         hub: selectedHub,
@@ -379,48 +561,131 @@ export const Omnibar: React.FC<OmnibarProps> = ({
       }
     };
 
+    const capacitor = (window as any).Capacitor;
+    const isNativePlatform = Boolean(capacitor?.isNativePlatform?.());
+
+    if (isNativePlatform) {
+      try {
+        const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
+        nativeSpeechRef.current = SpeechRecognition;
+
+        // Stop listening if already active
+        if (isListening) {
+          await cleanupNativeVoice();
+          return;
+        }
+
+        // Prevent concurrent sessions
+        if (nativeVoiceInFlightRef.current) {
+          return;
+        }
+
+        // Check availability
+        const available = await SpeechRecognition.available();
+        if (!available?.available) {
+          showToast('Speech recognition is not available on this device', 'error');
+          return;
+        }
+
+        // Request permission if needed
+        const permission = await SpeechRecognition.requestPermissions();
+        const granted = permission?.speechRecognition === 'granted';
+        if (!granted) {
+          showToast('Microphone permission denied', 'error');
+          return;
+        }
+
+        // Cleanup any previous session before starting
+        await cleanupNativeVoice();
+
+        // Mark session as active
+        nativeVoiceInFlightRef.current = true;
+        setIsListening(true);
+
+        // ATHENEA NATIVE MIC: Silent mode with real-time partial results
+        let capturedTranscript = '';  // Local variable to avoid closure issues
+        let sessionActive = true;
+
+        try {
+          // Setup all listeners BEFORE starting
+          console.log('[Athenea Mic] Setting up listeners...');
+          
+          // Listen for partial results (real-time text updates)
+          await SpeechRecognition.addListener('partialResults', (data: any) => {
+            console.log('[Athenea Mic] Partial result:', data);
+            const partial = data?.matches?.[0] || '';
+            if (partial && sessionActive) {
+              capturedTranscript = partial;  // Capture locally
+              setInputValue(partial);  // Display in real-time
+            }
+          });
+
+          // Listen for listening state changes
+          await SpeechRecognition.addListener('listeningState', (state: any) => {
+            console.log('[Athenea Mic] Listening state:', state);
+            if (state?.status === 'stopped' && sessionActive) {
+              sessionActive = false;
+              setIsListening(false);
+            }
+          });
+
+          console.log('[Athenea Mic] Starting recognition in silent mode...');
+          
+          // Start listening in SILENT MODE (no popup, background listening)
+          const startResult = await SpeechRecognition.start({
+            language: navigator.language || 'en-US',
+            maxResults: 5,
+            partialResults: true,  // Enable real-time updates
+            popup: false,          // Silent mode - no Google popup
+            prompt: ''             // No prompt needed in silent mode
+          } as any);
+
+          console.log('[Athenea Mic] Start result:', startResult);
+
+          // Wait for the recognizer to stop naturally or timeout after 15 seconds
+          await new Promise<void>((resolve) => {
+            const timeout = setTimeout(() => {
+              console.log('[Athenea Mic] Timeout reached');
+              sessionActive = false;
+              resolve();
+            }, 15000); // 15 second timeout
+
+            // Monitor for session end
+            const checkInterval = setInterval(() => {
+              if (!sessionActive) {
+                clearTimeout(timeout);
+                clearInterval(checkInterval);
+                console.log('[Athenea Mic] Session ended, final transcript:', capturedTranscript);
+                resolve();
+              }
+            }, 100);
+          });
+        } finally {
+          // STRICT CLEANUP: Always stop and remove listeners
+          sessionActive = false;
+          console.log('[Athenea Mic] Cleaning up...');
+          await cleanupNativeVoice();
+        }
+
+        // Auto-submit if we have valid transcript
+        console.log('[Athenea Mic] Processing captured transcript:', capturedTranscript);
+        if (capturedTranscript && capturedTranscript.trim()) {
+          await processTranscript(capturedTranscript.trim());
+        } else {
+          showToast(t('No voice input detected'), 'error');
+        }
+        return;
+      } catch (nativeError) {
+        await cleanupNativeVoice();
+        console.error('Native voice flow failed:', nativeError);
+        showToast('Native microphone failed to start', 'error');
+        return;
+      }
+    }
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      // Fallback for Android Capacitor builds where Web Speech API is unavailable.
-      try {
-        const capacitor = (window as any).Capacitor;
-        if (capacitor?.isNativePlatform?.()) {
-          const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
-          const available = await SpeechRecognition.available();
-          if (!available?.available) {
-            showToast('Speech recognition is not available on this device', 'error');
-            return;
-          }
-
-          const permission = await SpeechRecognition.requestPermissions();
-          const granted = permission?.speechRecognition === 'granted';
-          if (!granted) {
-            showToast('Microphone permission denied', 'error');
-            return;
-          }
-
-          setIsListening(true);
-          const result = await SpeechRecognition.start({
-            language: navigator.language || 'en-US',
-            maxResults: 1,
-            prompt: 'Speak now...'
-          } as any);
-
-          const spoken = (result as any)?.matches?.[0]?.trim();
-          setIsListening(false);
-
-          if (spoken) {
-            await processTranscript(spoken);
-          } else {
-            showToast('No voice input detected', 'error');
-          }
-          return;
-        }
-      } catch (nativeError) {
-        console.error('Native voice fallback failed:', nativeError);
-      }
-
       showToast('Voice input is not available in this environment', 'error');
       onActionExecuted?.({
         success: false,
@@ -498,19 +763,46 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   if (!isOpen) return null;
 
   const suggestedSkills = getSkillsByHub(selectedHub).slice(0, 4);
-  const dynamicInsights = (insightsByHub[selectedHub] || []).slice(0, 4);
   const artifactToRender = activeInsightArtifact || currentArtifact;
+  const showInlineOnboardingHint = selectedHub === 'WorkHub' && !isOnboardingCompleted();
+  const shortcutsByHub: Record<'WorkHub' | 'PersonalHub' | 'FinanceHub', HubShortcut[]> = {
+    WorkHub: [
+      { id: 'work-create-collaborator', label: t('Create collaborator'), prompt: 'create collaborator' },
+      { id: 'work-create-project', label: t('Create project'), prompt: 'create project' },
+      { id: 'work-create-task', label: t('Create task'), prompt: 'create task' },
+    ],
+    PersonalHub: [
+      { id: 'personal-create-routine', label: t('Create routine'), prompt: 'create daily routine' },
+      { id: 'personal-create-reminder', label: t('Create reminder'), prompt: 'create reminder' },
+      { id: 'personal-create-note', label: t('Create note'), prompt: 'create note' },
+    ],
+    FinanceHub: [
+      { id: 'finance-add-expense', label: t('Record expense'), prompt: 'record expense' },
+      { id: 'finance-add-income', label: t('Record income'), prompt: 'record income' },
+      { id: 'finance-view-budget', label: t('View budget'), prompt: 'show budget status' },
+    ],
+  };
+  const activeShortcuts = shortcutsByHub[selectedHub] || [];
 
   return (
     <div className="omnibar-overlay">
       <div className="omnibar-container" ref={modalRef}>
+        <div className="omnibar-top-strip" />
         {/* Header */}
         <div className="omnibar-header">
           <div className="omnibar-title">
             <span className="omnibar-icon">🤖</span>
             <span>ATHENEA Assistant</span>
+            <span className="omnibar-version">UI v2</span>
           </div>
-          <span className="omnibar-shortcut">Esc to close</span>
+          <button
+            type="button"
+            className="omnibar-shortcut omnibar-close-btn"
+            onClick={closeOmnibar}
+            aria-label="Close assistant"
+          >
+            ✕ {t('tap here to close')}
+          </button>
         </div>
 
         {/* Hub Selector Tabs */}
@@ -546,118 +838,124 @@ export const Omnibar: React.FC<OmnibarProps> = ({
 
         {/* Main Content Area */}
         <div className="omnibar-content">
+          <WarRoomView />
+
           {/* Input Section */}
           <form onSubmit={handleSubmitPrompt} className="omnibar-form">
             <input
               ref={inputRef}
               type="text"
               className="omnibar-input"
-              placeholder={`What do you want to do in ${selectedHub}?`}
+               placeholder={`${t('What do you want to do?')}`}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               disabled={isLoading}
             />
             <button
-              type="button"
-              className={`omnibar-mic-btn ${isListening ? 'is-listening' : ''}`}
-              onClick={handleVoiceInput}
-              disabled={isLoading}
-              title="Voice input"
+              type="submit"
+              className="omnibar-submit-btn"
+              disabled={isLoading || !inputValue.trim()}
+              title="Send"
             >
-              {isListening ? '...' : 'Mic'}
+              {isLoading ? '⏳' : '→'}
             </button>
-            {inputValue && (
-              <button
-                type="submit"
-                className="omnibar-submit-btn"
-                disabled={isLoading}
-              >
-                {isLoading ? '⏳' : '→'}
-              </button>
-            )}
           </form>
 
-          {/* Results Section */}
-          {currentResponse ? (
-            <div className="omnibar-results">
-              {/* Reasoning */}
-              <div className="omnibar-reasoning">
-                <div className="reasoning-flex">
-                  <span className={`confidence-badge ${
-                    confidenceScore >= 80 ? 'high' : 
-                    confidenceScore >= 60 ? 'medium' : 'low'
-                  }`}>
-                    {confidenceScore}%
-                  </span>
-                  <span className="reasoning-text">
-                    {currentResponse.reasoning.reasoning}
-                  </span>
-                </div>
+          {showInlineOnboardingHint && !inputValue && !currentResponse && !lastError && (
+            <div className="omnibar-inline-onboarding-hint">
+              <div className="onboarding-hint-title">{t('First command setup')}</div>
+              <div className="onboarding-hint-text">
+                Open Omnibar from here and run your first command. This quick tip now lives above Workflow optimal, not inside Dynamic Insights.
               </div>
+            </div>
+          )}
 
-              {/* Canvas Artifact */}
-              {artifactToRender && (
-                <div className="omnibar-artifact">
-                  <IntelligenceCanvas
-                    artifact={artifactToRender}
-                    onConfirm={handleConfirmAction}
-                    onCancel={handleCancel}
-                    isLoading={isLoading}
-                  />
+          {/* Proactive HUD - shown only when chat is empty */}
+          {chatMessages.length === 0 && !inputValue && !lastError && (
+            <div className="omnibar-proactive-hud-section">
+              <ProactiveHUD
+                onApplySuggestion={(suggestion) => {
+                  setInputValue(suggestion);
+                  setTimeout(() => inputRef.current?.focus(), 0);
+                  showToast('Suggestion moved to command box', 'info');
+                }}
+              />
+            </div>
+          )}
+
+          {/* ── CHAT AREA ── */}
+          {chatMessages.length > 0 ? (
+            <div className="omnibar-chat">
+              {chatMessages.map((msg) => (
+                <div key={msg.id} className={`chat-bubble chat-bubble--${msg.role}`}>
+                  {msg.role === 'agent' && (
+                    <div className="chat-agent-header">
+                      <span className="chat-agent-icon">{msg.agentIcon}</span>
+                      <span className="chat-agent-name">{msg.agentName}</span>
+                    </div>
+                  )}
+                  <div className="chat-bubble-text">{msg.text}</div>
+                  {msg.artifact && (
+                    <div className="chat-artifact">
+                      <IntelligenceCanvas
+                        artifact={msg.artifact}
+                        onConfirm={handleConfirmAction}
+                        onCancel={handleCancel}
+                        isLoading={isLoading}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+              {isLoading && (
+                <div className="chat-bubble chat-bubble--agent chat-bubble--typing">
+                  <span className="chat-agent-icon">{getAgentInfo(selectedHub, inputValue).icon}</span>
+                  <span className="chat-typing-dots"><span/><span/><span/></span>
                 </div>
               )}
+              <div ref={chatEndRef} />
             </div>
           ) : (
             <>
-              {/* Empty State - Show Suggested Skills */}
+              {/* Empty state — suggested shortcuts */}
               {!inputValue && !lastError && (
                 <div className="omnibar-empty">
-                  {dynamicInsights.length > 0 ? (
-                    <>
-                      <div className="empty-title">Dynamic Insights</div>
-                      <div className="insight-list">
-                        {dynamicInsights.map((insight) => (
-                          <button
-                            key={insight.id}
-                            className={`insight-card insight-${insight.severity}`}
-                            onClick={() => handleOpenInsight(insight)}
-                            type="button"
-                          >
-                            <div className="insight-card-header">
-                              <span className="insight-badge">{insight.severity.toUpperCase()}</span>
-                              <span className="insight-hub">{insight.hub}</span>
-                            </div>
-                            <div className="insight-title">{insight.title}</div>
-                            <div className="insight-description">{insight.description}</div>
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="empty-title">What do you want to do?</div>
-                      <div className="suggested-skills">
-                        {suggestedSkills.map((skill) => (
-                          <button
-                            key={skill.id}
-                            className="skill-suggestion"
-                            onClick={() => setInputValue(`${skill.icon} ${skill.name.toLowerCase()}`)}
-                            type="button"
-                          >
-                            <span className="skill-icon">{skill.icon}</span>
-                            <div className="skill-info">
-                              <div className="skill-name">{skill.name}</div>
-                              <div className="skill-desc">{skill.description}</div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
+                  <div className="omnibar-shortcuts-row" role="group" aria-label={`${selectedHub} quick shortcuts`}>
+                    {activeShortcuts.map((shortcut) => (
+                      <button
+                        key={shortcut.id}
+                        type="button"
+                        className="omnibar-shortcut-btn"
+                        onClick={() => {
+                          setInputValue(shortcut.prompt);
+                          setTimeout(() => inputRef.current?.focus(), 0);
+                        }}
+                      >
+                        {shortcut.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="empty-title">{t('What do you want to do?')}</div>
+                  <div className="suggested-skills">
+                    {suggestedSkills.map((skill) => (
+                      <button
+                        key={skill.id}
+                        className="skill-suggestion"
+                        onClick={() => setInputValue(`${skill.icon} ${skill.name.toLowerCase()}`)}
+                        type="button"
+                      >
+                        <span className="skill-icon">{skill.icon}</span>
+                        <div className="skill-info">
+                          <div className="skill-name">{skill.name}</div>
+                          <div className="skill-desc">{skill.description}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              {/* Error State */}
               {lastError && (
                 <div className="omnibar-error">
                   <span>⚠️ {lastError}</span>
@@ -670,7 +968,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         {/* Footer */}
         <div className="omnibar-footer">
           <span className="footer-text">
-            {currentResponse ? 'Review and confirm, or modify your request' : 'Press Ctrl+K for commands'}
+            {getAgentInfo(selectedHub, inputValue).icon} {getAgentInfo(selectedHub, inputValue).name} — {t('type your query or command')}
           </span>
         </div>
       </div>

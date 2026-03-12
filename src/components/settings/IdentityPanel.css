@@ -1,0 +1,122 @@
+.identity-panel {
+  border-radius: 14px;
+  border: 1px solid rgba(86, 144, 255, 0.35);
+  background: radial-gradient(circle at 15% 5%, rgba(61, 110, 232, 0.18), transparent 36%), linear-gradient(150deg, #0f1d31 0%, #152842 100%);
+  box-shadow: 0 8px 22px rgba(5, 15, 30, 0.35);
+  padding: 18px;
+  color: #d9e7ff;
+}
+
+.identity-panel-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #8cc2ff;
+}
+
+.identity-panel-header p {
+  margin: 6px 0 0;
+  color: #b8cbe6;
+  font-size: 0.9rem;
+}
+
+.identity-preview {
+  margin-top: 14px;
+  border: 1px solid rgba(140, 194, 255, 0.3);
+  border-radius: 10px;
+  background: rgba(10, 29, 49, 0.6);
+  padding: 12px;
+}
+
+.identity-preview-kicker {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7ea8de;
+}
+
+.identity-preview-line {
+  margin: 6px 0 0;
+  font-size: 1rem;
+  color: #f4f8ff;
+}
+
+.identity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.identity-field {
+  display: grid;
+  gap: 6px;
+}
+
+.identity-field-full {
+  grid-column: 1 / -1;
+}
+
+.identity-field span {
+  font-size: 0.8rem;
+  color: #b8cbe6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.identity-help-text {
+  color: #8ba9cd;
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.identity-field input,
+.identity-field select {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #40658a;
+  background: #102740;
+  color: #f4f8ff;
+  -webkit-text-fill-color: #f4f8ff;
+  padding: 10px;
+  font-size: 0.9rem;
+}
+
+.identity-field input:focus,
+.identity-field select:focus {
+  outline: none;
+  border-color: #8cc2ff;
+  box-shadow: 0 0 0 3px rgba(140, 194, 255, 0.22);
+}
+
+.identity-actions {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.identity-save-btn {
+  border: 1px solid rgba(140, 194, 255, 0.5);
+  background: linear-gradient(135deg, #2e68b0 0%, #3b7bd4 100%);
+  color: #ffffff;
+  border-radius: 9px;
+  padding: 10px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.identity-saved {
+  color: #87f2b4;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .identity-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .identity-field-full {
+    grid-column: auto;
+  }
+}

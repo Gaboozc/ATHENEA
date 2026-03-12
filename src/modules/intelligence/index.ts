@@ -118,6 +118,30 @@ export { analyzeStoreForInsights } from './proactive/observer';
 export { useProactiveInsights } from './proactive/useProactiveInsights';
 export { useInsightNotificationBridge } from './proactive/useInsightNotificationBridge';
 export { useExternalCalendarObserver } from './proactive/useExternalCalendarObserver';
+
+// ============================================================================
+// INFERENCE ENGINES EXPORTS (NEW - Hybrid Intelligence)
+// ============================================================================
+
+export { getONNXEngine } from './inference/ONNXInferenceEngine';
+export type { InferenceResult, ONNXInferenceEngine } from './inference/ONNXInferenceEngine';
+
+export { fastPathMatcher } from './inference/FastPathMatcher';
+export type { FastPathMatch } from './inference/FastPathMatcher';
+
+export { suggestionsEngine } from './inference/SuggestionsEngine';
+export type { 
+  SuggestionContext, 
+  AppState, 
+  CommandSuggestion 
+} from './inference/SuggestionsEngine';
+
+// ============================================================================
+// ACTION HISTORY EXPORTS (moved from proactive section to avoid duplicates)
+// ============================================================================
+
+export { actionHistoryStore, useActionHistory } from './actionHistory';
+export type { ActionHistoryEntry } from './actionHistory';
 export { useWidgetDataBridge } from './proactive/useWidgetDataBridge';
 export {
   setGhostWriteDraft,
@@ -125,13 +149,6 @@ export {
   getGhostWriteSnapshot,
   useGhostWriteSuggestions
 } from './ghostWrite';
-
-// ============================================================================
-// ACTION HISTORY EXPORTS
-// ============================================================================
-
-export { actionHistoryStore, useActionHistory } from './actionHistory';
-export type { ActionHistoryEntry } from './actionHistory';
 
 export type {
   DynamicInsight,

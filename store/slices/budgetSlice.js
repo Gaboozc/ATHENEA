@@ -25,11 +25,23 @@ const budgetSlice = createSlice({
       });
       state.balance -= Number(action.payload?.amount || 0);
     },
+    addIncome: (state, action) => {
+      state.balance += Number(action.payload?.amount || 0);
+    },
+    updateExpense: (state, action) => {
+      const payload = action.payload || {};
+      const expense = state.expenses.find((entry) => entry.id === payload.id);
+      if (!expense) return;
+      expense.amount = Number(payload.amount ?? expense.amount ?? 0);
+      expense.categoryId = payload.categoryId ?? expense.categoryId ?? null;
+      expense.note = payload.note ?? expense.note ?? '';
+      expense.date = payload.date || expense.date || new Date().toISOString();
+    },
     deleteExpense: (state, action) => {
       state.expenses = state.expenses.filter((entry) => entry.id !== action.payload);
     }
   }
 });
 
-export const { addCategory, addExpense, deleteExpense } = budgetSlice.actions;
+export const { addCategory, addExpense, addIncome, updateExpense, deleteExpense } = budgetSlice.actions;
 export default budgetSlice.reducer;

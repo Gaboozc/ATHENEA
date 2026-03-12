@@ -9,6 +9,7 @@ const collaboratorsSlice = createSlice({
     addCollaborator: (state, action) => {
       state.collaborators.unshift({
         id: action.payload?.id || `collab-${Date.now()}`,
+        status: action.payload?.status || 'active',
         ...action.payload,
         createdAt: new Date().toISOString()
       });
