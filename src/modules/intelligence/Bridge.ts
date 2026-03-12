@@ -651,25 +651,61 @@ export class IntelligenceBridge {
 
     let answer = fallbackAnswer;
     let responderPersona: 'jarvis' | 'cortana' | 'shodan' | 'swarm' = persona;
-    try {
-      const orchestrator = getAgentOrchestrator();
-      const warRoomDecision = await orchestrator.orchestrate({
-        userPrompt: request.userPrompt,
-        requestedHub: hub,
-        summary,
-        facts,
-        forceAllAgents: true,
-      });
 
-      if (warRoomDecision?.finalVerdict?.trim()) {
-        answer = warRoomDecision.finalVerdict.trim();
-        responderPersona =
-          warRoomDecision.leadAgent === 'auditor'
-            ? 'jarvis'
-            : warRoomDecision.leadAgent === 'vitals'
-              ? 'shodan'
-              : 'cortana';
-      } else {
+    // If the user explicitly calls an agent by name, that agent must answer.
+    if (!explicitPersona) {
+      try {
+        const orchestrator = getAgentOrchestrator();
+        const warRoomDecision = await orchestrator.orchestrate({
+          userPrompt: request.userPrompt,
+          requestedHub: hub,
+          summary,
+          facts,
+          forceAllAgents: true,
+        });
+
+        if (warRoomDecision?.finalVerdict?.trim()) {
+          answer = warRoomDecision.finalVerdict.trim();
+          responderPersona =
+            warRoomDecision.leadAgent === 'auditor'
+              ? 'jarvis'
+              : warRoomDecision.leadAgent === 'vitals'
+                ? 'shodan'
+                : 'cortana';
+        } else {
+          const llmAnswer = await getPersonaEngine().queryDomainAdvisor(
+            request.userPrompt,
+            {
+              hub,
+              summary,
+              facts,
+            },
+            persona
+          );
+          if (llmAnswer && llmAnswer.trim()) {
+            answer = llmAnswer.trim();
+          }
+        }
+      } catch {
+        try {
+          const llmAnswer = await getPersonaEngine().queryDomainAdvisor(
+            request.userPrompt,
+            {
+              hub,
+              summary,
+              facts,
+            },
+            persona
+          );
+          if (llmAnswer && llmAnswer.trim()) {
+            answer = llmAnswer.trim();
+          }
+        } catch {
+          // Keep deterministic fallback
+        }
+      }
+    } else {
+      try {
         const llmAnswer = await getPersonaEngine().queryDomainAdvisor(
           request.userPrompt,
           {
@@ -682,23 +718,8 @@ export class IntelligenceBridge {
         if (llmAnswer && llmAnswer.trim()) {
           answer = llmAnswer.trim();
         }
-      }
-    } catch {
-      try {
-      const llmAnswer = await getPersonaEngine().queryDomainAdvisor(
-        request.userPrompt,
-        {
-          hub,
-          summary,
-          facts,
-        },
-        persona
-      );
-      if (llmAnswer && llmAnswer.trim()) {
-        answer = llmAnswer.trim();
-      }
       } catch {
-        // Keep deterministic fallback
+        // Keep deterministic fallback when LLM is unavailable.
       }
     }
 
