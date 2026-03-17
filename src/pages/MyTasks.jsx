@@ -18,6 +18,10 @@ export const MyTasks = () => {
     [tasks, user?.id]
   );
 
+  /* FIX UX-1 — exponer GatekeeperModal */
+  const openGatekeeper = () =>
+    window.dispatchEvent(new CustomEvent('athenea:gatekeeper:open'));
+
   return (
     <div className="mytasks-container">
       <header className="mytasks-header">
@@ -25,7 +29,16 @@ export const MyTasks = () => {
           <h1>{t('My Tasks')}</h1>
           <p>{t('Assigned to you')}</p>
         </div>
-        <span className="mytasks-count">{myTasks.length}</span>
+        <div className="mytasks-header-actions">
+          <span className="mytasks-count">{myTasks.length}</span>
+          <button
+            type="button"
+            className="mytasks-btn-nueva"
+            onClick={openGatekeeper}
+          >
+            + {t('Nueva Tarea')}
+          </button>
+        </div>
       </header>
 
       <section className="mytasks-list">

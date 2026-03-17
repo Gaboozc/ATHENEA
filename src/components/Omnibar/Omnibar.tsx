@@ -112,6 +112,8 @@ export const Omnibar: React.FC<OmnibarProps> = ({
 
   // FIX 6: Voice language from Redux settings (default 'auto')
   const voiceLanguage = useSelector((state: any) => state.userSettings?.voiceLanguage ?? 'auto');
+  /* FIX UX-4 — WarRoomView sólo visible en modo avanzado */
+  const advancedMode = useSelector((state: any) => state.userSettings?.advancedMode ?? false);
 
   // FIX 6.1: 4-state voice machine
   type VoiceState = 'idle' | 'listening' | 'processing' | 'error';
@@ -849,7 +851,8 @@ export const Omnibar: React.FC<OmnibarProps> = ({
 
         {/* Main Content Area */}
         <div className="omnibar-content">
-          <WarRoomView />
+          {/* FIX UX-4 — WarRoomView solo si advancedMode */}
+          {advancedMode && <WarRoomView />}
 
           {/* Input Section */}
           <form onSubmit={handleSubmitPrompt} className="omnibar-form">

@@ -120,13 +120,30 @@ const DashboardWidget = ({ compact = false }) => {
           </div>
         </div>
 
+        {/* FIX UX-1 — exponer GatekeeperModal */}
         <div className="metric-card" onClick={() => navigate('/my-tasks')}>
           <div className="metric-icon">✓</div>
           <div className="metric-content">
-            <div className="metric-value">{metrics.pendingTasks}</div>
+            <div
+              className="metric-value"
+              style={metrics.pendingTasks > 5 ? { color: 'var(--color-error, #ef4444)' } : undefined}
+            >
+              {metrics.pendingTasks}
+            </div>
             <div className="metric-label">Pending Tasks</div>
             <div className="metric-subtitle">{metrics.completedTasks} completed</div>
           </div>
+          <button
+            type="button"
+            className="metric-gatekeeper-link"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.dispatchEvent(new CustomEvent('athenea:gatekeeper:open'));
+            }}
+            title="Crear tarea con prioridad evaluada"
+          >
+            Crear con prioridad →
+          </button>
         </div>
 
         <div className="metric-card" onClick={() => navigate('/todos')}>

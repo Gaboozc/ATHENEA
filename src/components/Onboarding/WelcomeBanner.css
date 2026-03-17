@@ -1,0 +1,133 @@
+/* FIX UX-2 — WelcomeBanner styles */
+.welcome-banner {
+  position: relative;
+  background: var(--bg-card, #0f2235);
+  border: 1px solid var(--border-strong, #2a3a4a);
+  border-left: 3px solid var(--accent-gold, #d4af37);
+  border-radius: 12px;
+  padding: 20px 24px 16px;
+  margin-bottom: 24px;
+  color: var(--text-primary);
+}
+
+.welcome-banner-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--text-muted, #7a8899);
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: color var(--transition-fast, 0.15s ease);
+}
+.welcome-banner-close:hover {
+  color: var(--text-primary);
+}
+
+.welcome-banner-eyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent-gold, #d4af37);
+  margin: 0 0 14px;
+}
+
+/* Sections row on desktop */
+.welcome-banner-sections {
+  display: flex;
+  gap: 16px;
+}
+
+.welcome-banner-section {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-default, #1e2d3d);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.welcome-banner-section-toggle {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.welcome-banner-section-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.welcome-banner-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  flex: 1;
+  color: var(--accent-gold, #d4af37);
+}
+
+.welcome-banner-section-chevron {
+  font-size: 10px;
+  color: var(--text-muted);
+  /* Hidden on desktop — text always visible */
+  display: none;
+}
+
+.welcome-banner-section-text {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary, #c9cdd2);
+}
+
+.welcome-banner-footer {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.welcome-banner-cta {
+  background: var(--accent-gold, #d4af37);
+  color: var(--bg-base, #0b0b0b);
+  border: none;
+  border-radius: 999px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity var(--transition-fast, 0.15s ease);
+}
+.welcome-banner-cta:hover {
+  opacity: 0.85;
+}
+
+/* Mobile: accordion layout */
+@media (max-width: 640px) {
+  .welcome-banner-sections {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .welcome-banner-section-chevron {
+    display: block;
+  }
+
+  .welcome-banner-section-text {
+    display: none;
+    margin-top: 8px;
+  }
+
+  .welcome-banner-section-text.is-open {
+    display: block;
+  }
+}

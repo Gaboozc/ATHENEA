@@ -78,6 +78,13 @@ export const WorkHub = () => {
         <button onClick={() => navigate('/my-tasks')}>{t('Go to My Tasks')}</button>
         <button onClick={() => navigate('/projects')}>{t('Go to Projects')}</button>
         <button onClick={() => navigate('/fleet')}>{t('Go to Collaborators')}</button>
+        {/* FIX UX-1 — exponer GatekeeperModal */}
+        <button
+          className="workhub-btn-gatekeeper"
+          onClick={() => window.dispatchEvent(new CustomEvent('athenea:gatekeeper:open'))}
+        >
+          🎯 {t('Crear tarea prioritaria')}
+        </button>
       </section>
 
       <section className="workhub-grid">

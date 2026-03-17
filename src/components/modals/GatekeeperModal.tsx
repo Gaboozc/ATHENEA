@@ -91,12 +91,18 @@ export const GatekeeperModal = () => {
       setCheckedIds(new Set());
       setIsOpen(true);
     };
+    /* FIX UX-9 — Escape key closes modal */
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) closeModal();
+    };
 
     window.addEventListener("athenea:gatekeeper:open", handleOpen as EventListener);
+    document.addEventListener('keydown', handleKey); /* FIX UX-9 */
     return () => {
       window.removeEventListener("athenea:gatekeeper:open", handleOpen as EventListener);
+      document.removeEventListener('keydown', handleKey); /* FIX UX-9 */
     };
-  }, [availableProjects]);
+  }, [availableProjects, isOpen]);
 
   const resetState = () => {
     setStep(1);
@@ -203,7 +209,12 @@ export const GatekeeperModal = () => {
   if (!isOpen) return null;
 
   return (
-    <div className="gatekeeper-overlay" role="dialog" aria-modal="true">
+    <div
+      className="gatekeeper-overlay"
+      role="dialog"
+      aria-modal="true"
+      onClick={(e) => { if (e.target === e.currentTarget) closeModal(); } /* FIX UX-9 */}
+    >
       <div className="gatekeeper-modal">
         <header className="gatekeeper-header">
           <div>

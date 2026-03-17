@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import useModalClose from '../hooks/useModalClose'; /* FIX UX-9 */
 import { useDispatch, useSelector } from 'react-redux';
 import { addEvent, updateEvent, deleteEvent } from '../../store/slices/calendarSlice';
 import { useLanguage } from '../context/LanguageContext';
@@ -234,6 +235,9 @@ export const Calendar = () => {
     setShowModal(false);
     setEditingEvent(null);
   };
+
+  const handleCloseModal = useCallback(() => setShowModal(false), []); /* FIX UX-9 */
+  const { handleBackdropClick: handleModalBackdrop } = useModalClose(handleCloseModal); /* FIX UX-9 */
 
   const handleEventClick = (event) => {
     if (event.relatedType === 'task') {
@@ -473,7 +477,7 @@ export const Calendar = () => {
       )}
 
       {showModal && (
-        <div className="calendar-modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="calendar-modal-overlay" onClick={handleModalBackdrop}>
           <div className="calendar-modal" onClick={(e) => e.stopPropagation()}>
             <div className="calendar-modal-header">
               <h2>{editingEvent ? t('Edit Event') : t('New Event')}</h2>
@@ -623,6 +627,7 @@ const DayDetailModal = ({
   date, meta, events, projectedSaldoLibre,
   onClose, onNewEvent, onEditEvent, onDeleteEvent, onEventClick, t,
 }) => {
+  const { handleBackdropClick } = useModalClose(onClose); /* FIX UX-9 */
   const dateLabel = date.toLocaleDateString(undefined, {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
@@ -672,7 +677,7 @@ const DayDetailModal = ({
     meta.jarvis.pressureLevel !== 'none';
 
   return (
-    <div className="calendar-modal-overlay" onClick={onClose}>
+    <div className="calendar-modal-overlay" onClick={handleBackdropClick}>
       <div className="cal-daydetail-modal" onClick={(e) => e.stopPropagation()}>
 
         {/* ── Header ──────────────────────────────────────────────────── */}

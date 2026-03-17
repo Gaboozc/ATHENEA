@@ -132,6 +132,25 @@
   color: var(--text-secondary);
 }
 
+/* FIX UX-1 */
+.metric-gatekeeper-link {
+  background: none;
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  align-self: flex-end;
+  margin-top: auto;
+}
+.metric-gatekeeper-link:hover {
+  background: var(--accent-gold);
+  color: var(--bg-base);
+}
+
 /* Today's Focus Section */
 .widget-focus {
   margin-bottom: 2rem;

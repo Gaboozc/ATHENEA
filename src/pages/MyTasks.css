@@ -26,6 +26,12 @@
   color: var(--text-primary);
 }
 
+.mytasks-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .mytasks-count {
   border: 1px solid var(--accent-gold);
   color: var(--accent-gold);
@@ -33,6 +39,24 @@
   padding: 4px 12px;
   font-size: 12px;
   font-weight: 700;
+}
+
+/* FIX UX-1 */
+.mytasks-btn-nueva {
+  background: var(--accent-gold);
+  color: var(--bg-base);
+  border: none;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+.mytasks-btn-nueva:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
 }
 
 .mytasks-list {

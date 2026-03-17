@@ -12,6 +12,54 @@
   overflow: hidden;
 }
 
+/* FIX UX-8 — Header con identidad del agente activo */
+.hud-agent-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(83, 108, 189, 0.2);
+}
+
+.hud-agent-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.hud-agent-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-gold, #d4af37);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.hud-agent-role {
+  font-size: 11px;
+  color: rgba(180, 190, 220, 0.6);
+  margin-left: 2px;
+}
+
+/* FIX UX-8 — hint de comandos en la parte inferior */
+.hud-hint {
+  margin: 0;
+  font-size: 11px;
+  color: rgba(150, 165, 200, 0.5);
+  text-align: center;
+  line-height: 1.4;
+  position: relative;
+  z-index: 1;
+}
+.hud-hint code {
+  font-size: 10px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  padding: 1px 4px;
+  color: rgba(150, 165, 200, 0.7);
+}
+
 .arc-core {
   position: absolute;
   inset: 0;

@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import useModalClose from '../hooks/useModalClose'; /* FIX UX-9 */
 import { useDispatch, useSelector } from 'react-redux';
 import { addNote, updateNote, deleteNote, togglePinNote, addTag } from '../../store/slices/notesSlice';
 import { linkNoteToCalendar, unlinkFromCalendar } from '../../store/slices/calendarSlice';
@@ -69,10 +70,11 @@ export const Notes = () => {
     setShowModal(true);
   };
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => { /* FIX UX-9 */
     setShowModal(false);
     setEditingNote(null);
-  };
+  }, []);
+  const { handleBackdropClick } = useModalClose(handleCloseModal); /* FIX UX-9 */
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -240,7 +242,7 @@ export const Notes = () => {
       </div>
 
       {showModal && (
-        <div className="notes-modal-overlay" onClick={handleCloseModal}>
+        <div className="notes-modal-overlay" onClick={handleBackdropClick}>
           <div className="notes-modal" onClick={(e) => e.stopPropagation()}>
             <div className="notes-modal-header">
               <h2>{editingNote ? t('Edit Note') : t('New Note')}</h2>

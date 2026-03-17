@@ -239,6 +239,20 @@
   cursor: pointer;
 }
 
+/* FIX UX-7 — urgencia visual en reminder cards */
+.reminder-card--urgent {
+  border-color: var(--accent-gold);
+  background: rgba(212, 175, 55, 0.04);
+}
+.reminder-card--overdue {
+  border-color: var(--color-error, #ef4444);
+  background: rgba(239, 68, 68, 0.06);
+}
+.reminder-card--overdue .reminder-badge {
+  border-color: var(--color-error, #ef4444);
+  color: var(--color-error, #ef4444);
+}
+
 .reminder-link:hover {
   filter: brightness(1.1);
 }

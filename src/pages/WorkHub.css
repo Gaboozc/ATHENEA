@@ -68,6 +68,17 @@
   color: var(--bg-base);
 }
 
+/* FIX UX-1 */
+.workhub-btn-gatekeeper {
+  border-color: var(--accent-gold) !important;
+  color: var(--accent-gold) !important;
+  font-weight: 700;
+}
+.workhub-btn-gatekeeper:hover {
+  background: var(--accent-gold) !important;
+  color: var(--bg-base) !important;
+}
+
 .workhub-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

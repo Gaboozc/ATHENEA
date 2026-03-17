@@ -863,6 +863,7 @@
   height: 24px;
 }
 
+/* FIX UX-10 — Animated mobile menu slide-in */
 .navbar-mobile-menu {
   position: fixed;
   top: calc(env(safe-area-inset-top, 0px) + 66px);
@@ -873,6 +874,17 @@
   border-top: 2px solid var(--border-default);
   z-index: 9998;
   overflow-y: auto;
+  /* Closed state */
+  opacity: 0;
+  transform: translateX(-100%);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.navbar-mobile-menu.is-open {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: all;
 }
 
 .navbar-mobile-content {

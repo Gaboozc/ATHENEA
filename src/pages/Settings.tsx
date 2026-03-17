@@ -8,7 +8,7 @@ import {
   setCurrentOrg,
   updateOrganizationBranding
 } from "../../store/slices/organizationsSlice";
-import { setVoiceLanguage } from "../store/slices/userSettingsSlice";
+import { setVoiceLanguage, updateUserSettings } from "../store/slices/userSettingsSlice";
 import type { VoiceLanguage } from "../store/slices/userSettingsSlice";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { useTasks } from "../context/TasksContext";
@@ -33,6 +33,8 @@ export const Settings = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const voiceLanguage = useSelector((state: any) => state.userSettings?.voiceLanguage ?? 'auto') as VoiceLanguage;
+  /* FIX UX-4 */
+  const advancedMode = useSelector((state: any) => state.userSettings?.advancedMode ?? false);
   const { user, role } = useCurrentUser();
   const { clearAssignmentsForUser } = useTasks();
   const {
@@ -83,6 +85,12 @@ export const Settings = () => {
   const [brandName, setBrandName] = useState(currentOrg?.name || "");
   const [brandColor, setBrandColor] = useState(currentOrg?.brandColor || "#1ec9ff");
   const [logoUrl, setLogoUrl] = useState(currentOrg?.logoUrl || "");
+  /* FIX UX-6 — feedback de guardado inline */
+  const [savedField, setSavedField] = useState<string | null>(null);
+  const markSaved = (key: string) => {
+    setSavedField(key);
+    setTimeout(() => setSavedField(null), 1500);
+  };
 
   useEffect(() => {
     const stored = localStorage.getItem(INVITES_STORAGE_KEY);
@@ -341,21 +349,43 @@ export const Settings = () => {
             </div>
           </div>
 
-          {/* FIX 6.7: Voice Language Selector */}
+          {/* FIX UX-4 — Voice Language */}
           <div className="settings-section">
-            <h3>🎙 {t("Voice Language")}</h3>
+            <h3>🎙 {t("Voice Language")} {savedField === 'voiceLanguage' && <span className="settings-saved-indicator">✓ Guardado</span>}</h3>
             <div className="settings-row" style={{ flexWrap: 'wrap', gap: 8 }}>
               {(['auto', 'en-US', 'es-MX', 'es-ES'] as VoiceLanguage[]).map((lang) => (
                 <button
                   key={lang}
                   type="button"
                   className={`settings-action${voiceLanguage === lang ? ' is-active' : ''}`}
-                  onClick={() => dispatch(setVoiceLanguage(lang))}
+                  onClick={() => { dispatch(setVoiceLanguage(lang)); markSaved('voiceLanguage'); }}
                 >
                   {lang === 'auto' ? t('Auto (system)') : lang}
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* FIX UX-4 — Modo avanzado */}
+          <div className="settings-section">
+            <h3>🔧 {t("Modo avanzado")} {savedField === 'advancedMode' && <span className="settings-saved-indicator">✓ Guardado</span>}</h3>
+            <label className="settings-advanced-toggle">
+              <input
+                type="checkbox"
+                checked={advancedMode}
+                onChange={(e) => {
+                  dispatch(updateUserSettings({ advancedMode: e.target.checked }));
+                  markSaved('advancedMode');
+                }}
+              />
+              <span>{t('Mostrar diagnóstico de agentes en el Omnibar')}</span>
+            </label>
+            {advancedMode && (
+              <p className="settings-advanced-hint">
+                Activa el panel "Thought Stream" (WarRoomView) dentro del Omnibar.
+                Útil para depurar el comportamiento de los agentes.
+              </p>
+            )}
           </div>
 
           <div className="settings-section">

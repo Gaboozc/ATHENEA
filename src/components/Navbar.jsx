@@ -232,8 +232,9 @@ export const Navbar = () => {
 				</div>
 			</nav>
 
-			{isMobileMenuOpen && createPortal(
-				<div className="navbar-mobile-menu">
+			{/* FIX UX-10 — Always-mounted portal; CSS transition controls visibility */}
+			{createPortal(
+				<div className={`navbar-mobile-menu${isMobileMenuOpen ? ' is-open' : ''}`}>
 					<div className="navbar-mobile-content">
 						{dropdowns.map((group) => {
 							const isExpanded = expandedMobileGroup === group.label;
@@ -308,6 +309,17 @@ export const Navbar = () => {
 								className={`navbar-mobile-link${location.pathname.startsWith('/identity') ? ' is-active' : ''}`}
 							>
 								{t('Identity')}
+							</Link>
+							{/* FIX UX-5 — Stats en menú mobile */}
+							<Link
+								to="/stats"
+								onClick={() => {
+									closeMobileMenu();
+									setExpandedMobileGroup(null);
+								}}
+								className={`navbar-mobile-link${location.pathname.startsWith('/stats') ? ' is-active' : ''}`}
+							>
+								📊 {t('Estadísticas')}
 							</Link>
 						</div>
 				<div className="navbar-mobile-group" style={{ borderTop: '1px solid var(--border-default)', paddingTop: '12px', marginTop: '12px' }}>

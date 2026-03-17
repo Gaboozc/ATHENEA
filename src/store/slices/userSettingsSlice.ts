@@ -63,6 +63,8 @@ export interface UserSettingsState {
   llmProvider: LLMProvider;
   llmApiKey: string;
   initialized: boolean;
+  // FIX UX-4 — modo avanzado: habilita WarRoomView en el Omnibar
+  advancedMode: boolean;
 }
 
 const initialState: UserSettingsState = {
@@ -112,6 +114,8 @@ const initialState: UserSettingsState = {
     webhookURL: '',
   llmProvider: 'openai',
   llmApiKey: '',
+  // FIX UX-4
+  advancedMode: false,
 };
 
 const userSettingsSlice = createSlice({

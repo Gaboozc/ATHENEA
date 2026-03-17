@@ -26,6 +26,7 @@ import goalsReducer from './slices/goalsSlice';
 import budgetCycleReducer from './slices/budgetCycleSlice';
 import { budgetGuardMiddleware } from '../src/store/middleware/budgetGuardMiddleware';
 import { financeDeletionAuditMiddleware } from '../src/store/middleware/financeDeletionAuditMiddleware';
+import { feedbackMiddleware } from '../src/store/middleware/feedbackMiddleware'; /* FIX UX-3 */
 
 const placeholderSlice = createSlice({
   name: 'app',
@@ -106,7 +107,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE']
       }
-    }).concat(aiObserverMiddleware, actionHistoryMiddleware, budgetGuardMiddleware, financeDeletionAuditMiddleware)
+    ).concat(aiObserverMiddleware, actionHistoryMiddleware, budgetGuardMiddleware, financeDeletionAuditMiddleware, feedbackMiddleware)
 });
 
 export const persistor = persistStore(store);

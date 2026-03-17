@@ -242,6 +242,43 @@
   color: var(--color-error);
 }
 
+/* FIX UX-4 */
+.settings-advanced-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+.settings-advanced-toggle input[type="checkbox"] {
+  accent-color: var(--accent-gold);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+.settings-advanced-hint {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* FIX UX-6 — saved indicator */
+.settings-saved-indicator {
+  color: var(--color-success, #4ade80);
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-left: 8px;
+  vertical-align: middle;
+  animation: settings-fade-out 1.5s ease forwards;
+}
+@keyframes settings-fade-out {
+  0%   { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 @media (max-width: 768px) {
   .settings-page {
     padding: 1rem;

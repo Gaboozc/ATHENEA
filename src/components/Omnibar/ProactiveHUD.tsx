@@ -58,14 +58,31 @@ export const ProactiveHUD: React.FC<ProactiveHUDProps> = ({ onApplySuggestion })
   const neuralMessage = currentResponse.briefing || currentResponse.greeting || currentResponse.suggestion;
   const responder = currentResponse.responderPersona;
 
+  /* FIX UX-8 — mapear persona a info visible para el usuario */
+  const AGENT_INFO: Record<string, { icon: string; name: string; role: string }> = {
+    cortana: { icon: '🧿', name: 'Cortana', role: 'Estrategia & trabajo' },
+    jarvis:  { icon: '🤖', name: 'Jarvis',  role: 'Finanzas & control'  },
+    shodan:  { icon: '👁️', name: 'SHODAN',  role: 'Salud & energía'     },
+    swarm:   { icon: '🎯', name: 'ATHENEA', role: 'Sistema'              },
+  };
+  const agentInfo = AGENT_INFO[responder] ?? AGENT_INFO.cortana;
+
   return (
     <div className={`proactive-hud hud-${currentResponse.emotionalTone} responder-${responder}`}>
+      {/* FIX UX-8 — header con nombre del agente activo */}
+      <div className="hud-agent-header">
+        <span className="hud-agent-icon">{agentInfo.icon}</span>
+        <span className="hud-agent-name">{agentInfo.name}</span>
+        <span className="hud-agent-role">{agentInfo.role}</span>
+      </div>
+
       <div className="arc-core" aria-hidden="true">
         <div className={`arc-pulse arc-pulse-${currentResponse.emotionalTone}`} />
+        {/* FIX UX-8 — tooltips en los puntos del swarm */}
         <div className="swarm-processing-dots" aria-label="Thought Stream">
-          <span className="swarm-dot swarm-dot-blue" />
-          <span className="swarm-dot swarm-dot-gold" />
-          <span className="swarm-dot swarm-dot-green" />
+          <span className="swarm-dot swarm-dot-blue"  title={`Cortana${responder === 'cortana' ? ' — activa' : ' — en espera'}`} />
+          <span className="swarm-dot swarm-dot-gold"  title={`Jarvis${responder === 'jarvis'   ? ' — activo' : ' — en espera'}`} />
+          <span className="swarm-dot swarm-dot-green" title={`SHODAN${responder === 'shodan'   ? ' — activo' : ' — en espera'}`} />
         </div>
       </div>
 
@@ -80,6 +97,11 @@ export const ProactiveHUD: React.FC<ProactiveHUDProps> = ({ onApplySuggestion })
           <div className="hud-command-feedback">{lastCommandFeedback}</div>
         )}
       </div>
+
+      {/* FIX UX-8 — hint de comandos cuando HUD está activo */}
+      <p className="hud-hint">
+        Escribe en lenguaje natural · <code>cortana:</code> Work · <code>jarvis:</code> Finanzas · <code>shodan:</code> Salud
+      </p>
     </div>
   );
 };

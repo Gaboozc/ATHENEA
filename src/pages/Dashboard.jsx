@@ -6,6 +6,7 @@ import { useTasks } from "../context/TasksContext";
 import { useLanguage } from '../context/LanguageContext';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import DashboardWidget from '../components/DashboardWidget';
+import { WelcomeBanner } from '../components/Onboarding/WelcomeBanner'; /* FIX UX-2 */
 import { selectFinancialSnapshot } from '../store/selectors/financialSelectors';
 import { Skeleton } from '../components/Skeleton/Skeleton';
 
@@ -203,8 +204,58 @@ export const Dashboard = () => {
         </div>
       </header>
 
+      {/* FIX UX-2 — micro-onboarding primera sesión */}
+      <WelcomeBanner />
+
       {/* Dashboard Widget - Quick Overview */}
       <DashboardWidget />
+
+      {/* FIX UX-7 — Reminders antes que Recent Notes (urgencia > arbitrariedad) */}
+      <section className="reminders">
+        <div className="reminders-header">
+          <h2>{t('Reminders')}</h2>
+          <span>{reminders.length}</span>
+        </div>
+        {!isReady ? (
+          <div className="reminders-skeleton">
+            <Skeleton type="card" height="56px" />
+            <Skeleton type="card" height="56px" />
+          </div>
+        ) : reminders.length === 0 ? (
+          <div className="reminders-empty">{t('No upcoming reminders.')}</div>
+        ) : (
+          <ul className="reminders-list">
+            {reminders.map((reminder) => (
+              <li
+                key={reminder.id}
+                className={[
+                  'reminder-card',
+                  `reminder-${reminder.type}`,
+                  reminder.diffDays <= 0 ? 'reminder-card--overdue' : '',
+                  reminder.diffDays === 1 ? 'reminder-card--urgent' : '',
+                ].filter(Boolean).join(' ')}
+              >
+                <div>
+                  <span className="reminder-title">{reminder.title}</span>
+                  <span className="reminder-date">
+                    {reminder.dueDate.toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="reminder-meta">
+                  <span className="reminder-badge">{getReminderLabel(reminder.diffDays)}</span>
+                  <button
+                    type="button"
+                    className="reminder-link"
+                    onClick={() => navigate(reminder.route)}
+                  >
+                    {t('View')}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="notes-recent">
         <div className="notes-recent-header">
@@ -249,44 +300,6 @@ export const Dashboard = () => {
                 >
                   {t('View more')}
                 </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="reminders">
-        <div className="reminders-header">
-          <h2>{t('Reminders')}</h2>
-          <span>{reminders.length}</span>
-        </div>
-        {!isReady ? (
-          <div className="reminders-skeleton">
-            <Skeleton type="card" height="56px" />
-            <Skeleton type="card" height="56px" />
-          </div>
-        ) : reminders.length === 0 ? (
-          <div className="reminders-empty">{t('No upcoming reminders.')}</div>
-        ) : (
-          <ul className="reminders-list">
-            {reminders.map((reminder) => (
-              <li key={reminder.id} className={`reminder-card reminder-${reminder.type}`}>
-                <div>
-                  <span className="reminder-title">{reminder.title}</span>
-                  <span className="reminder-date">
-                    {reminder.dueDate.toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="reminder-meta">
-                  <span className="reminder-badge">{getReminderLabel(reminder.diffDays)}</span>
-                  <button
-                    type="button"
-                    className="reminder-link"
-                    onClick={() => navigate(reminder.route)}
-                  >
-                    {t('View')}
-                  </button>
-                </div>
               </li>
             ))}
           </ul>
