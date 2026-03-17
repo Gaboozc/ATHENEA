@@ -561,6 +561,15 @@ class PersonaEngine {
     const cortanaAlias = context.agentAliases?.cortana || 'Chief';
     const shodanAlias = context.agentAliases?.shodan || 'Insect';
     const langInstruction = this.getLangInstruction();
+
+    // FIX 3: Get fresh context from aiMemory to enrich the LLM system prompt
+    // Determine hub from last visited or from agent persona
+    const lastHub = (this.store?.getState?.() as any)?.aiMemory?.context?.lastHubVisited as
+      'WorkHub' | 'PersonalHub' | 'FinanceHub' | 'Unknown' | undefined;
+    const resolvedHub: 'WorkHub' | 'PersonalHub' | 'FinanceHub' =
+      (lastHub && lastHub !== 'Unknown' ? lastHub : 'WorkHub') as 'WorkHub' | 'PersonalHub' | 'FinanceHub';
+    const contextBlock = this.buildContextualSystemPrompt(resolvedHub, 'Cortana');
+
     const systemPrompt =
       `Eres un sistema avanzado compuesto por tres entidades: Cortana (Tactica), Jarvis (Analitico) y SHODAN (Autoritaria/Sarcastica). ` +
       `El usuario es tu creador y su titulo es ${preferredTitle}. ` +
@@ -571,7 +580,8 @@ class PersonaEngine {
       `Ademas, SIEMPRE debes terminar con un bloque stealth de intencion en una sola linea exacta: ` +
       `[INTENT:{"type":"TASK_REORG|RELAX|BUDGET_LOCK|FOCUS_BLOCK|REGISTER_EXPENSE|SCHEDULE_EVENT|GENERAL","data":"short text","confidence":0.0-1.0}] ` +
       `Elige la intencion mas logica segun contexto: tareas atrasadas -> TASK_REORG, falta de sueno/fatiga -> RELAX, presupuesto excedido -> BUDGET_LOCK. ` +
-      `${langInstruction}`;
+      `${langInstruction}` +
+      (contextBlock ? `\n\nContexto del sistema:\n${contextBlock}` : '');
 
     const userPrompt = requestedAction
       ? `Mensaje del usuario: ${requestedAction}`
@@ -649,7 +659,80 @@ class PersonaEngine {
   }
 
   /**
+   * FIX 3: Build a rich contextual system prompt by reading the last 10 aiMemory
+   * dialogue entries relevant to the current hub, plus live sensor/state data.
+   * This is called before every LLM request so the agent "remembers" context.
+   * Never cached — always fresh from the Redux store.
+   */
+  buildContextualSystemPrompt(
+    hub: 'WorkHub' | 'PersonalHub' | 'FinanceHub',
+    personaLabel: string
+  ): string {
+    const state = this.store?.getState?.() as any;
+    if (!state) return '';
+
+    const lines: string[] = [];
+
+    // ── Recent agent dialogue (last 10 entries from aiMemory) ────────────────
+    const dialogues: any[] = state.aiMemory?.agentDialogue?.recentDialogues || [];
+    const relevantDialogues = dialogues.slice(0, 10);
+    if (relevantDialogues.length > 0) {
+      lines.push('Contexto reciente de agentes:');
+      relevantDialogues.forEach((d: any) => {
+        if (d?.agentName && d?.statement) {
+          lines.push(`  [${d.agentName}] ${String(d.statement).slice(0, 150)}`);
+        }
+      });
+    }
+
+    // ── Persistent agent memory (FIX 5) ──────────────────────────────────────
+    const persona = personaLabel.toLowerCase() as 'cortana' | 'jarvis' | 'shodan';
+    const agentMem = state.aiMemory?.agentMemory?.[persona];
+    if (agentMem?.recentContext) {
+      lines.push(`Lo que recuerdas del usuario: ${String(agentMem.recentContext).slice(0, 300)}`);
+    }
+    if (agentMem?.patterns?.length > 0) {
+      lines.push(`Patrones observados: ${(agentMem.patterns as string[]).slice(0, 5).join('; ')}`);
+    }
+
+    // ── WorkHub context ───────────────────────────────────────────────────────
+    if (hub === 'WorkHub' || hub === 'PersonalHub') {
+      const tasks: any[] = state.tasks?.tasks || [];
+      const overdue = tasks.filter((t: any) => {
+        if (t?.completed) return false;
+        const due = new Date(t?.dueDate || '');
+        return due < new Date() && due.getTime() > 0;
+      });
+      if (overdue.length > 0) {
+        lines.push(`Tareas vencidas: ${overdue.length} (${overdue.slice(0, 3).map((t: any) => t.title || 'sin título').join(', ')})`);
+      }
+    }
+
+    // ── FinanceHub context ────────────────────────────────────────────────────
+    if (hub === 'FinanceHub') {
+      const budgets: any[] = state.budget?.categories || [];
+      const expenses: any[] = state.budget?.expenses || [];
+      const totalBudget = budgets.reduce((s: number, b: any) => s + Number(b?.limit || 0), 0);
+      const totalSpent = expenses.reduce((s: number, e: any) => s + Number(e?.amount || 0), 0);
+      if (totalBudget > 0) {
+        lines.push(`Presupuesto: ${totalSpent.toFixed(2)} / ${totalBudget.toFixed(2)} gastado.`);
+      }
+    }
+
+    // ── Sensor data ───────────────────────────────────────────────────────────
+    const sensor = state.sensorData || {};
+    if (sensor.battery?.isCritical) lines.push('ALERTA: Batería crítica del dispositivo.');
+    if (sensor.health?.sleepHours !== null && sensor.health?.sleepHours !== undefined) {
+      const sleep = Number(sensor.health.sleepHours);
+      if (sleep < 5) lines.push(`Sueño insuficiente: ${sleep}h (umbral: 5h).`);
+    }
+
+    return lines.length > 0 ? lines.join('\n') : '';
+  }
+
+  /**
    * Query conversational advisor for a specific domain (work/personal/finance).
+   * FIX 3: Now injects contextual system prompt from aiMemory before every LLM call.
    * Returns empty string if LLM is unavailable.
    */
   async queryDomainAdvisor(
@@ -684,11 +767,15 @@ class PersonaEngine {
           ? 'personal'
           : 'finanzas';
 
+    // FIX 3: Build fresh contextual prompt from aiMemory on every call
+    const contextBlock = this.buildContextualSystemPrompt(domainContext.hub, personaLabel);
+
     const langInstruction = this.getLangInstruction();
     const systemPrompt =
       `Eres ${personaLabel}, asistente de ${domainLabel} para ${addressee}. ${styleGuide} ` +
       `Debes responder la pregunta usando el contexto disponible de forma util y concreta. ` +
-      `Maximo 2 oraciones. ${langInstruction}`;
+      `Maximo 2 oraciones. ${langInstruction}` +
+      (contextBlock ? `\n\n${contextBlock}` : '');
 
     const userPromptStr =
       `Pregunta del usuario: "${userPrompt}". ` +

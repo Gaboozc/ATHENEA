@@ -16,8 +16,8 @@
  * - GitHub's Command Palette
  */
 
-import React, { useState, useRef, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../../context/LanguageContext';
 import { syncExternalEvents } from '../../../store/slices/calendarSlice.js';
 import {
@@ -110,6 +110,25 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     return getAgentInfo(fallbackHub, promptText);
   };
 
+  // FIX 6: Voice language from Redux settings (default 'auto')
+  const voiceLanguage = useSelector((state: any) => state.userSettings?.voiceLanguage ?? 'auto');
+
+  // FIX 6.1: 4-state voice machine
+  type VoiceState = 'idle' | 'listening' | 'processing' | 'error';
+  const [voiceState, setVoiceState] = useState<VoiceState>('idle');
+  const [voiceError, setVoiceError] = useState('');
+  const voiceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finalResultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const capturedTranscriptRef = useRef('');
+
+  // FIX 6.2: Locale resolution from Redux or browser
+  const resolveLocale = useCallback((): string => {
+    if (voiceLanguage && voiceLanguage !== 'auto') return voiceLanguage;
+    const lang = navigator.language || 'en-US';
+    if (lang.startsWith('es')) return 'es-MX';
+    return 'en-US';
+  }, [voiceLanguage]);
+
   // Local state
   const [inputValue, setInputValue] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -117,7 +136,6 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   const [selectedHub, setSelectedHub] = useState<'WorkHub' | 'PersonalHub' | 'FinanceHub'>(defaultHub);
   const [activeInsight, setActiveInsight] = useState<DynamicInsight | null>(null);
   const [activeInsightArtifact, setActiveInsightArtifact] = useState<CanvasArtifact | null>(null);
-  const [isListening, setIsListening] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -150,37 +168,45 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     }, 4000);
   };
 
-  const cleanupNativeVoice = async () => {
-    const speech = nativeSpeechRef.current;
-    if (!speech) {
-      setIsListening(false);
-      nativeVoiceInFlightRef.current = false;
-      return;
+  // FIX 6.3: cleanupAndReset as useCallback — clears all timers, stops plugin, resets state atomically
+  const cleanupAndReset = useCallback(async (nextState: VoiceState = 'idle', errorMsg = '') => {
+    // Clear all pending timers first
+    if (voiceTimeoutRef.current) {
+      clearTimeout(voiceTimeoutRef.current);
+      voiceTimeoutRef.current = null;
+    }
+    if (finalResultTimeoutRef.current) {
+      clearTimeout(finalResultTimeoutRef.current);
+      finalResultTimeoutRef.current = null;
     }
 
-    try {
-      await speech.stop();
-    } catch {
-      // Ignore stop errors when no active session exists.
-    }
-
-    try {
-      await speech.removeAllListeners();
-    } catch {
-      // Ignore listener cleanup errors in teardown path.
-    }
-
-    setIsListening(false);
     nativeVoiceInFlightRef.current = false;
-  };
+
+    const speech = nativeSpeechRef.current;
+    if (speech) {
+      try { await speech.stop(); } catch { /* ignore */ }
+      try { await speech.removeAllListeners(); } catch { /* ignore */ }
+    }
+
+    setVoiceState(nextState);
+    if (errorMsg) setVoiceError(errorMsg);
+  }, []);
+
+  // FIX 6: Auto-clear error state after 3 seconds
+  useEffect(() => {
+    if (voiceState !== 'error') return;
+    const t = setTimeout(() => {
+      setVoiceState('idle');
+      setVoiceError('');
+    }, 3000);
+    return () => clearTimeout(t);
+  }, [voiceState]);
 
   useEffect(() => {
     return () => {
-      cleanupNativeVoice().catch(() => {
-        // Ignore cleanup errors during unmount.
-      });
+      cleanupAndReset().catch(() => { /* ignore unmount errors */ });
     };
-  }, []);
+  }, [cleanupAndReset]);
 
   // Focus input when modal opens
   useEffect(() => {
@@ -565,25 +591,23 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     const isNativePlatform = Boolean(capacitor?.isNativePlatform?.());
 
     if (isNativePlatform) {
+      // FIX 6.1: If already listening, cancel and reset
+      if (voiceState === 'listening') {
+        await cleanupAndReset('idle');
+        return;
+      }
+
+      // Prevent concurrent sessions
+      if (nativeVoiceInFlightRef.current) return;
+
       try {
         const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
         nativeSpeechRef.current = SpeechRecognition;
 
-        // Stop listening if already active
-        if (isListening) {
-          await cleanupNativeVoice();
-          return;
-        }
-
-        // Prevent concurrent sessions
-        if (nativeVoiceInFlightRef.current) {
-          return;
-        }
-
         // Check availability
         const available = await SpeechRecognition.available();
         if (!available?.available) {
-          showToast('Speech recognition is not available on this device', 'error');
+          await cleanupAndReset('error', 'Speech recognition not available on this device');
           return;
         }
 
@@ -591,94 +615,81 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         const permission = await SpeechRecognition.requestPermissions();
         const granted = permission?.speechRecognition === 'granted';
         if (!granted) {
-          showToast('Microphone permission denied', 'error');
+          await cleanupAndReset('error', 'Microphone permission denied');
           return;
         }
 
-        // Cleanup any previous session before starting
-        await cleanupNativeVoice();
+        // FIX 6.1: Hard cleanup before any new session
+        await cleanupAndReset('idle');
 
         // Mark session as active
         nativeVoiceInFlightRef.current = true;
-        setIsListening(true);
+        capturedTranscriptRef.current = '';
+        setVoiceState('listening');
 
-        // ATHENEA NATIVE MIC: Silent mode with real-time partial results
-        let capturedTranscript = '';  // Local variable to avoid closure issues
-        let sessionActive = true;
-
-        try {
-          // Setup all listeners BEFORE starting
-          console.log('[Athenea Mic] Setting up listeners...');
-          
-          // Listen for partial results (real-time text updates)
-          await SpeechRecognition.addListener('partialResults', (data: any) => {
-            console.log('[Athenea Mic] Partial result:', data);
-            const partial = data?.matches?.[0] || '';
-            if (partial && sessionActive) {
-              capturedTranscript = partial;  // Capture locally
-              setInputValue(partial);  // Display in real-time
+        // FIX 6.5: Debounce final result submission 1.5s after last partial
+        const scheduleFinalSubmit = () => {
+          if (finalResultTimeoutRef.current) clearTimeout(finalResultTimeoutRef.current);
+          finalResultTimeoutRef.current = setTimeout(async () => {
+            const transcript = capturedTranscriptRef.current.trim();
+            await cleanupAndReset('processing');
+            if (transcript) {
+              await processTranscript(transcript);
+            } else {
+              await cleanupAndReset('error', t('No voice input detected'));
             }
-          });
+          }, 1500);
+        };
 
-          // Listen for listening state changes
-          await SpeechRecognition.addListener('listeningState', (state: any) => {
-            console.log('[Athenea Mic] Listening state:', state);
-            if (state?.status === 'stopped' && sessionActive) {
-              sessionActive = false;
-              setIsListening(false);
+        // Setup listeners BEFORE starting
+        await SpeechRecognition.addListener('partialResults', (data: any) => {
+          const partial = data?.matches?.[0] || '';
+          if (partial && nativeVoiceInFlightRef.current) {
+            capturedTranscriptRef.current = partial;
+            setInputValue(partial);
+            scheduleFinalSubmit(); // reset debounce on every partial
+          }
+        });
+
+        // FIX 6.4: listeningState stopped → trigger final submit immediately
+        await SpeechRecognition.addListener('listeningState', async (state: any) => {
+          if (state?.status === 'stopped' && nativeVoiceInFlightRef.current) {
+            // Cancel pending debounce and submit right away
+            if (finalResultTimeoutRef.current) {
+              clearTimeout(finalResultTimeoutRef.current);
+              finalResultTimeoutRef.current = null;
             }
-          });
+            const transcript = capturedTranscriptRef.current.trim();
+            await cleanupAndReset('processing');
+            if (transcript) {
+              await processTranscript(transcript);
+            } else {
+              await cleanupAndReset('error', t('No voice input detected'));
+            }
+          }
+        });
 
-          console.log('[Athenea Mic] Starting recognition in silent mode...');
-          
-          // Start listening in SILENT MODE (no popup, background listening)
-          const startResult = await SpeechRecognition.start({
-            language: navigator.language || 'en-US',
-            maxResults: 5,
-            partialResults: true,  // Enable real-time updates
-            popup: false,          // Silent mode - no Google popup
-            prompt: ''             // No prompt needed in silent mode
-          } as any);
+        // FIX 6.2: Use Redux voice language setting
+        await SpeechRecognition.start({
+          language: resolveLocale(),
+          maxResults: 5,
+          partialResults: true,
+          popup: false,
+          prompt: ''
+        } as any);
 
-          console.log('[Athenea Mic] Start result:', startResult);
+        // FIX 6.4: Hard 10s escape timeout — in case listeningState never fires
+        voiceTimeoutRef.current = setTimeout(async () => {
+          const transcript = capturedTranscriptRef.current.trim();
+          await cleanupAndReset(transcript ? 'processing' : 'error',
+            transcript ? '' : t('No voice input detected'));
+          if (transcript) await processTranscript(transcript);
+        }, 10000);
 
-          // Wait for the recognizer to stop naturally or timeout after 15 seconds
-          await new Promise<void>((resolve) => {
-            const timeout = setTimeout(() => {
-              console.log('[Athenea Mic] Timeout reached');
-              sessionActive = false;
-              resolve();
-            }, 15000); // 15 second timeout
-
-            // Monitor for session end
-            const checkInterval = setInterval(() => {
-              if (!sessionActive) {
-                clearTimeout(timeout);
-                clearInterval(checkInterval);
-                console.log('[Athenea Mic] Session ended, final transcript:', capturedTranscript);
-                resolve();
-              }
-            }, 100);
-          });
-        } finally {
-          // STRICT CLEANUP: Always stop and remove listeners
-          sessionActive = false;
-          console.log('[Athenea Mic] Cleaning up...');
-          await cleanupNativeVoice();
-        }
-
-        // Auto-submit if we have valid transcript
-        console.log('[Athenea Mic] Processing captured transcript:', capturedTranscript);
-        if (capturedTranscript && capturedTranscript.trim()) {
-          await processTranscript(capturedTranscript.trim());
-        } else {
-          showToast(t('No voice input detected'), 'error');
-        }
         return;
       } catch (nativeError) {
-        await cleanupNativeVoice();
+        await cleanupAndReset('error', 'Native microphone failed to start');
         console.error('Native voice flow failed:', nativeError);
-        showToast('Native microphone failed to start', 'error');
         return;
       }
     }
@@ -695,7 +706,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
       return;
     }
 
-    if (isListening && recognitionRef.current) {
+    if (voiceState === 'listening' && recognitionRef.current) {
       recognitionRef.current.stop();
       return;
     }
@@ -709,12 +720,12 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = navigator.language || 'en-US';
+    recognition.lang = resolveLocale();
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
-      setIsListening(true);
+      setVoiceState('listening');
     };
 
     recognition.onresult = async (event: any) => {
@@ -732,22 +743,22 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     };
 
     recognition.onerror = (event: any) => {
-      setIsListening(false);
+      setVoiceState('error');
+      setVoiceError(`Voice recognition failed${event?.error ? `: ${event.error}` : ''}`);
       playErrorSound();
-      showToast(`Voice recognition failed${event?.error ? `: ${event.error}` : ''}`, 'error');
     };
 
     recognition.onend = () => {
-      setIsListening(false);
+      if (voiceState === 'listening') setVoiceState('idle');
     };
 
     recognitionRef.current = recognition;
     try {
       recognition.start();
     } catch (error) {
-      setIsListening(false);
+      setVoiceState('error');
+      setVoiceError('Could not start microphone');
       playErrorSound();
-      showToast('Could not start microphone', 'error');
       console.error('Speech recognition start failed:', error);
     }
   };
@@ -851,6 +862,22 @@ export const Omnibar: React.FC<OmnibarProps> = ({
               onChange={(e) => setInputValue(e.target.value)}
               disabled={isLoading}
             />
+            {/* FIX 6.6: Voice button with 4 visual states */}
+            <button
+              type="button"
+              className={[
+                'omnibar-voice-btn',
+                voiceState === 'listening' ? 'omnibar-voice-btn--listening' : '',
+                voiceState === 'processing' ? 'omnibar-voice-btn--processing' : '',
+                voiceState === 'error' ? 'omnibar-voice-btn--error' : '',
+              ].filter(Boolean).join(' ')}
+              onClick={handleVoiceInput}
+              disabled={isLoading || voiceState === 'processing'}
+              aria-label={voiceState === 'listening' ? 'Stop voice input' : 'Start voice input'}
+              title={voiceState === 'listening' ? 'Tap to stop' : 'Voice input'}
+            >
+              {voiceState === 'idle' ? '🎙' : voiceState === 'listening' ? '⏹' : voiceState === 'processing' ? '⏳' : '⚠️'}
+            </button>
             <button
               type="submit"
               className="omnibar-submit-btn"
@@ -860,6 +887,14 @@ export const Omnibar: React.FC<OmnibarProps> = ({
               {isLoading ? '⏳' : '→'}
             </button>
           </form>
+          {/* FIX 6.6: Voice status bar */}
+          {voiceState !== 'idle' && (
+            <div className={`omnibar-voice-status${voiceState === 'error' ? ' omnibar-voice-status--error' : ''}`}>
+              {voiceState === 'listening' && `🎙 ${t('Listening')}…`}
+              {voiceState === 'processing' && `⏳ ${t('Processing')}…`}
+              {voiceState === 'error' && `⚠️ ${voiceError || t('Voice error')}`}
+            </div>
+          )}
 
           {showInlineOnboardingHint && !inputValue && !currentResponse && !lastError && (
             <div className="omnibar-inline-onboarding-hint">

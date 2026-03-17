@@ -8,6 +8,8 @@ import {
   setCurrentOrg,
   updateOrganizationBranding
 } from "../../store/slices/organizationsSlice";
+import { setVoiceLanguage } from "../store/slices/userSettingsSlice";
+import type { VoiceLanguage } from "../store/slices/userSettingsSlice";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { useTasks } from "../context/TasksContext";
 import { getPlanLimits } from "../utils/planLimits";
@@ -30,6 +32,7 @@ export const Settings = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const voiceLanguage = useSelector((state: any) => state.userSettings?.voiceLanguage ?? 'auto') as VoiceLanguage;
   const { user, role } = useCurrentUser();
   const { clearAssignmentsForUser } = useTasks();
   const {
@@ -335,6 +338,23 @@ export const Settings = () => {
               {invites.filter((invite) => invite.orgId === currentOrgId).length === 0 && (
                 <div className="settings-empty">{t("No active invites.")}</div>
               )}
+            </div>
+          </div>
+
+          {/* FIX 6.7: Voice Language Selector */}
+          <div className="settings-section">
+            <h3>🎙 {t("Voice Language")}</h3>
+            <div className="settings-row" style={{ flexWrap: 'wrap', gap: 8 }}>
+              {(['auto', 'en-US', 'es-MX', 'es-ES'] as VoiceLanguage[]).map((lang) => (
+                <button
+                  key={lang}
+                  type="button"
+                  className={`settings-action${voiceLanguage === lang ? ' is-active' : ''}`}
+                  onClick={() => dispatch(setVoiceLanguage(lang))}
+                >
+                  {lang === 'auto' ? t('Auto (system)') : lang}
+                </button>
+              ))}
             </div>
           </div>
 

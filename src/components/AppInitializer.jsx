@@ -20,8 +20,10 @@ import { initializePreFlightBriefing, getPreFlightBriefingGenerator } from '../m
 // FASE 2.6: Austerity Protocol
 import { initializeAusterityProtocol } from '../modules/intelligence/AusterityProtocol';
 // FASE 3: Multi-Agent System
-import { initializeAgentOrchestrator } from '../modules/intelligence/agents/AgentOrchestrator';
+import { initializeAgentOrchestrator, getAgentOrchestrator } from '../modules/intelligence/agents/AgentOrchestrator';
 import { initializeShadowChronos } from '../modules/intelligence/ShadowChronos';
+// FIX 4: ActionBridge listener + proactive agent evaluation
+import { initializeActionBridgeListener } from '../modules/actions/ActionBridge';
 
 /**
  * AppInitializer - Initialize app features on mount
@@ -65,9 +67,52 @@ const AppInitializer = ({ children }) => {
     initializeAusterityProtocol(store);
     // FASE 3: Initialize Multi-Agent Orchestrator
     initializeAgentOrchestrator(store);
+    // FIX 4: Wire ActionBridge to EventBus so orchestrator decisions execute real Redux actions
+    initializeActionBridgeListener(store);
     // FASE 5: Initialize proactive trend analyzer
     initializeShadowChronos(store);
     markBootstrapped();
+  }, [store]);
+
+  // FIX 4: Proactive sensor-triggered agent evaluation (debounced to 5 minutes)
+  useEffect(() => {
+    let lastEvaluationTime = 0;
+    const DEBOUNCE_MS = 5 * 60 * 1000; // 5 minutes
+
+    const unsubscribe = store.subscribe(() => {
+      const now = Date.now();
+      if (now - lastEvaluationTime < DEBOUNCE_MS) return;
+
+      const state = store.getState();
+      const sensors = state?.sensorData;
+      const tasks = state?.tasks?.items ?? [];
+
+      const batteryIsCritical = sensors?.battery?.percentage <= 15 && sensors?.battery?.isCharging === false;
+      const sleepDeprived = sensors?.health?.sleepHours < 5;
+      const overdueTasks = tasks.filter((t) => {
+        if (t.completed || !t.dueDate) return false;
+        return new Date(t.dueDate) < new Date();
+      }).length;
+
+      const shouldEvaluate = batteryIsCritical || sleepDeprived || overdueTasks >= 3;
+      if (!shouldEvaluate) return;
+
+      lastEvaluationTime = now;
+
+      const orchestrator = getAgentOrchestrator();
+      if (!orchestrator) return;
+
+      orchestrator.evaluate().then((decision) => {
+        if (!decision) return;
+        const agentName = decision.recommendedAgent ?? 'Cortana';
+        const message = decision.reasoning ?? decision.message ?? '';
+        if (message) {
+          showToast(`[${agentName}] ${message}`, 'info', 6000, '🤖');
+        }
+      }).catch(() => { /* silent */ });
+    });
+
+    return () => unsubscribe();
   }, [store]);
 
   useEffect(() => {

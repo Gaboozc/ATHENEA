@@ -33,8 +33,8 @@ import {
   recordAgentDialogue,
   type RecordAgentConflictPayload,
 } from '../../../store/slices/aiMemorySlice';
-// FASE 4.0: ActionBridge integration temporarily disabled to avoid circular dependency
-// import { getActionBridge } from '../../actions/ActionBridge';
+// FIX 1: Use EventBus instead of direct ActionBridge import to break circular dependency
+import { eventBus } from '../EventBus';
 
 export class AgentOrchestrator {
   private agents: Map<AgentType, Agent> = new Map();
@@ -234,12 +234,18 @@ export class AgentOrchestrator {
       }
     }
 
-    // FASE 4.0: Execute physical actions based on decision
-    // Temporarily disabled to isolate stack overflow issue
-    // const actionBridge = getActionBridge();
-    // await actionBridge.processOrchestratorDecision(decision);
+    // FIX 1: Emit decision on EventBus — ActionBridge listens independently
+    eventBus.emit('orchestrator:decision', decision);
 
     return decision;
+  }
+
+  /**
+   * FIX 4: Public evaluate() for proactive activation from external sensors.
+   * Runs a standard orchestration pass without requiring a user prompt.
+   */
+  async evaluate(): Promise<OrchestratorDecision> {
+    return this.orchestrate({ forceAllAgents: false });
   }
 
   /**

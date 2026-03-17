@@ -180,8 +180,17 @@ export class IntelligenceBridge {
     const effectiveHub = keywordHub || request.context.currentHub;
     const hub = (effectiveHub || 'WorkHub') as 'WorkHub' | 'PersonalHub' | 'FinanceHub';
 
-    // Every prompt is always handled by the domain agent (Cortana / SHODAN / Jarvis).
-    // No skill matching, no forms — the AI agent always responds.
+    // FIX 2: Skill-first routing — try skill match BEFORE falling through to conversational.
+    // If a skill is matched with sufficient confidence, return it directly.
+    // The useIntelligence hook will auto-execute (threshold 70) or show Canvas.
+    try {
+      const skillResult = await this.trySkillFirstRoute(request, hub, reduxGetState);
+      if (skillResult) return skillResult;
+    } catch (skillErr) {
+      console.warn('[Bridge] Skill-first route error:', skillErr);
+    }
+
+    // Every remaining prompt is handled by the domain agent (Cortana / SHODAN / Jarvis).
     try {
       return await this.handleConversationalQuestion(
         request,
@@ -198,6 +207,82 @@ export class IntelligenceBridge {
         'An error occurred while processing your request'
       );
     }
+  }
+
+  /**
+   * FIX 2: Attempt to match prompt against skills before going conversational.
+   * Returns an IntelligenceResponse if a skill is matched with confidence >= 45
+   * (post-enhancement will typically be >= 70), or null to continue conversational.
+   */
+  private async trySkillFirstRoute(
+    request: IntelligenceRequest,
+    hub: 'WorkHub' | 'PersonalHub' | 'FinanceHub',
+    reduxGetState: () => any
+  ): Promise<IntelligenceResponse | null> {
+    const prompt = request.userPrompt;
+
+    // Fast-path matcher against skills in the active hub
+    const skillsForHub = getSkillsByHub(hub);
+    const fastMatch = fastPathMatcher.match(prompt, skillsForHub, hub);
+
+    // Determine candidate skill
+    let skill = fastMatch ? getSkillById(fastMatch.skillId) : null;
+    let baseConfidence = fastMatch?.confidence ?? 0;
+
+    // If fast-path missed, try keyword search across all skills
+    if (!skill) {
+      skill = findSkillByKeywords(prompt, hub) || null;
+      baseConfidence = skill ? 50 : 0;
+    }
+
+    if (!skill) return null;
+
+    // Budget-query skill is handled as a conversational question — keep that path
+    if (skill.action === 'agent/query') {
+      return this.handleAgentQuerySkill(request, skill, Math.max(baseConfidence, 60), InferenceLayer.FAST_PATH, reduxGetState);
+    }
+
+    // Questions (what/when/how …) are intentionally conversational
+    if (this.isConversationalQuestion(prompt, skill)) return null;
+
+    // Extract parameters and calculate final confidence
+    const params = extractParameters(prompt, skill.paramSchema);
+    const requiredIds = Object.entries(skill.paramSchema).filter(([, d]) => d.required).map(([id]) => id);
+    const allRequired = requiredIds.every((id) => params[id] !== undefined && params[id] !== '' && params[id] !== null);
+    const enhancedConfidence = this.calculateEnhancedConfidence(prompt, skill, params, allRequired, baseConfidence);
+
+    // FIX 2: Minimum threshold of 45 raw (post-enhancement usually reaches 70+)
+    if (enhancedConfidence < 45) return null;
+
+    const state = reduxGetState();
+    const missingParams = this.getMissingRequiredParams(skill, params);
+    const artifact = this.buildCanvasArtifact(skill, params, state);
+    const reduxAction = this.buildReduxAction(skill, params);
+
+    // Persona routing mirrors the conversational path
+    const personaMap: Record<'WorkHub' | 'PersonalHub' | 'FinanceHub', 'cortana' | 'shodan' | 'jarvis'> = {
+      WorkHub: 'cortana',
+      PersonalHub: 'shodan',
+      FinanceHub: 'jarvis',
+    };
+    const responderPersona = this.detectPersonaFromPrompt(prompt) || personaMap[hub];
+
+    return {
+      id: request.id,
+      success: true,
+      reasoning: {
+        matchedSkill: skill,
+        confidence: enhancedConfidence,
+        reasoning: `[FAST_PATH] FIX-2 skill match: ${skill.id}`,
+        responderPersona,
+        allRequiredParamsPresent: allRequired,
+        missingParams,
+      },
+      reduxAction,
+      artifact,
+      userMessage: this.generateUserMessage(skill, params),
+      timestamp: Date.now(),
+    };
   }
 
   /**

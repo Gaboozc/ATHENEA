@@ -50,9 +50,10 @@ interface UseIntelligenceReturn {
 
 /**
  * Autonomous execution threshold
- * Actions with confidence >= 90% and all required params will auto-execute
+ * FIX 2: Lowered from 90 to 70 — skills with all required params and >= 70% confidence
+ * will auto-execute without user confirmation.
  */
-const AUTO_EXECUTE_THRESHOLD = 90;
+const AUTO_EXECUTE_THRESHOLD = 70;
 
 /**
  * useIntelligence Hook

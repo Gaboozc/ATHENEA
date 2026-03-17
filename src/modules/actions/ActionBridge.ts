@@ -640,4 +640,24 @@ export function getActionBridge(): ActionBridge {
   return actionBridgeInstance;
 }
 
+// FIX 1: Wire ActionBridge to EventBus so AgentOrchestrator can emit events without
+// a direct import (which caused a circular dependency crash).
+let _eventBusUnsubscribe: (() => void) | null = null;
+
+export function initializeActionBridgeListener(store: import('@reduxjs/toolkit').Store): void {
+  if (_eventBusUnsubscribe) return; // already initialized
+
+  const bridge = getActionBridge();
+  bridge.initialize(store);
+
+  // Lazy import to avoid loading Intel module before it's ready
+  import('../intelligence/EventBus').then(({ eventBus }) => {
+    _eventBusUnsubscribe = eventBus.on('orchestrator:decision', (decision) => {
+      bridge.processOrchestratorDecision(decision).catch((err) => {
+        console.warn('[ActionBridge] processOrchestratorDecision error:', err);
+      });
+    });
+  });
+}
+
 export default ActionBridge;

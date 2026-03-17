@@ -2,6 +2,8 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export type VoiceTone = 'jarvis' | 'cortana';
 export type LLMProvider = 'openai' | 'groq';
+// FIX 6.2: Voice language options for speech recognition locale
+export type VoiceLanguage = 'en-US' | 'es-MX' | 'es-ES' | 'auto';
 
 export interface WorkingHours {
   start: string; // HH:MM
@@ -50,6 +52,8 @@ export interface UserSettingsState {
   };
   knownCommerceKeywords: string[];
   voiceTone: VoiceTone;
+  // FIX 6.2: Voice language for speech recognition (affects locale passed to Android plugin)
+  voiceLanguage: VoiceLanguage;
   // FASE 2.5: External Data Integration
   watchedAssets: WatchedAsset[];
   weatherPreferences: WeatherPreferences;
@@ -90,6 +94,8 @@ const initialState: UserSettingsState = {
   },
   knownCommerceKeywords: ['oxxo', 'walmart', 'costco', 'starbucks', 'amazon'],
   voiceTone: 'jarvis',
+  // FIX 6.2: Default to 'auto' — resolves from navigator.language at runtime
+  voiceLanguage: 'auto',
   // FASE 2.5: External Data Default Configuration
   watchedAssets: [],
   weatherPreferences: {
@@ -181,6 +187,11 @@ const userSettingsSlice = createSlice({
       state.voiceTone = action.payload;
       state.initialized = true;
     },
+    // FIX 6.2: Set preferred voice language
+    setVoiceLanguage: (state, action: PayloadAction<VoiceLanguage>) => {
+      state.voiceLanguage = action.payload;
+      state.initialized = true;
+    },
     // FASE 2.5: External Data Actions
     addWatchedAsset: (state, action: PayloadAction<WatchedAsset>) => {
       const exists = state.watchedAssets.find(a => a.id === action.payload.id);
@@ -254,6 +265,7 @@ export const {
   setWorkingHours,
   setGeofencing,
   setVoiceTone,
+  setVoiceLanguage,
   addWatchedAsset,
   removeWatchedAsset,
   toggleAssetAlert,

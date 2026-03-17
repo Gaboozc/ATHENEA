@@ -139,6 +139,12 @@ export interface AiMemoryState {
     conflicts: ConflictMemoryEntry[]; // Recurring conflict patterns
     needsUserIntervention: boolean; // Flag if any conflict needs resolution
   };
+  // FIX 5: Persistent per-agent memory that survives across sessions
+  agentMemory: {
+    cortana: { lastSeen: string; patterns: string[]; recentContext: string };
+    jarvis:  { lastSeen: string; patterns: string[]; recentContext: string };
+    shodan:  { lastSeen: string; patterns: string[]; recentContext: string };
+  };
 }
 
 const initialState: AiMemoryState = {
@@ -198,6 +204,12 @@ const initialState: AiMemoryState = {
   conflictMemory: {
     conflicts: [],
     needsUserIntervention: false,
+  },
+  // FIX 5: Persistent agent memory
+  agentMemory: {
+    cortana: { lastSeen: '', patterns: [], recentContext: '' },
+    jarvis:  { lastSeen: '', patterns: [], recentContext: '' },
+    shodan:  { lastSeen: '', patterns: [], recentContext: '' },
   },
 };
 
@@ -468,6 +480,32 @@ const aiMemorySlice = createSlice({
     clearDialogueHistory(state) {
       state.agentDialogue.recentDialogues = [];
     },
+    // FIX 5: Update persistent agent memory after each session
+    updateAgentMemory(
+      state,
+      action: PayloadAction<{
+        agent: 'cortana' | 'jarvis' | 'shodan';
+        lastSeen?: string;
+        patterns?: string[];
+        recentContext?: string;
+      }>
+    ) {
+      if (!state.agentMemory) {
+        state.agentMemory = {
+          cortana: { lastSeen: '', patterns: [], recentContext: '' },
+          jarvis:  { lastSeen: '', patterns: [], recentContext: '' },
+          shodan:  { lastSeen: '', patterns: [], recentContext: '' },
+        } as any;
+      }
+      const mem = state.agentMemory[action.payload.agent];
+      if (!mem) return;
+      if (action.payload.lastSeen !== undefined) mem.lastSeen = action.payload.lastSeen;
+      if (action.payload.patterns !== undefined) {
+        // Keep last 20 patterns
+        mem.patterns = [...(action.payload.patterns || []), ...(mem.patterns || [])].slice(0, 20);
+      }
+      if (action.payload.recentContext !== undefined) mem.recentContext = action.payload.recentContext;
+    },
   },
 });
 
@@ -498,6 +536,8 @@ export const {
   recordAgentConflict,
   markConflictResolved,
   clearDialogueHistory,
+  // FIX 5: Persistent agent memory
+  updateAgentMemory,
 } = aiMemorySlice.actions;
 
 export default aiMemorySlice.reducer;
