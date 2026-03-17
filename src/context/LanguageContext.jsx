@@ -770,7 +770,6 @@ const translations = {
     'Min Stock': 'Stock Minimo',
     'Global categories aligned to Gatekeeper intake.': 'Categorias globales alineadas al intake Gatekeeper.',
     'Role access': 'Acceso por rol',
-    'Action': 'Accion',
     'Management team has full read/write access across teams.': 'El equipo de gestion tiene acceso total de lectura/escritura en todos los equipos.',
     'Team Roster': 'Roster del equipo',
     'Search members': 'Buscar miembros',

@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { listGoogleCalendarEvents } from '../../src/services/googleCalendar.ts';
+import { listGoogleCalendarEvents } from '../../src/services/googleCalendar';
 
 const normalizeIso = (value) => {
   if (!value) return null;

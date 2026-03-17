@@ -107,7 +107,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE']
       }
-    ).concat(aiObserverMiddleware, actionHistoryMiddleware, budgetGuardMiddleware, financeDeletionAuditMiddleware, feedbackMiddleware)
+    }).concat(aiObserverMiddleware, actionHistoryMiddleware, budgetGuardMiddleware, financeDeletionAuditMiddleware, feedbackMiddleware)
 });
 
 export const persistor = persistStore(store);
