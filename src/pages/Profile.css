@@ -1,26 +1,26 @@
-.profile-container {
+﻿.profile-container {
   max-width: 800px;
   margin: 0 auto;
   padding: 32px 20px 48px;
-  background: #0b0b0b;
+  background: var(--bg-base);
   min-height: 100vh;
-  color: #c9cdd2;
+  color: var(--text-primary);
 }
 
 .profile-header h1 {
   margin: 0 0 6px;
-  color: #d4af37;
+  color: var(--accent-gold);
   font-size: 32px;
 }
 
 .profile-header p {
   margin: 0 0 24px;
-  color: #c9cdd2;
+  color: var(--text-primary);
 }
 
 .profile-card {
-  background: #0f2235;
-  border: 1px solid #27272a;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 16px;
   padding: 20px;
   display: grid;
@@ -37,10 +37,52 @@
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 .profile-value {
-  color: #c9cdd2;
+  color: var(--text-primary);
   font-weight: 600;
+}
+
+/* FIX UI-8: CTA para navegar a IdentityHub */
+.profile-identity-cta {
+  margin-top: 20px;
+  padding: 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.profile-identity-hint {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.profile-identity-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: var(--accent-gold);
+  color: var(--text-inverse);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.profile-identity-link:hover {
+  background: #e4c24a;
+  box-shadow: var(--shadow-gold);
 }

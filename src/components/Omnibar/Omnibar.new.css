@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ATHENEA Omnibar - Premium Design System
  * 
  * Modern, sophisticated command palette with:
@@ -16,7 +16,7 @@
   --athenea-secondary: #8b5cf6;
   --athenea-accent: #ec4899;
   
-  --hub-work: #3b82f6;
+  --hub-work: var(--color-info);
   --hub-personal: #ec4899;
   --hub-finance: #10b981;
   
@@ -360,7 +360,7 @@
 
 .omnibar-mic-btn.is-listening {
   border: 2px solid transparent;
-  background: linear-gradient(135deg, #ef4444 0%, #a855f7 100%);
+  background: linear-gradient(135deg, var(--color-error) 0%, #a855f7 100%);
   color: white;
   font-weight: 900;
   box-shadow: 0 0 30px rgba(239, 68, 68, 0.4);
@@ -632,7 +632,7 @@
 }
 
 .insight-high {
-  border-left-color: #ef4444;
+  border-left-color: var(--color-error);
 }
 
 .insight-high:hover {
@@ -723,7 +723,7 @@
 }
 
 .toast.error {
-  border-left: 4px solid #ef4444;
+  border-left: 4px solid var(--color-error);
 }
 
 .toast.info {

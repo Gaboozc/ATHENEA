@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Urbanist:wght@400;500;600;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Urbanist:wght@400;500;600;700&display=swap');
 
 .login-container {
   height: 100vh;
@@ -139,7 +139,7 @@
   padding: 12px 18px;
   font-weight: 600;
   cursor: pointer;
-  background: #1ec9ff;
+  background: var(--accent-cyan);
   color: #04111f;
   box-shadow: 0 12px 28px rgba(30, 201, 255, 0.35);
 }

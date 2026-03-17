@@ -1,7 +1,7 @@
-/* Dashboard Widget Styles */
+﻿/* Dashboard Widget Styles */
 .dashboard-widget {
-  background: #0f2235;
-  border: 1px solid #27272a;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
@@ -18,7 +18,7 @@
 
 .widget-header h3 {
   font-size: 1.3rem;
-  color: #d4af37;
+  color: var(--accent-gold);
   margin: 0;
   display: flex;
   align-items: center;
@@ -59,13 +59,13 @@
 .widget-stat .stat-value {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #1ec9ff;
+  color: var(--accent-cyan);
   margin-bottom: 0.25rem;
 }
 
 .widget-stat .stat-label {
   font-size: 0.8rem;
-  color: #9aa3ad;
+  color: var(--text-secondary);
   text-align: center;
 }
 
@@ -90,7 +90,7 @@
 }
 
 .metric-card:hover {
-  border-color: #1ec9ff;
+  border-color: var(--accent-cyan);
   background: rgba(30, 201, 255, 0.12);
   box-shadow: 0 8px 16px rgba(30, 201, 255, 0.15);
   transform: translateY(-2px);
@@ -116,20 +116,20 @@
 .metric-value {
   font-size: 2rem;
   font-weight: bold;
-  color: #1ec9ff;
+  color: var(--accent-cyan);
   line-height: 1;
   margin-bottom: 0.25rem;
 }
 
 .metric-label {
   font-size: 0.9rem;
-  color: #c9cdd2;
+  color: var(--text-primary);
   margin-bottom: 0.125rem;
 }
 
 .metric-subtitle {
   font-size: 0.8rem;
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 /* Today's Focus Section */
@@ -144,7 +144,7 @@
 .focus-header {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #d4af37;
+  color: var(--accent-gold);
   margin-bottom: 1rem;
 }
 
@@ -158,7 +158,7 @@
 }
 
 .focus-card:hover {
-  border-color: #1ec9ff;
+  border-color: var(--accent-cyan);
   background: rgba(30, 201, 255, 0.08);
   transform: translateX(4px);
 }
@@ -166,7 +166,7 @@
 .focus-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #c9cdd2;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
 
@@ -205,7 +205,7 @@
 
 .focus-context {
   font-size: 0.85rem;
-  color: #9aa3ad;
+  color: var(--text-secondary);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;

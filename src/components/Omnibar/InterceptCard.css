@@ -1,4 +1,4 @@
-.intercept-card-v2 {
+﻿.intercept-card-v2 {
   border: 1px solid rgba(59, 130, 246, 0.35);
   border-radius: 12px;
   padding: 12px;
@@ -98,7 +98,7 @@
 
 .intercept-execute {
   color: #fff;
-  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, #2563eb 0%, var(--color-info) 100%);
 }
 
 .intercept-discard {

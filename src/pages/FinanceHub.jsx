@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { addCategory, addExpense, deleteExpense } from '../../store/slices/budgetSlice';
 import { selectFinancialSnapshot } from '../store/selectors/financialSelectors';
+import { Skeleton } from '../components/Skeleton/Skeleton';
 import './FinanceHub.css';
 
 export const FinanceHub = () => {
@@ -13,6 +14,8 @@ export const FinanceHub = () => {
   const { payments } = useSelector((state) => state.payments);
   const { categories: budgetCategories, expenses } = useSelector((state) => state.budget);
   const financialSnapshot = useSelector(selectFinancialSnapshot);
+  const [isReady, setIsReady] = useState(false);
+  useEffect(() => { setIsReady(true); }, []);
   const [categoryName, setCategoryName] = useState('');
   const [categoryLimit, setCategoryLimit] = useState('');
   const [expenseAmount, setExpenseAmount] = useState('');
@@ -128,19 +131,19 @@ export const FinanceHub = () => {
       <section className="financehub-stats">
         <div className="financehub-stat financehub-stat-saldo">
           <span>{t('Saldo Libre')}</span>
-          <strong>{Number(financialSnapshot.saldoLibre || 0).toFixed(2)}</strong>
+          {isReady ? <strong>{Number(financialSnapshot.saldoLibre || 0).toFixed(2)}</strong> : <Skeleton type="stat" />}
         </div>
         <div className="financehub-stat">
           <span>{t('Next 7 days')}</span>
-          <strong>{nextSevenTotal.toFixed(2)}</strong>
+          {isReady ? <strong>{nextSevenTotal.toFixed(2)}</strong> : <Skeleton type="stat" />}
         </div>
         <div className="financehub-stat">
           <span>{t('Monthly Total')}</span>
-          <strong>{monthlyTotal.toFixed(2)}</strong>
+          {isReady ? <strong>{monthlyTotal.toFixed(2)}</strong> : <Skeleton type="stat" />}
         </div>
         <div className="financehub-stat">
           <span>{t('Recurring Payments')}</span>
-          <strong>{payments.length}</strong>
+          {isReady ? <strong>{payments.length}</strong> : <Skeleton type="stat" />}
         </div>
       </section>
 

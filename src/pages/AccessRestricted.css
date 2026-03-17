@@ -1,4 +1,4 @@
-.access-container {
+﻿.access-container {
   min-height: calc(100vh - 72px);
   display: flex;
   align-items: center;
@@ -10,7 +10,7 @@
   max-width: 520px;
   width: 100%;
   background: #0f1115;
-  border: 1px solid #27272a;
+  border: 1px solid var(--border-default);
   border-radius: 16px;
   padding: 28px 24px;
   text-align: center;

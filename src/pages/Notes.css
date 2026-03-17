@@ -1,4 +1,4 @@
-.notes-container {
+﻿.notes-container {
   padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;
@@ -10,7 +10,7 @@
 
 .notes-header h1 {
   font-size: 2rem;
-  color: #1ec9ff;
+  color: var(--accent-cyan);
   margin-bottom: 0.5rem;
 }
 
@@ -39,7 +39,7 @@
 
 .notes-search:focus {
   outline: none;
-  border-color: #1ec9ff;
+  border-color: var(--accent-cyan);
 }
 
 .notes-filters {
@@ -64,14 +64,14 @@
 }
 
 .notes-filter.active {
-  background: #1ec9ff;
+  background: var(--accent-cyan);
   color: #0f172a;
-  border-color: #1ec9ff;
+  border-color: var(--accent-cyan);
 }
 
 .notes-create-btn {
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #1ec9ff, #0ea5e9);
+  background: linear-gradient(135deg, var(--accent-cyan), #0ea5e9);
   border: none;
   border-radius: 8px;
   color: #fff;
@@ -164,7 +164,7 @@
 
 .note-tag {
   background: rgba(30, 201, 255, 0.1);
-  color: #1ec9ff;
+  color: var(--accent-cyan);
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-size: 0.85rem;
@@ -263,7 +263,7 @@
 .notes-form-group input:focus,
 .notes-form-group textarea:focus {
   outline: none;
-  border-color: #1ec9ff;
+  border-color: var(--accent-cyan);
 }
 
 .notes-color-picker {
@@ -312,8 +312,8 @@
 
 .notes-tag-option.selected {
   background: rgba(30, 201, 255, 0.2);
-  border-color: #1ec9ff;
-  color: #1ec9ff;
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
 }
 
 .notes-form-actions {
@@ -342,7 +342,7 @@
 }
 
 .notes-form-actions button[type="submit"] {
-  background: linear-gradient(135deg, #1ec9ff, #0ea5e9);
+  background: linear-gradient(135deg, var(--accent-cyan), #0ea5e9);
   color: #fff;
 }
 

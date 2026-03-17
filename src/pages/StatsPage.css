@@ -1,4 +1,4 @@
-/* Stats & Achievements Page */
+﻿/* Stats & Achievements Page */
 .stats-page {
   padding: 2rem;
   max-width: 1400px;
@@ -13,7 +13,7 @@
 .stats-header h1 {
   font-size: 1.8rem;
   margin-bottom: 0.5rem;
-  color: #1a1a1a;
+  color: var(--accent-gold);
 }
 
 .stats-header p {
@@ -76,7 +76,7 @@
 
 .xp-fill {
   height: 100%;
-  background: linear-gradient(90deg, #4ade80, #22c55e);
+  background: linear-gradient(90deg, #4ade80, var(--color-success));
   border-radius: 6px;
   transition: width 0.3s ease;
 }
@@ -117,7 +117,7 @@
   display: block;
   font-size: 2rem;
   font-weight: bold;
-  color: #1a1a1a;
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
@@ -141,7 +141,7 @@
 
 .section-header h2 {
   font-size: 1.5rem;
-  color: #1a1a1a;
+  color: var(--text-primary);
 }
 
 .achievement-count {
@@ -194,7 +194,7 @@
 }
 
 .achievement-card.unlocked .achievement-icon {
-  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  background: linear-gradient(135deg, #4ade80 0%, var(--color-success) 100%);
 }
 
 .achievement-info {
@@ -204,7 +204,7 @@
 .achievement-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
@@ -241,7 +241,7 @@
 
 .unlocked-date {
   font-size: 0.8rem;
-  color: #22c55e;
+  color: var(--color-success);
   margin-bottom: 0.5rem;
 }
 
@@ -267,7 +267,7 @@
 .detailed-stats h2 {
   font-size: 1.3rem;
   margin-bottom: 1.5rem;
-  color: #1a1a1a;
+  color: var(--text-primary);
 }
 
 .stats-list {
@@ -293,7 +293,7 @@
 .stat-row .stat-value {
   font-size: 1rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-primary);
 }
 
 /* Actions */
@@ -305,7 +305,7 @@
 
 .reset-button {
   padding: 0.75rem 1.5rem;
-  background: #ef4444;
+  background: var(--color-error);
   color: white;
   border: none;
   border-radius: 8px;

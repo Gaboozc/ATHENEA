@@ -1,8 +1,8 @@
-.projects-container {
+﻿.projects-container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 32px 20px;
-  background: #0b0b0b;
+  background: var(--bg-base);
 }
 
 .projects-header {
@@ -24,25 +24,25 @@
 
 .projects-header-hint {
   font-size: 12px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 .projects-header h1 {
   font-size: 32px;
   font-weight: 700;
-  color: #d4af37;
+  color: var(--accent-gold);
   margin: 0 0 4px 0;
 }
 
 .projects-header p {
-  color: #c9cdd2;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .tactical-button {
-  border: 1px solid #1ec9ff;
-  background: #0f2235;
-  color: #1ec9ff;
+  border: 1px solid var(--accent-cyan);
+  background: var(--bg-surface);
+  color: var(--accent-cyan);
   border-radius: 10px;
   padding: 8px 16px;
   font-weight: 600;
@@ -51,8 +51,8 @@
 }
 
 .btn-primary {
-  background: #1ec9ff;
-  color: #0b0b0b;
+  background: var(--accent-cyan);
+  color: var(--bg-base);
   border: none;
   padding: 12px 24px;
   border-radius: 8px;
@@ -101,17 +101,17 @@
   font-size: 11px;
   letter-spacing: 0.6px;
   text-transform: uppercase;
-  color: #9aa3ad;
+  color: var(--text-secondary);
   margin-bottom: 6px;
 }
 
 .workstream-filter select {
   min-width: 220px;
-  background: #0f2235;
-  border: 1px solid #27272a;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   padding: 10px 12px;
-  color: #c9cdd2;
+  color: var(--text-primary);
   font-size: 14px;
   font-family: inherit;
 }
@@ -174,7 +174,7 @@
 
 .project-cancelled-date {
   font-size: 12px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
   margin-bottom: 12px;
 }
 
@@ -194,12 +194,12 @@
 
 .project-create-card {
   width: min(920px, 96vw);
-  background: #0b0b0b;
-  border: 1px solid #27272a;
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
-  color: #c9cdd2;
+  color: var(--text-primary);
   margin-top: max(8px, env(safe-area-inset-top, 0px));
   margin-bottom: max(8px, env(safe-area-inset-bottom, 0px));
   max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
@@ -220,7 +220,7 @@
 }
 
 .project-create-personal-toggle {
-  border: 1px dashed #1ec9ff;
+  border: 1px dashed var(--accent-cyan);
   border-radius: 10px;
   padding: 10px 12px;
   background: rgba(30, 201, 255, 0.08);
@@ -229,7 +229,7 @@
 .project-create-personal-hint {
   font-size: 12px;
   color: #9dd9eb;
-  border-left: 3px solid #1ec9ff;
+  border-left: 3px solid var(--accent-cyan);
   padding: 8px 10px;
   background: rgba(15, 34, 53, 0.5);
 }
@@ -240,7 +240,7 @@
   text-transform: uppercase;
   letter-spacing: 0.6px;
   color: #86efac;
-  border: 1px solid #22c55e;
+  border: 1px solid var(--color-success);
   border-radius: 999px;
   padding: 3px 10px;
   margin-bottom: 12px;
@@ -255,14 +255,14 @@
 
 .project-create-header h2 {
   margin: 0;
-  color: #d4af37;
+  color: var(--accent-gold);
   font-size: 20px;
 }
 
 .project-create-close {
   background: transparent;
-  border: 1px solid #27272a;
-  color: #c9cdd2;
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
   width: 32px;
   height: 32px;
   border-radius: 8px;
@@ -287,7 +287,7 @@
 
 .project-create-economic h3 {
   margin: 0;
-  color: #1ec9ff;
+  color: var(--accent-cyan);
   font-size: 14px;
   letter-spacing: 0.6px;
   text-transform: uppercase;
@@ -295,7 +295,7 @@
 
 .project-create-economic p {
   margin: 0;
-  color: #9aa3ad;
+  color: var(--text-secondary);
   font-size: 12px;
   letter-spacing: 0;
   text-transform: none;
@@ -307,7 +307,7 @@
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 .project-create-form .settings-toggle {
@@ -325,11 +325,11 @@
 .project-create-form input,
 .project-create-form textarea,
 .project-create-form select {
-  background: #0f2235;
-  border: 1px solid #27272a;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   padding: 10px 12px;
-  color: #c9cdd2;
+  color: var(--text-primary);
   font-size: 14px;
   font-family: inherit;
 }
@@ -355,8 +355,8 @@
 
 .project-create-submit {
   border: none;
-  background: #1ec9ff;
-  color: #0b0b0b;
+  background: var(--accent-cyan);
+  color: var(--bg-base);
   font-weight: 700;
   padding: 10px 20px;
   border-radius: 10px;
@@ -382,8 +382,8 @@
 }
 
 .project-card {
-  background: #0f2235;
-  border: 1px solid #27272a;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -411,7 +411,7 @@
 .project-card-header h3 {
   font-size: 20px;
   font-weight: 600;
-  color: #d4af37;
+  color: var(--accent-gold);
   margin: 0;
   flex: 1;
 }
@@ -427,7 +427,7 @@
 }
 
 .project-description {
-  color: #c9cdd2;
+  color: var(--text-primary);
   margin: 0 0 20px 0;
   line-height: 1.5;
 }
@@ -435,14 +435,14 @@
 .project-tasks {
   margin: 0 0 20px 0;
   padding: 12px;
-  border: 1px solid #27272a;
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   background: rgba(15, 34, 53, 0.85);
 }
 
 .project-tasks-title {
   font-size: 12px;
-  color: #c9cdd2;
+  color: var(--text-primary);
   text-transform: uppercase;
   letter-spacing: 0.6px;
   margin-bottom: 8px;
@@ -457,7 +457,7 @@
 }
 
 .project-tasks li {
-  color: #c9cdd2;
+  color: var(--text-primary);
   font-size: 13px;
   display: flex;
   align-items: center;
@@ -470,7 +470,7 @@
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: #1ec9ff;
+  background: var(--accent-cyan);
   display: inline-block;
 }
 
@@ -494,7 +494,7 @@
   gap: 8px;
   margin-bottom: 20px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #27272a;
+  border-bottom: 1px solid var(--border-default);
 }
 
 .info-item {
@@ -504,13 +504,13 @@
 }
 
 .info-label {
-  color: #9aa3ad;
+  color: var(--text-secondary);
   font-size: 14px;
   font-weight: 500;
 }
 
 .info-value {
-  color: #c9cdd2;
+  color: var(--text-primary);
   font-size: 14px;
   text-align: right;
 }
@@ -529,9 +529,9 @@
 }
 
 .project-action {
-  border: 1px solid #27272a;
-  background: #0b0b0b;
-  color: #c9cdd2;
+  border: 1px solid var(--border-default);
+  background: var(--bg-base);
+  color: var(--text-primary);
   border-radius: 999px;
   padding: 6px 14px;
   font-size: 11px;
@@ -547,7 +547,7 @@
 
 .workstream-hint {
   font-size: 12px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 .project-action.project-cancel {
@@ -556,13 +556,13 @@
 }
 
 .project-action.project-restore {
-  border-color: #22c55e;
-  color: #22c55e;
+  border-color: var(--color-success);
+  color: var(--color-success);
 }
 
 .project-action.project-delete {
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--color-error);
+  color: var(--color-error);
 }
 
 .projects-cancelled {
@@ -579,13 +579,13 @@
 
 .projects-cancelled-header h2 {
   margin: 0 0 6px;
-  color: #d4af37;
+  color: var(--accent-gold);
   font-size: 20px;
 }
 
 .projects-cancelled-header p {
   margin: 0;
-  color: #9aa3ad;
+  color: var(--text-secondary);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
@@ -596,45 +596,45 @@
   justify-content: space-between;
   font-size: 14px;
   font-weight: 600;
-  color: #c9cdd2;
+  color: var(--text-primary);
 }
 
 .progress-percentage {
-  color: #1ec9ff;
+  color: var(--accent-cyan);
 }
 
 .progress-bar {
   height: 8px;
-  background: #0b0b0b;
-  border: 1px solid #27272a;
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: #1ec9ff;
+  background: var(--accent-cyan);
   transition: width 0.3s;
 }
 
 .points-info {
   font-size: 13px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
   text-align: center;
 }
 
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  background: #0f2235;
-  border: 1px solid #27272a;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .empty-state p {
   font-size: 18px;
-  color: #c9cdd2;
+  color: var(--text-primary);
   margin-bottom: 24px;
 }
 
@@ -662,7 +662,7 @@
   .project-create-actions {
     position: sticky;
     bottom: 0;
-    background: #0b0b0b;
+    background: var(--bg-base);
     padding: 10px 0 calc(8px + env(safe-area-inset-bottom, 0px));
   }
 }

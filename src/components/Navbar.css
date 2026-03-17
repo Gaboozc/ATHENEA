@@ -1,3 +1,13 @@
+﻿/* FIX UI-6: inline styles movidos a CSS */
+.athenea-navbar {
+  background: var(--bg-base);
+  border-bottom: 2px solid var(--border-default);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+  padding-bottom: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
 .navbar {
   overflow-x: auto;
   position: relative;
@@ -11,11 +21,11 @@
   min-height: 36px;
   padding: 6px 12px;
   border-radius: 10px;
-  border: 1px solid #d4af37;
+  border: 1px solid var(--accent-gold);
   border-bottom-width: 4px;
   text-decoration: none;
-  background: #0b0b0b;
-  color: #d4af37;
+  background: var(--bg-base);
+  color: var(--accent-gold);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.8px;
@@ -53,10 +63,10 @@
   gap: 6px;
   padding: 6px 10px;
   border-radius: 10px;
-  border: 1px solid #1ec9ff;
+  border: 1px solid var(--accent-cyan);
   border-bottom-width: 4px;
-  background: #0b0b0b;
-  color: #1ec9ff;
+  background: var(--bg-base);
+  color: var(--accent-cyan);
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
@@ -66,8 +76,8 @@
 }
 
 .navbar-dropdown-summary:hover {
-  border-color: #d4af37;
-  color: #d4af37;
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
 }
 
 .navbar-dropdown-summary::-webkit-details-marker {
@@ -84,8 +94,8 @@
 }
 
 .navbar-dropdown[aria-expanded="true"] .navbar-dropdown-summary {
-  border-color: #d4af37;
-  color: #d4af37;
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
 }
 
 .navbar-dropdown-menu-portal {
@@ -96,14 +106,26 @@
 
 .navbar-dropdown-menu {
   min-width: 180px;
-  background: #0f2235;
-  border: 1px solid #27272a;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   padding: 8px;
   display: grid;
   gap: 6px;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
   margin-top: 8px;
+  animation: dropdown-appear 0.15s ease forwards;
+}
+
+@keyframes dropdown-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .navbar-dropdown-link {
@@ -111,20 +133,21 @@
   padding: 8px 10px;
   border-radius: 10px;
   border: 1px solid transparent;
-  color: #c9cdd2;
+  color: var(--text-primary);
   text-decoration: none;
   font-size: 12px;
   font-weight: 600;
+  transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
 }
 
 .navbar-dropdown-link:hover {
-  border-color: #1ec9ff;
-  color: #1ec9ff;
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
 }
 
 .navbar-dropdown-link.is-active {
-  border-color: #d4af37;
-  color: #d4af37;
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
 }
 
 .navbar-actions a {
@@ -135,10 +158,10 @@
   gap: 4px;
   padding: 6px 10px;
   border-radius: 10px;
-  border: 1px solid #1ec9ff;
+  border: 1px solid var(--accent-cyan);
   border-bottom-width: 4px;
-  background: #0b0b0b;
-  color: #1ec9ff;
+  background: var(--bg-base);
+  color: var(--accent-cyan);
   font-size: 12px;
   font-weight: 600;
   text-decoration: none;
@@ -160,8 +183,8 @@
 }
 
 .navbar-actions a.is-active {
-  border-color: #d4af37;
-  color: #d4af37;
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
 }
 
 .navbar-actions a .navbar-button-glow {
@@ -171,7 +194,7 @@
   width: 320px;
   height: 5px;
   border-radius: 999px;
-  background: #1ec9ff;
+  background: var(--accent-cyan);
   opacity: 0.5;
   box-shadow: 0 0 10px 10px rgba(0, 0, 0, 0.3);
   transition: top 0.5s ease;
@@ -267,10 +290,10 @@
   gap: 4px;
   padding: 6px 10px;
   border-radius: 10px;
-  border: 1px solid #1ec9ff;
+  border: 1px solid var(--accent-cyan);
   border-bottom-width: 4px;
-  background: #0b0b0b;
-  color: #1ec9ff;
+  background: var(--bg-base);
+  color: var(--accent-cyan);
   font-size: 12px;
   font-weight: 600;
   text-decoration: none;
@@ -292,13 +315,13 @@
 }
 
 .navbar-button.is-active {
-  border-color: #d4af37;
-  color: #d4af37;
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
 }
 
 .navbar-button.is-muted {
   border-color: #3f3f46;
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 .navbar-button-glow {
@@ -308,7 +331,7 @@
   width: 320px;
   height: 5px;
   border-radius: 999px;
-  background: #1ec9ff;
+  background: var(--accent-cyan);
   opacity: 0.4;
   box-shadow: 0 0 10px 10px rgba(0, 0, 0, 0.3);
   transition: top 0.5s ease;
@@ -328,13 +351,13 @@
   cursor: not-allowed;
   opacity: 0.55;
   border-color: #3f3f46;
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 .navbar-role-toggle {
-  border: 1px solid #27272a;
-  background: #0b0b0b;
-  color: #c9cdd2;
+  border: 1px solid var(--border-default);
+  background: var(--bg-base);
+  color: var(--text-primary);
   border-radius: 10px;
   padding: 6px 10px;
   font-size: 11px;
@@ -344,18 +367,18 @@
 }
 
 .navbar-role-toggle:hover {
-  border-color: #1ec9ff;
-  color: #1ec9ff;
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
 }
 
 .navbar-tenant {
   font-size: 12px;
-  color: #c9cdd2;
-  background: #0f2235;
+  color: var(--text-primary);
+  background: var(--bg-surface);
   padding: 8px 12px;
   border-radius: 8px;
   font-weight: 600;
-  border: 1px solid #27272a;
+  border: 1px solid var(--border-default);
 }
 
 .navbar-org {
@@ -364,17 +387,31 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 .navbar-org select {
-  background: #0b0b0b;
-  color: #c9cdd2;
-  border: 1px solid #27272a;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   padding: 6px 10px;
   font-size: 12px;
   min-width: 180px;
+}
+
+/* FIX UI-6: home button active state when on /dashboard */
+.navbar-home-button.is-active {
+  background: var(--bg-surface);
+  border-color: var(--accent-gold);
+  border-top-width: 4px;
+  border-bottom-width: 1px;
+}
+
+/* System icon buttons (Settings/Stats/Identity) — stroke-only SVG, no fill */
+.navbar-icon-button.system-icon svg {
+  fill: none;
+  stroke: currentColor;
 }
 
 .navbar-icon-button {
@@ -384,9 +421,9 @@
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  border: 1px solid #27272a;
-  background: #0f2235;
-  color: #c9cdd2;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-primary);
   text-decoration: none;
   transition: border-color 0.2s ease, color 0.2s ease;
 }
@@ -395,13 +432,13 @@
   position: absolute;
   top: -6px;
   right: -6px;
-  background: #d4af37;
-  color: #0b0b0b;
+  background: var(--accent-gold);
+  color: var(--bg-base);
   font-size: 10px;
   font-weight: 700;
   padding: 2px 5px;
   border-radius: 999px;
-  border: 1px solid #0b0b0b;
+  border: 1px solid var(--bg-base);
 }
 
 .navbar-icon-button svg {
@@ -411,13 +448,13 @@
 }
 
 .navbar-icon-button:hover {
-  border-color: #1ec9ff;
-  color: #1ec9ff;
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
 }
 
 .navbar-icon-button.is-active {
-  border-color: #d4af37;
-  color: #d4af37;
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
 }
 
 .lang-switch {
@@ -434,8 +471,8 @@
   height: 14px;
   border-radius: 4px;
   overflow: hidden;
-  border: 1px solid #27272a;
-  background: #0b0b0b;
+  border: 1px solid var(--border-default);
+  background: var(--bg-base);
 }
 
 .lang-flag svg {
@@ -470,8 +507,8 @@
   position: relative;
   transition: all 0.3s ease;
   display: block;
-  color: #c9cdd2;
-  border: 1px solid #27272a;
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
 }
 
 .lang-switch-track::before {
@@ -488,7 +525,7 @@
   content: attr(data-off);
   width: 48px;
   height: 18px;
-  background: #0b0b0b;
+  background: var(--bg-base);
   border-radius: 26px;
   position: absolute;
   left: 2px;
@@ -500,7 +537,7 @@
   padding: 3px 0;
   font-size: 10px;
   font-weight: 700;
-  color: #d4af37;
+  color: var(--accent-gold);
 }
 
 .lang-switch-control input:checked + .lang-switch-track {
@@ -511,7 +548,7 @@
 .lang-switch-control input:checked + .lang-switch-track::after {
   content: attr(data-on);
   left: 50px;
-  background: #0b0b0b;
+  background: var(--bg-base);
   color: #fff;
 }
 
@@ -522,11 +559,11 @@
 }
 
 .navbar-task-button {
-  --main-focus: #1ec9ff;
-  --font-color: #c9cdd2;
-  --bg-color-sub: #0f2235;
-  --bg-color: #0b0b0b;
-  --main-color: #1ec9ff;
+  --main-focus: var(--accent-cyan);
+  --font-color: var(--text-primary);
+  --bg-color-sub: var(--bg-surface);
+  --bg-color: var(--bg-base);
+  --main-color: var(--accent-cyan);
   position: relative;
   width: 150px;
   height: 38px;
@@ -600,9 +637,9 @@
 }
 
 .navbar-pill-button {
-  --stone-50: #c9cdd2;
-  --stone-800: #0f2235;
-  --cyan-400: #1ec9ff;
+  --stone-50: var(--text-primary);
+  --stone-800: var(--bg-surface);
+  --cyan-400: var(--accent-cyan);
   font-family: "Consolas", "Courier New", monospace;
   cursor: pointer;
   position: relative;
@@ -812,7 +849,7 @@
   display: none;
   background: transparent;
   border: none;
-  color: #1ec9ff;
+  color: var(--accent-cyan);
   cursor: pointer;
   width: 32px;
   height: 32px;
@@ -832,8 +869,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: #0b0b0b;
-  border-top: 2px solid #27272a;
+  background: var(--bg-base);
+  border-top: 2px solid var(--border-default);
   z-index: 9998;
   overflow-y: auto;
 }
@@ -853,8 +890,8 @@
   display: block;
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid #27272a;
-  color: #c9cdd2;
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
   text-decoration: none;
   font-size: 13px;
   font-weight: 500;
@@ -862,13 +899,13 @@
 }
 
 .navbar-mobile-link:hover {
-  border-color: #1ec9ff;
-  color: #1ec9ff;
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
 }
 
 .navbar-mobile-link.is-active {
-  border-color: #d4af37;
-  color: #d4af37;
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
   background: rgba(212, 175, 55, 0.1);
 }
 
@@ -882,7 +919,7 @@
   background: rgba(30, 201, 255, 0.08);
   border: 1px solid rgba(30, 201, 255, 0.3);
   border-radius: 10px;
-  color: #1ec9ff;
+  color: var(--accent-cyan);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -892,7 +929,7 @@
 
 .navbar-mobile-group-button:hover {
   background: rgba(30, 201, 255, 0.15);
-  border-color: #1ec9ff;
+  border-color: var(--accent-cyan);
 }
 
 .navbar-mobile-group-button:active {
@@ -933,12 +970,12 @@
 .navbar-mobile-group-items .navbar-mobile-link {
   margin-left: 12px;
   padding-left: 16px;
-  border-left: 2px solid #27272a;
+  border-left: 2px solid var(--border-default);
   border-radius: 6px;
 }
 
 .navbar-mobile-group-items .navbar-mobile-link:hover {
-  border-left-color: #1ec9ff;
+  border-left-color: var(--accent-cyan);
   background: rgba(30, 201, 255, 0.08);
 }
 
@@ -950,9 +987,9 @@
   width: 40px;
   height: 40px;
   border-radius: 8px;
-  border: 2px solid #1ec9ff;
-  background: #0b0b0b;
-  color: #1ec9ff;
+  border: 2px solid var(--accent-cyan);
+  background: var(--bg-base);
+  color: var(--accent-cyan);
   cursor: pointer;
   font-size: 11px;
   font-weight: 700;
@@ -962,8 +999,8 @@
 }
 
 .navbar-language-toggle:hover {
-  border-color: #d4af37;
-  color: #d4af37;
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
   box-shadow: 0 0 12px rgba(212, 175, 55, 0.3);
 }
 
@@ -979,10 +1016,10 @@
 .navbar-mobile-language-toggle {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #1ec9ff;
+  border: 1px solid var(--accent-cyan);
   border-radius: 8px;
-  background: #0b0b0b;
-  color: #1ec9ff;
+  background: var(--bg-base);
+  color: var(--accent-cyan);
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
@@ -990,8 +1027,8 @@
 }
 
 .navbar-mobile-language-toggle:hover {
-  border-color: #d4af37;
-  color: #d4af37;
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
   background: rgba(30, 201, 255, 0.08);
 }
 

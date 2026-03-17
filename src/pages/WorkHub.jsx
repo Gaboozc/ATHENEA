@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useTasks } from '../context/TasksContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
+import { Skeleton } from '../components/Skeleton/Skeleton';
 import './WorkHub.css';
 
 export const WorkHub = () => {
@@ -10,6 +11,8 @@ export const WorkHub = () => {
   const { t } = useLanguage();
   const { projects } = useSelector((state) => state.projects);
   const { tasks } = useTasks();
+  const [isReady, setIsReady] = useState(false);
+  useEffect(() => { setIsReady(true); }, []);
 
   const activeProjects = useMemo(
     () => (projects || []).filter((project) => project?.status !== 'cancelled'),
@@ -63,11 +66,11 @@ export const WorkHub = () => {
       <section className="workhub-stats">
         <div className="workhub-stat">
           <span>{t('Critical Tasks')}</span>
-          <strong>{criticalTasks.length > 0 ? criticalTasks.length : '0'}</strong>
+          {isReady ? <strong>{criticalTasks.length > 0 ? criticalTasks.length : '0'}</strong> : <Skeleton type="stat" />}
         </div>
         <div className="workhub-stat">
           <span>{t('Active Projects')}</span>
-          <strong>{activeProjects.length > 0 ? activeProjects.length : '0'}</strong>
+          {isReady ? <strong>{activeProjects.length > 0 ? activeProjects.length : '0'}</strong> : <Skeleton type="stat" />}
         </div>
       </section>
 

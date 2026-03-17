@@ -1,5 +1,6 @@
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useLanguage } from '../context/LanguageContext';
+import { Link } from 'react-router-dom';
 import './Profile.css';
 
 export const Profile = () => {
@@ -26,6 +27,16 @@ export const Profile = () => {
           <span className="profile-label">{t('Tenant')}</span>
           <span className="profile-value">{user?.tenant || t('Primary')}</span>
         </div>
+      </section>
+
+      {/* FIX UI-8: enlace al perfil operativo completo */}
+      <section className="profile-identity-cta">
+        <p className="profile-identity-hint">
+          {t('Your full operator profile (aliases, working hours, voice tone, geofencing) is configured in Identity.')}
+        </p>
+        <Link to="/identity" className="profile-identity-link">
+          {t('View full profile')} →
+        </Link>
       </section>
     </div>
   );

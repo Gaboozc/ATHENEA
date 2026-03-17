@@ -1,4 +1,4 @@
-.reminder-toasts {
+﻿.reminder-toasts {
   position: fixed;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
   right: 20px;
@@ -9,8 +9,8 @@
 }
 
 .reminder-toast {
-  background: #0f2235;
-  border: 1px solid #27272a;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 14px;
   padding: 12px 14px;
   color: #e2e8f0;
@@ -22,13 +22,13 @@
 
 .reminder-toast-title {
   font-weight: 700;
-  color: #d4af37;
+  color: var(--accent-gold);
   font-size: 0.95rem;
 }
 
 .reminder-toast-message {
   font-size: 0.85rem;
-  color: #c9cdd2;
+  color: var(--text-primary);
 }
 
 .reminder-toast-meta {
@@ -39,8 +39,8 @@
 }
 
 .reminder-toast-badge {
-  border: 1px solid #1ec9ff;
-  color: #1ec9ff;
+  border: 1px solid var(--accent-cyan);
+  color: var(--accent-cyan);
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 0.75rem;
@@ -49,9 +49,9 @@
 }
 
 .reminder-toast button {
-  border: 1px solid #27272a;
-  background: #0b0b0b;
-  color: #c9cdd2;
+  border: 1px solid var(--border-default);
+  background: var(--bg-base);
+  color: var(--text-primary);
   border-radius: 999px;
   padding: 4px 10px;
   cursor: pointer;
@@ -60,7 +60,7 @@
 
 .reminder-toast button.ghost {
   border-color: transparent;
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 @keyframes toast-in {

@@ -1,0 +1,127 @@
+/* ============================================================
+   ATHENEA — Design Tokens
+   FIX UI-1: Sistema de tokens globales
+   Importar como primera línea en src/index.css
+   ============================================================ */
+
+:root {
+  /* ----------------------------------------------------------
+     Fondos
+  ---------------------------------------------------------- */
+  --bg-base:        #0b0b0b;
+  --bg-surface:     #0f2235;
+  --bg-card:        #112240;
+  --bg-elevated:    #1a2f4a;
+  --bg-overlay:     rgba(15, 34, 53, 0.95);
+
+  /* ----------------------------------------------------------
+     Bordes
+  ---------------------------------------------------------- */
+  --border-subtle:  #1e3a5f;
+  --border-default: #27272a;
+  --border-strong:  #d4af37;
+
+  /* ----------------------------------------------------------
+     Texto
+  ---------------------------------------------------------- */
+  --text-primary:   #c9cdd2;
+  --text-secondary: #8899aa;
+  --text-muted:     #556677;
+  --text-inverse:   #0b0b0b;
+
+  /* ----------------------------------------------------------
+     Acentos
+  ---------------------------------------------------------- */
+  --accent-gold:     #d4af37;
+  --accent-gold-dim: #8b7224;
+  --accent-cyan:     #1ec9ff;
+  --accent-cyan-dim: #0e6b8a;
+
+  /* ----------------------------------------------------------
+     Semánticos
+  ---------------------------------------------------------- */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error:   #ef4444;
+  --color-info:    #3b82f6;
+
+  /* ----------------------------------------------------------
+     Tipografía
+  ---------------------------------------------------------- */
+  --font-base: system-ui, -apple-system, sans-serif;
+  --font-mono: 'Consolas', 'Courier New', monospace;
+
+  --font-size-xs:  0.75rem;
+  --font-size-sm:  0.875rem;
+  --font-size-md:  1rem;
+  --font-size-lg:  1.125rem;
+  --font-size-xl:  1.375rem;
+  --font-size-2xl: 1.75rem;
+
+  /* ----------------------------------------------------------
+     Espaciado
+  ---------------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* ----------------------------------------------------------
+     Radios
+  ---------------------------------------------------------- */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-full: 9999px;
+
+  /* ----------------------------------------------------------
+     Sombras
+  ---------------------------------------------------------- */
+  --shadow-card:     0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.6);
+  --shadow-gold:     0 0 12px rgba(212, 175, 55, 0.25);
+
+  /* ----------------------------------------------------------
+     Transiciones (utilitarias)
+  ---------------------------------------------------------- */
+  --transition-fast:   0.15s ease;
+  --transition-normal: 0.25s ease;
+}
+
+/* ----------------------------------------------------------
+   Animaciones globales reutilizables (FIX UI-5)
+---------------------------------------------------------- */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ----------------------------------------------------------
+   Clase utilitaria de transición (FIX UI-11)
+---------------------------------------------------------- */
+.btn-transition {
+  transition: background var(--transition-fast),
+              border-color var(--transition-fast),
+              color var(--transition-fast),
+              box-shadow var(--transition-fast);
+}

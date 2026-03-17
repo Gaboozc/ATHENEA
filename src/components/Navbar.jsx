@@ -107,16 +107,13 @@ export const Navbar = () => {
 
 	return (
 		<>
-			<nav className="navbar" style={{ 
-				background: '#0b0b0b',
-				borderBottom: '2px solid #27272a',
-				paddingTop: 'calc(env(safe-area-inset-top, 0px) + 10px)',
-				paddingBottom: '10px',
-				paddingLeft: '10px',
-				paddingRight: '10px',
-			}}>
+			<nav className="navbar athenea-navbar">
 				<div className="navbar-inner">
-					<Link to="/dashboard" className="navbar-home-button" aria-label="ATHENEA home">
+					<Link
+						to="/dashboard"
+						className={`navbar-home-button${location.pathname === '/' || location.pathname === '/dashboard' ? ' is-active' : ''}`}
+						aria-label="ATHENEA home"
+					>
 						<span>ATHENEA</span>
 					</Link>
 
@@ -197,8 +194,40 @@ export const Navbar = () => {
 								<svg viewBox="0 0 24 24" aria-hidden="true">
 									<path d="M12 2a6 6 0 0 1 6 6v4.3l1.4 2.8A1 1 0 0 1 18.5 17h-13a1 1 0 0 1-.9-1.4L6 12.3V8a6 6 0 0 1 6-6zm0 20a2.5 2.5 0 0 0 2.4-2h-4.8A2.5 2.5 0 0 0 12 22z" />
 								</svg>
-							</Link>
-						</div>
+							</Link>						{/* FIX UI-6: System icons — Settings, Stats, Identity */}
+						<Link
+							to="/settings"
+						className={`navbar-icon-button system-icon${location.pathname.startsWith('/settings') ? ' is-active' : ''}`}
+							title={t('Configuración')}
+						>
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+								<circle cx="12" cy="12" r="3" />
+								<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+							</svg>
+						</Link>
+						<Link
+							to="/stats"
+							className={`navbar-icon-button system-icon${location.pathname.startsWith('/stats') ? ' is-active' : ''}`}
+							aria-label={t('Stats')}
+							title={t('Estadísticas')}
+						>
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+								<line x1="18" y1="20" x2="18" y2="10" />
+								<line x1="12" y1="20" x2="12" y2="4" />
+								<line x1="6" y1="20" x2="6" y2="14" />
+							</svg>
+						</Link>
+						<Link
+							to="/identity"
+							className={`navbar-icon-button system-icon${location.pathname.startsWith('/identity') ? ' is-active' : ''}`}
+							title={t('Identidad')}
+						>
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+								<rect x="3" y="4" width="18" height="16" rx="2" />
+								<circle cx="9" cy="10" r="2" />
+								<path d="M15 8h2M15 12h2M7 16h10" />
+							</svg>
+						</Link>						</div>
 					</div>
 				</div>
 			</nav>
@@ -281,7 +310,7 @@ export const Navbar = () => {
 								{t('Identity')}
 							</Link>
 						</div>
-						<div className="navbar-mobile-group" style={{ borderTop: '1px solid #27272a', paddingTop: '12px', marginTop: '12px' }}>
+				<div className="navbar-mobile-group" style={{ borderTop: '1px solid var(--border-default)', paddingTop: '12px', marginTop: '12px' }}>
 							<button
 								onClick={() => {
 									toggleLanguage();

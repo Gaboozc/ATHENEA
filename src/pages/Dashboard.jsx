@@ -7,6 +7,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import DashboardWidget from '../components/DashboardWidget';
 import { selectFinancialSnapshot } from '../store/selectors/financialSelectors';
+import { Skeleton } from '../components/Skeleton/Skeleton';
 
 const PRIORITY_BUCKETS = [
   "Critical",
@@ -28,6 +29,8 @@ export const Dashboard = () => {
   const { t } = useLanguage();
   const { user, role } = useCurrentUser();
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 768px)').matches);
+  const [isReady, setIsReady] = useState(false);
+  useEffect(() => { setIsReady(true); }, []);
   const isAdmin = (role || '').toLowerCase() === 'admin' || (role || '').toLowerCase() === 'super-admin';
 
   useEffect(() => {
@@ -214,7 +217,13 @@ export const Dashboard = () => {
             {t('View all notes')}
           </button>
         </div>
-        {recentNotes.length === 0 ? (
+        {!isReady ? (
+          <div className="notes-recent-skeleton">
+            <Skeleton type="line" width="75%" />
+            <Skeleton type="line" width="60%" />
+            <Skeleton type="line" width="80%" />
+          </div>
+        ) : recentNotes.length === 0 ? (
           <div className="notes-recent-empty">{t('No notes yet.')}</div>
         ) : (
           <ul className="notes-recent-list">
@@ -251,7 +260,12 @@ export const Dashboard = () => {
           <h2>{t('Reminders')}</h2>
           <span>{reminders.length}</span>
         </div>
-        {reminders.length === 0 ? (
+        {!isReady ? (
+          <div className="reminders-skeleton">
+            <Skeleton type="card" height="56px" />
+            <Skeleton type="card" height="56px" />
+          </div>
+        ) : reminders.length === 0 ? (
           <div className="reminders-empty">{t('No upcoming reminders.')}</div>
         ) : (
           <ul className="reminders-list">

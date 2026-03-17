@@ -1,21 +1,21 @@
-.fleet-container {
+﻿.fleet-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 32px 20px 48px;
-  background: #0b0b0b;
+  background: var(--bg-base);
   min-height: 100vh;
-  color: #c9cdd2;
+  color: var(--text-primary);
 }
 
 .fleet-header h1 {
   margin: 0 0 6px;
-  color: #d4af37;
+  color: var(--accent-gold);
   font-size: 32px;
 }
 
 .fleet-header p {
   margin: 0 0 24px;
-  color: #c9cdd2;
+  color: var(--text-primary);
 }
 
 .fleet-kpi-strip {
@@ -26,8 +26,8 @@
 }
 
 .fleet-kpi-card {
-  background: linear-gradient(180deg, #0f2235 0%, #0b1827 100%);
-  border: 1px solid #27272a;
+  background: linear-gradient(180deg, var(--bg-surface) 0%, #0b1827 100%);
+  border: 1px solid var(--border-default);
   border-radius: 14px;
   padding: 14px 16px;
   display: flex;
@@ -39,13 +39,13 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 .fleet-kpi-value {
   font-size: 28px;
   line-height: 1;
-  color: #d4af37;
+  color: var(--accent-gold);
 }
 
 
@@ -65,7 +65,7 @@
 
 .fleet-section-header h2 {
   margin: 0;
-  color: #d4af37;
+  color: var(--accent-gold);
   font-size: 18px;
 }
 
@@ -73,7 +73,7 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 .fleet-grid {
@@ -83,8 +83,8 @@
 }
 
 .fleet-card {
-  background: #0f2235;
-  border: 1px solid #27272a;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 16px;
   padding: 20px;
 }
@@ -123,22 +123,22 @@
 
 .fleet-title h2 {
   margin: 0;
-  color: #d4af37;
+  color: var(--accent-gold);
   font-size: 18px;
 }
 
 .fleet-id {
   font-size: 11px;
   text-transform: uppercase;
-  color: #9aa3ad;
-  border: 1px solid #27272a;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
   padding: 2px 8px;
   border-radius: 999px;
 }
 
 .fleet-role {
   margin: 10px 0 0;
-  color: #c9cdd2;
+  color: var(--text-primary);
 }
 
 .fleet-load {
@@ -146,8 +146,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #0b0b0b;
-  border: 1px solid #27272a;
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   padding: 8px 12px;
 }
@@ -158,14 +158,14 @@
 
 .fleet-load-label {
   font-size: 12px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.6px;
 }
 
 .fleet-load-value {
   font-size: 18px;
-  color: #1ec9ff;
+  color: var(--accent-cyan);
   font-weight: 700;
 }
 
@@ -176,12 +176,12 @@
 .fleet-assigned ul {
   margin: 8px 0 0;
   padding-left: 18px;
-  color: #c9cdd2;
+  color: var(--text-primary);
   font-size: 12px;
 }
 
 .fleet-empty {
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 .fleet-route {
@@ -197,8 +197,8 @@
 }
 
 .fleet-task-card {
-  background: #0f2235;
-  border: 1px solid #27272a;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 16px;
   padding: 16px;
 }
@@ -213,12 +213,12 @@
 .fleet-task-header h3 {
   margin: 0;
   font-size: 16px;
-  color: #c9cdd2;
+  color: var(--text-primary);
 }
 
 .fleet-task-meta {
   margin: 6px 0 0;
-  color: #9aa3ad;
+  color: var(--text-secondary);
   font-size: 12px;
 }
 
@@ -228,7 +228,7 @@
   padding: 2px 8px;
   border-radius: 999px;
   border: 1px solid rgba(30, 201, 255, 0.4);
-  color: #1ec9ff;
+  color: var(--accent-cyan);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
@@ -236,7 +236,7 @@
 
 .fleet-source.fleet-locked {
   border-color: rgba(212, 175, 55, 0.6);
-  color: #d4af37;
+  color: var(--accent-gold);
   margin-left: 8px;
 }
 
@@ -248,9 +248,9 @@
 }
 
 .fleet-assignments select {
-  background: #0b0b0b;
-  color: #c9cdd2;
-  border: 1px solid #27272a;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   padding: 6px 10px;
   font-size: 12px;
@@ -258,9 +258,9 @@
 }
 
 .fleet-assign-btn {
-  background: #0b0b0b;
-  border: 1px solid #27272a;
-  color: #c9cdd2;
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
   padding: 6px 10px;
   border-radius: 8px;
   font-size: 12px;
@@ -274,16 +274,16 @@
 }
 
 .fleet-assign-btn:hover {
-  border-color: #1ec9ff;
-  color: #1ec9ff;
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
 }
 
 .fleet-empty-card {
   padding: 16px;
   border-radius: 12px;
-  background: #0f2235;
-  border: 1px solid #27272a;
-  color: #9aa3ad;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
 }
 
 .fleet-priority {
@@ -292,23 +292,23 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border: 1px solid #27272a;
+  border: 1px solid var(--border-default);
 }
 
 .fleet-priority.tag-critical {
-  color: #d4af37;
+  color: var(--accent-gold);
   border-color: rgba(212, 175, 55, 0.5);
 }
 
 .fleet-priority.tag-high-velocity {
-  color: #1ec9ff;
+  color: var(--accent-cyan);
   border-color: rgba(30, 201, 255, 0.5);
 }
 
 .fleet-priority.tag-steady-flow,
 .fleet-priority.tag-low-friction,
 .fleet-priority.tag-backlog {
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 @media (max-width: 960px) {
@@ -333,8 +333,8 @@
 }
 
 .modal-content {
-  background: #0f2235;
-  border: 1px solid #27272a;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 16px;
   padding: 24px;
   max-width: 500px;
@@ -350,9 +350,9 @@
 }
 
 .fleet-task-assigner {
-  border: 1px solid #27272a;
+  border: 1px solid var(--border-default);
   border-radius: 12px;
-  background: #0f2235;
+  background: var(--bg-surface);
   padding: 14px;
   margin-bottom: 14px;
 }
@@ -360,7 +360,7 @@
 .fleet-task-assigner h3 {
   margin: 0 0 10px;
   font-size: 14px;
-  color: #d4af37;
+  color: var(--accent-gold);
 }
 
 .fleet-task-assigner-grid {
@@ -373,10 +373,10 @@
   gap: 10px;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid #27272a;
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   padding: 10px 12px;
-  background: #0b0b0b;
+  background: var(--bg-base);
 }
 
 .fleet-task-row-main {
@@ -387,7 +387,7 @@
 }
 
 .fleet-task-row-main strong {
-  color: #c9cdd2;
+  color: var(--text-primary);
   font-size: 13px;
   white-space: nowrap;
   overflow: hidden;
@@ -395,24 +395,24 @@
 }
 
 .fleet-task-row-main span {
-  color: #9aa3ad;
+  color: var(--text-secondary);
   font-size: 11px;
 }
 
 .fleet-task-row select {
   min-width: 140px;
-  background: #0f2235;
-  color: #c9cdd2;
-  border: 1px solid #27272a;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   padding: 6px 10px;
   font-size: 12px;
 }
 
 .fleet-task-complete {
-  border: 1px solid #1ec9ff;
+  border: 1px solid var(--accent-cyan);
   background: rgba(30, 201, 255, 0.1);
-  color: #1ec9ff;
+  color: var(--accent-cyan);
   border-radius: 8px;
   padding: 6px 10px;
   font-size: 12px;
@@ -420,8 +420,8 @@
 }
 
 .fleet-task-complete:disabled {
-  border-color: #27272a;
-  color: #9aa3ad;
+  border-color: var(--border-default);
+  color: var(--text-secondary);
   background: transparent;
   cursor: default;
 }
@@ -445,7 +445,7 @@
   .modal-actions {
     position: sticky;
     bottom: 0;
-    background: #0f2235;
+    background: var(--bg-surface);
     padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
   }
 
@@ -462,7 +462,7 @@
 
 .modal-content h2 {
   margin: 0 0 20px;
-  color: #d4af37;
+  color: var(--accent-gold);
   font-size: 22px;
 }
 
@@ -476,7 +476,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  color: #c9cdd2;
+  color: var(--text-primary);
   font-size: 14px;
 }
 
@@ -485,9 +485,9 @@
 .modal-form textarea {
   padding: 10px 12px;
   background: #000;
-  border: 1px solid #27272a;
+  border: 1px solid var(--border-default);
   border-radius: 8px;
-  color: #c9cdd2;
+  color: var(--text-primary);
   font-size: 14px;
 }
 
@@ -514,16 +514,16 @@
 
 .modal-actions button:first-child {
   background: transparent;
-  border: 1px solid #27272a;
-  color: #c9cdd2;
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
 }
 
 .modal-actions button:first-child:hover {
-  border-color: #d4af37;
+  border-color: var(--accent-gold);
 }
 
 .modal-actions button:last-child {
-  background: #d4af37;
+  background: var(--accent-gold);
   color: #000;
   font-weight: 600;
 }
@@ -535,7 +535,7 @@
 /* Add button */
 .fleet-add-btn {
   padding: 8px 16px;
-  background: #d4af37;
+  background: var(--accent-gold);
   border: none;
   border-radius: 8px;
   color: #000;
@@ -550,8 +550,8 @@
 }
 
 .fleet-add-btn:disabled {
-  background: #27272a;
-  color: #9aa3ad;
+  background: var(--border-default);
+  color: var(--text-secondary);
   cursor: not-allowed;
 }
 
@@ -566,17 +566,17 @@
   flex: 1;
   padding: 8px 12px;
   background: transparent;
-  border: 1px solid #27272a;
+  border: 1px solid var(--border-default);
   border-radius: 8px;
-  color: #c9cdd2;
+  color: var(--text-primary);
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .fleet-card-actions button:hover {
-  border-color: #d4af37;
-  color: #d4af37;
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
 }
 
 /* Work order specific styles */
@@ -586,11 +586,11 @@
   gap: 6px;
   margin: 12px 0;
   font-size: 13px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 .fleet-task-info span strong {
-  color: #c9cdd2;
+  color: var(--text-primary);
 }
 
 .fleet-progress {
@@ -601,14 +601,14 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  color: #c9cdd2;
+  color: var(--text-primary);
   font-size: 13px;
 }
 
 .fleet-progress input[type="range"] {
   width: 100%;
   height: 6px;
-  background: #27272a;
+  background: var(--border-default);
   border-radius: 3px;
   outline: none;
   -webkit-appearance: none;
@@ -620,7 +620,7 @@
   appearance: none;
   width: 16px;
   height: 16px;
-  background: #d4af37;
+  background: var(--accent-gold);
   border-radius: 50%;
   cursor: pointer;
 }
@@ -628,7 +628,7 @@
 .fleet-progress input[type="range"]::-moz-range-thumb {
   width: 16px;
   height: 16px;
-  background: #d4af37;
+  background: var(--accent-gold);
   border-radius: 50%;
   cursor: pointer;
   border: none;
@@ -636,17 +636,17 @@
 
 /* Priority badges */
 .fleet-priority-low {
-  color: #9aa3ad;
-  border-color: #9aa3ad;
+  color: var(--text-secondary);
+  border-color: var(--text-secondary);
 }
 
 .fleet-priority-medium {
-  color: #1ec9ff;
+  color: var(--accent-cyan);
   border-color: rgba(30, 201, 255, 0.5);
 }
 
 .fleet-priority-high {
-  color: #d4af37;
+  color: var(--accent-gold);
   border-color: rgba(212, 175, 55, 0.5);
 }
 
@@ -654,7 +654,7 @@
 .fleet-full-width {
   width: 100%;
   background: rgba(9, 16, 27, 0.35);
-  border: 1px solid #27272a;
+  border: 1px solid var(--border-default);
   border-radius: 16px;
   padding: 18px;
 }
@@ -667,8 +667,8 @@
   justify-content: center;
   padding: 60px 20px;
   text-align: center;
-  background: #0f2235;
-  border: 1px solid #27272a;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 16px;
 }
 
@@ -679,19 +679,19 @@
 
   .fleet-empty-state h3 {
     margin: 0 0 8px;
-    color: #c9cdd2;
+    color: var(--text-primary);
     font-size: 20px;
   }
 
   .fleet-empty-state p {
     margin: 0 0 24px;
-    color: #9aa3ad;
+    color: var(--text-secondary);
     max-width: 400px;
   }
 
   .fleet-add-btn-primary {
     padding: 12px 24px;
-    background: #d4af37;
+    background: var(--accent-gold);
     border: none;
     border-radius: 8px;
     color: #000;
@@ -715,8 +715,8 @@
 
   /* Collaborator item (accordion) */
   .fleet-collab-item {
-    background: #0f2235;
-    border: 1px solid #27272a;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
     border-radius: 12px;
     overflow: hidden;
     transition: all 0.2s ease;
@@ -750,7 +750,7 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: #d4af37;
+    background: var(--accent-gold);
     color: #000;
     display: flex;
     align-items: center;
@@ -769,7 +769,7 @@
 
   .fleet-collab-info h3 {
     margin: 0;
-    color: #d4af37;
+    color: var(--accent-gold);
     font-size: 18px;
     white-space: nowrap;
     overflow: hidden;
@@ -778,12 +778,12 @@
 
   .fleet-collab-email {
     font-size: 13px;
-    color: #9aa3ad;
+    color: var(--text-secondary);
   }
 
   .fleet-collab-role {
     font-size: 12px;
-    color: #1ec9ff;
+    color: var(--accent-cyan);
     display:inline-block;
     padding: 2px 8px;
     background: rgba(30, 201, 255, 0.1);
@@ -806,12 +806,12 @@
   .fleet-stat-value {
     font-size: 24px;
     font-weight: 700;
-    color: #d4af37;
+    color: var(--accent-gold);
   }
 
   .fleet-stat-label {
     font-size: 11px;
-    color: #9aa3ad;
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -821,8 +821,8 @@
     height: 32px;
     border-radius: 6px;
     background: transparent;
-    border: 1px solid #27272a;
-    color: #c9cdd2;
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -832,7 +832,7 @@
 
   .fleet-expand-btn:hover {
     background: rgba(212, 175, 55, 0.1);
-    border-color: #d4af37;
+    border-color: var(--accent-gold);
   }
 
   .fleet-expand-btn svg {
@@ -843,7 +843,7 @@
   /* Collaborator details (expanded) */
   .fleet-collab-details {
     padding: 0 20px 20px;
-    border-top: 1px solid #27272a;
+    border-top: 1px solid var(--border-default);
   }
 
   .fleet-details-grid {
@@ -855,14 +855,14 @@
 
   .fleet-detail-section {
     background: rgba(0, 0, 0, 0.3);
-    border: 1px solid #27272a;
+    border: 1px solid var(--border-default);
     border-radius: 8px;
     padding: 16px;
   }
 
   .fleet-detail-section h4 {
     margin: 0 0 12px;
-    color: #d4af37;
+    color: var(--accent-gold);
     font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -885,13 +885,13 @@
   }
 
   .fleet-detail-label {
-    color: #9aa3ad;
+    color: var(--text-secondary);
     min-width: 60px;
   }
 
   .fleet-detail-empty {
     font-size: 13px;
-    color: #9aa3ad;
+    color: var(--text-secondary);
     font-style: italic;
   }
 
@@ -907,7 +907,7 @@
     border: 1px solid rgba(30, 201, 255, 0.3);
     border-radius: 6px;
     font-size: 12px;
-    color: #1ec9ff;
+    color: var(--accent-cyan);
   }
 
   .fleet-detail-header {
@@ -920,9 +920,9 @@
   .fleet-add-btn-small {
     padding: 6px 12px;
     background: transparent;
-    border: 1px solid #d4af37;
+    border: 1px solid var(--accent-gold);
     border-radius: 6px;
-    color: #d4af37;
+    color: var(--accent-gold);
     font-size: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -981,7 +981,7 @@
 
   .fleet-order-card {
     background: rgba(0, 0, 0, 0.5);
-    border: 1px solid #27272a;
+    border: 1px solid var(--border-default);
     border-radius: 8px;
     padding: 12px;
   }
@@ -995,14 +995,14 @@
 
   .fleet-order-header h5 {
     margin: 0;
-    color: #c9cdd2;
+    color: var(--text-primary);
     font-size: 14px;
   }
 
   .fleet-order-desc {
     margin: 0 0 8px;
     font-size: 13px;
-    color: #9aa3ad;
+    color: var(--text-secondary);
   }
 
   .fleet-order-meta {
@@ -1011,7 +1011,7 @@
     gap: 12px;
     margin-bottom: 8px;
     font-size: 12px;
-    color: #9aa3ad;
+    color: var(--text-secondary);
   }
 
   .fleet-order-project,
@@ -1028,7 +1028,7 @@
     justify-content: space-between;
     margin-bottom: 6px;
     font-size: 12px;
-    color: #c9cdd2;
+    color: var(--text-primary);
   }
 
   .fleet-order-actions {
@@ -1041,28 +1041,28 @@
     flex: 1;
     padding: 6px 12px;
     background: transparent;
-    border: 1px solid #27272a;
+    border: 1px solid var(--border-default);
     border-radius: 6px;
-    color: #c9cdd2;
+    color: var(--text-primary);
     font-size: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
   }
 
   .fleet-order-actions button:hover {
-    border-color: #d4af37;
-    color: #d4af37;
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
   }
 
   .fleet-btn-complete {
     background: rgba(30, 201, 255, 0.1) !important;
     border-color: rgba(30, 201, 255, 0.5) !important;
-    color: #1ec9ff !important;
+    color: var(--accent-cyan) !important;
   }
 
   .fleet-btn-complete:hover {
     background: rgba(30, 201, 255, 0.2) !important;
-    border-color: #1ec9ff !important;
+    border-color: var(--accent-cyan) !important;
   }
 
   .fleet-status-completed {
@@ -1071,7 +1071,7 @@
     align-items: center;
     justify-content: center;
     font-size: 12px;
-    color: #1ec9ff;
+    color: var(--accent-cyan);
   }
 
   /* Collaborator actions */
@@ -1080,7 +1080,7 @@
     gap: 12px;
     padding: 16px;
     background: rgba(0, 0, 0, 0.3);
-    border-top: 1px solid #27272a;
+    border-top: 1px solid var(--border-default);
     margin-top: 20px;
   }
 
@@ -1088,9 +1088,9 @@
     flex: 1;
     padding: 10px 20px;
     background: transparent;
-    border: 1px solid #d4af37;
+    border: 1px solid var(--accent-gold);
     border-radius: 8px;
-    color: #d4af37;
+    color: var(--accent-gold);
     font-size: 14px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -1121,13 +1121,13 @@
     align-items: center;
     justify-content: space-between;
     padding-bottom: 16px;
-    border-bottom: 1px solid #27272a;
+    border-bottom: 1px solid var(--border-default);
     margin-bottom: 20px;
   }
 
   .modal-header h2 {
     margin: 0;
-    color: #d4af37;
+    color: var(--accent-gold);
     font-size: 22px;
   }
 
@@ -1135,9 +1135,9 @@
     width: 32px;
     height: 32px;
     background: transparent;
-    border: 1px solid #27272a;
+    border: 1px solid var(--border-default);
     border-radius: 6px;
-    color: #c9cdd2;
+    color: var(--text-primary);
     font-size: 24px;
     cursor: pointer;
     display: flex;
@@ -1167,7 +1167,7 @@
 
   .modal-section h3 {
     margin: 0 0 12px;
-    color: #d4af37;
+    color: var(--accent-gold);
     font-size: 16px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -1176,7 +1176,7 @@
   .modal-label {
     display: block;
     margin-bottom: 6px;
-    color: #c9cdd2;
+    color: var(--text-primary);
     font-size: 13px;
     font-weight: 500;
   }
@@ -1194,9 +1194,9 @@
   .modal-empty-message {
     padding: 12px;
     background: rgba(0, 0, 0, 0.3);
-    border: 1px solid #27272a;
+    border: 1px solid var(--border-default);
     border-radius: 6px;
-    color: #9aa3ad;
+    color: var(--text-secondary);
     font-size: 13px;
     margin: 0;
   }
@@ -1213,7 +1213,7 @@
     gap: 8px;
     padding: 10px;
     background: rgba(0, 0, 0, 0.3);
-    border: 1px solid #27272a;
+    border: 1px solid var(--border-default);
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -1234,16 +1234,16 @@
 
   .modal-btn-cancel {
     background: transparent;
-    border: 1px solid #27272a;
-    color: #c9cdd2;
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
   }
 
   .modal-btn-cancel:hover {
-    border-color: #d4af37;
+    border-color: var(--accent-gold);
   }
 
   .modal-btn-save {
-    background: #d4af37;
+    background: var(--accent-gold);
     color: #000;
     font-weight: 600;
   }
@@ -1253,8 +1253,8 @@
   }
 
   .modal-btn-save:disabled {
-    background: #27272a;
-    color: #9aa3ad;
+    background: var(--border-default);
+    color: var(--text-secondary);
     cursor: not-allowed;
   }
 

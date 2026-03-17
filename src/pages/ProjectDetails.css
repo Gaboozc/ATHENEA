@@ -1,10 +1,10 @@
-.project-detail-container {
+﻿.project-detail-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 32px 20px 140px;
-  background: #0b0b0b;
+  background: var(--bg-base);
   min-height: 100vh;
-  color: #c9cdd2;
+  color: var(--text-primary);
 }
 
 .project-detail-header {
@@ -22,9 +22,9 @@
 }
 
 .tactical-button {
-  border: 1px solid #1ec9ff;
-  background: #0f2235;
-  color: #1ec9ff;
+  border: 1px solid var(--accent-cyan);
+  background: var(--bg-surface);
+  color: var(--accent-cyan);
   border-radius: 10px;
   padding: 8px 16px;
   font-weight: 600;
@@ -37,12 +37,12 @@
 }
 
 .tactical-button.is-muted {
-  border-color: #27272a;
-  color: #c9cdd2;
+  border-color: var(--border-default);
+  color: var(--text-primary);
 }
 
 .project-status {
-  color: #0b0b0b;
+  color: var(--bg-base);
   font-weight: 700;
   border-radius: 999px;
   padding: 6px 14px;
@@ -51,21 +51,21 @@
 }
 
 .project-status.is-muted {
-  background: #0f2235;
-  border: 1px solid #27272a;
-  color: #c9cdd2;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
   text-transform: none;
 }
 
 .project-title-block h1 {
   margin: 0 0 6px;
-  color: #d4af37;
+  color: var(--accent-gold);
   font-size: 32px;
 }
 
 .project-title-block p {
   margin: 0 0 24px;
-  color: #c9cdd2;
+  color: var(--text-primary);
 }
 
 .project-grid {
@@ -76,15 +76,15 @@
 }
 
 .project-card {
-  background: #0f2235;
-  border: 1px solid #27272a;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 16px;
   padding: 20px;
 }
 
 .project-card h2 {
   margin: 0 0 16px;
-  color: #d4af37;
+  color: var(--accent-gold);
   font-size: 18px;
 }
 
@@ -104,16 +104,16 @@
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 .project-settings-grid input,
 .project-settings-grid select {
-  background: #0b0b0b;
-  border: 1px solid #27272a;
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   padding: 8px 10px;
-  color: #c9cdd2;
+  color: var(--text-primary);
   font-size: 13px;
   text-transform: none;
   letter-spacing: 0;
@@ -146,7 +146,7 @@
 .project-info-grid .label {
   display: block;
   font-size: 12px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.6px;
   margin-bottom: 4px;
@@ -154,7 +154,7 @@
 
 .project-info-grid .value {
   font-size: 14px;
-  color: #c9cdd2;
+  color: var(--text-primary);
 }
 
 .project-finance-timeline {
@@ -169,9 +169,9 @@
 }
 
 .project-finance-summary > div {
-  border: 1px solid #27272a;
+  border: 1px solid var(--border-default);
   border-radius: 10px;
-  background: #0b0b0b;
+  background: var(--bg-base);
   padding: 10px;
   display: grid;
   gap: 4px;
@@ -179,13 +179,13 @@
 
 .project-finance-summary .label {
   font-size: 11px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.6px;
 }
 
 .project-finance-summary .value {
-  color: #d4af37;
+  color: var(--accent-gold);
   font-size: 16px;
   font-weight: 700;
 }
@@ -202,14 +202,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border: 1px solid #27272a;
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   padding: 8px 12px;
-  background: #0b0b0b;
+  background: var(--bg-base);
 }
 
 .project-finance-list li strong {
-  color: #1ec9ff;
+  color: var(--accent-cyan);
 }
 
 .progress-shell {
@@ -221,12 +221,12 @@
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: #0b0b0b;
-  border: 6px solid #1ec9ff;
+  background: var(--bg-base);
+  border: 6px solid var(--accent-cyan);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #1ec9ff;
+  color: var(--accent-cyan);
   font-size: 28px;
   font-weight: 700;
   margin: 0 auto;
@@ -245,8 +245,8 @@
 }
 
 .progress-stat-button {
-  border: 1px solid #27272a;
-  background: #0b0b0b;
+  border: 1px solid var(--border-default);
+  background: var(--bg-base);
   border-radius: 12px;
   padding: 6px 8px;
   cursor: pointer;
@@ -255,13 +255,13 @@
 .progress-stats .value {
   display: block;
   font-size: 20px;
-  color: #d4af37;
+  color: var(--accent-gold);
   font-weight: 700;
 }
 
 .progress-stats .label {
   font-size: 11px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
   text-transform: uppercase;
 }
 
@@ -280,25 +280,25 @@
 .tasks-header p {
   margin: 4px 0 0;
   font-size: 12px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 .tasks-header input {
-  background: #0b0b0b;
-  border: 1px solid #27272a;
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   padding: 8px 12px;
-  color: #c9cdd2;
+  color: var(--text-primary);
   width: min(320px, 100%);
 }
 
 .tasks-warning {
   margin-bottom: 12px;
   padding: 10px 12px;
-  border: 1px solid #27272a;
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   background: rgba(212, 175, 55, 0.08);
-  color: #d4af37;
+  color: var(--accent-gold);
   font-size: 12px;
 }
 
@@ -317,8 +317,8 @@
   gap: 12px;
   padding: 10px 12px;
   border-radius: 12px;
-  border: 1px solid #27272a;
-  background: #0b0b0b;
+  border: 1px solid var(--border-default);
+  background: var(--bg-base);
 }
 
 .task-action:disabled {
@@ -335,15 +335,15 @@
 
 .task-title {
   font-size: 14px;
-  color: #c9cdd2;
+  color: var(--text-primary);
 }
 
 .task-status {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: #9aa3ad;
-  border: 1px solid #27272a;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
   padding: 2px 8px;
   border-radius: 999px;
 }
@@ -355,9 +355,9 @@
 }
 
 .task-action {
-  border: 1px solid #27272a;
-  background: #0f2235;
-  color: #c9cdd2;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-primary);
   border-radius: 999px;
   padding: 2px 10px;
   font-size: 10px;
@@ -367,13 +367,13 @@
 }
 
 .task-action.task-complete {
-  border-color: #22c55e;
-  color: #22c55e;
+  border-color: var(--color-success);
+  color: var(--color-success);
 }
 
 .task-action.task-delete {
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--color-error);
+  color: var(--color-error);
 }
 
 .task-action.task-progress {
@@ -382,8 +382,8 @@
 }
 
 .task-action.task-restore {
-  border-color: #1ec9ff;
-  color: #1ec9ff;
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
 }
 
 .task-metadata {
@@ -394,7 +394,7 @@
 
 .task-score {
   font-size: 11px;
-  color: #1ec9ff;
+  color: var(--accent-cyan);
 }
 
 .task-priority {
@@ -408,9 +408,9 @@
 
 .tasks-empty {
   padding: 16px;
-  border: 1px dashed #27272a;
+  border: 1px dashed var(--border-default);
   border-radius: 12px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 .tasks-footer {
@@ -424,8 +424,8 @@
   margin-top: 16px;
   padding: 16px;
   border-radius: 14px;
-  border: 1px solid #27272a;
-  background: #0b0b0b;
+  border: 1px solid var(--border-default);
+  background: var(--bg-base);
 }
 
 .deleted-tasks-header {
@@ -433,7 +433,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
-  color: #9aa3ad;
+  color: var(--text-secondary);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
@@ -442,12 +442,12 @@
 .deleted-tasks-header h3 {
   margin: 0;
   font-size: 14px;
-  color: #d4af37;
+  color: var(--accent-gold);
 }
 
 .deleted-tasks-empty {
   margin: 0;
-  color: #9aa3ad;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -465,8 +465,8 @@
   align-items: center;
   padding: 8px 10px;
   border-radius: 10px;
-  border: 1px solid #27272a;
-  background: #0f2235;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
   font-size: 13px;
 }
 
@@ -484,9 +484,9 @@
   gap: 12px;
   text-align: center;
   padding: 40px;
-  border: 1px solid #27272a;
+  border: 1px solid var(--border-default);
   border-radius: 16px;
-  background: #0f2235;
+  background: var(--bg-surface);
 }
 
 @media (max-width: 720px) {

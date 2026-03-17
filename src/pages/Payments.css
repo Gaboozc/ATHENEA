@@ -1,8 +1,8 @@
-.payments-container {
+﻿.payments-container {
   padding: 1.5rem 1.25rem 2rem;
   max-width: 1100px;
   margin: 0 auto;
-  color: #c9cdd2;
+  color: var(--text-primary);
 }
 
 .payments-header {
@@ -14,18 +14,18 @@
 
 .payments-header h1 {
   margin: 0 0 0.4rem;
-  color: #d4af37;
+  color: var(--accent-gold);
   font-size: 1.8rem;
 }
 
 .payments-header p {
   margin: 0;
   font-size: 0.9rem;
-  color: #9aa3ad;
+  color: var(--text-secondary);
 }
 
 .payments-count {
-  border: 1px solid #27272a;
+  border: 1px solid var(--border-default);
   border-radius: 999px;
   padding: 0.25rem 0.8rem;
   font-size: 0.85rem;
@@ -41,8 +41,8 @@
 .payments-form input,
 .payments-form select {
   border-radius: 10px;
-  border: 1px solid #27272a;
-  background: #0b0b0b;
+  border: 1px solid var(--border-default);
+  background: var(--bg-base);
   color: #e2e8f0;
   padding: 0.65rem 0.75rem;
 }
@@ -50,8 +50,8 @@
 .payments-form button {
   border: none;
   border-radius: 999px;
-  background: linear-gradient(135deg, #1ec9ff, #0ea5e9);
-  color: #0b0b0b;
+  background: linear-gradient(135deg, var(--accent-cyan), #0ea5e9);
+  color: var(--bg-base);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -65,10 +65,10 @@
 }
 
 .payment-card {
-  border: 1px solid #27272a;
+  border: 1px solid var(--border-default);
   border-radius: 16px;
   padding: 1rem 1.25rem;
-  background: #0f2235;
+  background: var(--bg-surface);
   display: grid;
   gap: 0.75rem;
 }
@@ -89,18 +89,18 @@
   display: inline-block;
   margin-top: 0.35rem;
   font-size: 0.8rem;
-  color: #1ec9ff;
+  color: var(--accent-cyan);
 }
 
 .payment-date {
   font-size: 0.9rem;
-  color: #d4af37;
+  color: var(--accent-gold);
 }
 
 .payment-notes {
   margin: 0;
   font-size: 0.9rem;
-  color: #c9cdd2;
+  color: var(--text-primary);
 }
 
 .payment-actions {
@@ -110,9 +110,9 @@
 }
 
 .payment-actions button {
-  border: 1px solid #27272a;
-  background: #0b0b0b;
-  color: #c9cdd2;
+  border: 1px solid var(--border-default);
+  background: var(--bg-base);
+  color: var(--text-primary);
   border-radius: 999px;
   padding: 0.35rem 0.8rem;
   cursor: pointer;
@@ -120,12 +120,12 @@
 }
 
 .payment-actions button.danger {
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--color-error);
+  color: var(--color-error);
 }
 
 .payments-empty {
-  color: #9aa3ad;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 

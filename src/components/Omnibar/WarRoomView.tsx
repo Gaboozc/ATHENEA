@@ -39,28 +39,21 @@ export const WarRoomView: React.FC = () => {
 
   const [currentDecision, setCurrentDecision] = useState<any>(null);
 
+  // Reactively update decision when panel opens or lastSession changes in Redux.
+  // No interval — Redux drives updates; orchestrator is queried on-demand only.
   useEffect(() => {
     if (!isExpanded) return;
-
-    // Poll for latest orchestrator decision only when stream is visible.
-    const updateDecision = () => {
-      try {
-        // @ts-ignore
-        const { getAgentOrchestrator } = require('../../modules/intelligence/agents/AgentOrchestrator');
-        const orchestrator = getAgentOrchestrator();
-        if (orchestrator) {
-          const decision = orchestrator.getLastDecision();
-          setCurrentDecision(decision);
-        }
-      } catch (e) {
-        // Orchestrator not available
+    try {
+      // @ts-ignore
+      const { getAgentOrchestrator } = require('../../modules/intelligence/agents/AgentOrchestrator');
+      const orchestrator = getAgentOrchestrator();
+      if (orchestrator) {
+        setCurrentDecision(orchestrator.getLastDecision());
       }
-    };
-
-    updateDecision();
-    const interval = setInterval(updateDecision, 3000);
-    return () => clearInterval(interval);
-  }, [isExpanded]);
+    } catch (e) {
+      // Orchestrator not available
+    }
+  }, [isExpanded, lastSession]);
 
   const getAgentColor = (agentType: string): string => {
     switch (agentType) {
