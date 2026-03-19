@@ -162,3 +162,64 @@
 .personalhub-empty {
   color: var(--text-secondary);
 }
+
+/* P-FIX-1: Routine inline editing & delete */
+.personalhub-routine-title {
+  cursor: text;
+}
+.personalhub-routine-title:hover {
+  text-decoration: underline dotted var(--accent-cyan);
+}
+.personalhub-routine-edit {
+  font-size: 0.95rem;
+  background: var(--bg-base);
+  border: 1px solid var(--accent-cyan);
+  border-radius: 6px;
+  color: var(--text-primary);
+  padding: 0.15rem 0.4rem;
+  outline: none;
+  width: 100%;
+}
+.personalhub-routine-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.personalhub-routine-delete {
+  background: none;
+  border: none;
+  color: var(--color-error, #ef4444);
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0 0.4rem;
+  line-height: 1;
+}
+.personalhub-routine-delete:hover {
+  opacity: 0.7;
+}
+.personalhub-streak {
+  font-size: 0.75rem;
+  color: var(--color-warning, #f59e0b);
+  margin-left: 0.5rem;
+}
+
+/* ── Responsive Mobile ───────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .personalhub-container {
+    padding: 1rem 0.75rem 1.5rem;
+  }
+  .personalhub-header h1 {
+    font-size: 1.4rem;
+  }
+  .personalhub-grid {
+    grid-template-columns: 1fr;
+  }
+  .personalhub-actions button {
+    min-height: 44px;
+    flex: 1 1 auto;
+    text-align: center;
+  }
+  .personalhub-card {
+    padding: 0.9rem 1rem;
+  }
+}

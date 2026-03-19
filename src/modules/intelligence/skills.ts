@@ -22,7 +22,7 @@ export const workHubSkills: SkillManifest[] = [
     description: 'Create a new work project with goals and timeline',
     icon: '📁',
     hub: 'WorkHub',
-    keywords: ['project', 'create project', 'new project', 'start project', 'begin project', 'collaborator', 'colaborador'],
+    keywords: ['project', 'create project', 'new project', 'start project', 'begin project', 'collaborator', 'colaborador', 'crear proyecto', 'nuevo proyecto', 'iniciar proyecto', 'proyecto nuevo', 'empezar proyecto', 'abrir proyecto'], /* W-FEAT-6 */
     action: 'projects/create',
     paramSchema: {
       title: {
@@ -41,11 +41,11 @@ export const workHubSkills: SkillManifest[] = [
         required: false,
         description: 'Expected completion date'
       },
-      priority: {
+      level: { /* W-FIX-6 */
         type: 'select',
         required: false,
         description: 'Priority level',
-        enum: ['low', 'medium', 'high', 'critical']
+        enum: ['Critical', 'High Velocity', 'Steady Flow', 'Low Friction', 'Backlog']
       }
     }
   },
@@ -56,7 +56,7 @@ export const workHubSkills: SkillManifest[] = [
     description: 'Add a new task to your work or a project',
     icon: '✅',
     hub: 'WorkHub',
-    keywords: ['add', 'task', 'do', 'create', 'todo', 'to do', 'need to', 'project task'],
+    keywords: ['add', 'task', 'do', 'create', 'todo', 'to do', 'need to', 'project task', 'agregar tarea', 'nueva tarea', 'crear tarea', 'añadir tarea', 'tarea', 'quiero hacer', 'necesito hacer'], /* W-FEAT-6 */
     action: 'tasks/add',
     paramSchema: {
       title: {
@@ -70,11 +70,11 @@ export const workHubSkills: SkillManifest[] = [
         required: false,
         description: 'Active project'
       },
-      priority: {
+      level: { /* W-FIX-6 */
         type: 'select',
         required: false,
         description: 'Task priority',
-        enum: ['low', 'medium', 'high']
+        enum: ['Critical', 'High Velocity', 'Steady Flow', 'Low Friction', 'Backlog']
       },
       dueDate: {
         type: 'date',
@@ -95,7 +95,7 @@ export const workHubSkills: SkillManifest[] = [
     description: 'Record time spent on a task',
     icon: '⏱️',
     hub: 'WorkHub',
-    keywords: ['log', 'spent', 'hours', 'worked', 'time', 'record'],
+    keywords: ['log', 'spent', 'hours', 'worked', 'time', 'record', 'registrar horas', 'loguear tiempo', 'horas trabajadas', 'anotar tiempo', 'tiempo trabajado', 'registrar tiempo'], /* W-FEAT-6 */
     action: 'tasks/logTime',
     paramSchema: {
       taskId: {
@@ -114,6 +114,36 @@ export const workHubSkills: SkillManifest[] = [
         description: 'Work notes/summary'
       }
     }
+  },
+  {
+    id: 'open_gatekeeper', /* W-FEAT-4 */
+    name: 'Open Task Creator',
+    description: 'Open the priority task creation modal (Gatekeeper)',
+    icon: '🎯',
+    hub: 'WorkHub',
+    keywords: ['gatekeeper', 'open gatekeeper', 'crear tarea prioritaria', 'tarea urgente', 'tarea crítica', 'task modal', 'abrir modal', 'nueva tarea urgente', 'priority task', 'critical task'],
+    action: 'navigation/openGatekeeper',
+    paramSchema: {}
+  },
+  {
+    id: 'open_focus',
+    name: 'Open Focus Mode',
+    description: 'Open the Pomodoro focus timer',
+    icon: '⏱️',
+    hub: 'WorkHub',
+    keywords: ['focus', 'pomodoro', 'concentrarme', 'modo focus', 'sesión de trabajo', 'timer', 'temporizador', 'open focus', 'start focus', 'work session'],
+    action: 'navigation/openFocus',
+    paramSchema: {}
+  },
+  {
+    id: 'open_standup',
+    name: 'Daily Standup',
+    description: 'Open the daily standup form',
+    icon: '📋',
+    hub: 'WorkHub',
+    keywords: ['standup', 'daily standup', 'qué hice ayer', 'qué haré hoy', 'standup diario', 'check-in trabajo'],
+    action: 'navigation/openStandup',
+    paramSchema: {}
   }
 ];
 
@@ -128,7 +158,7 @@ export const personalHubSkills: SkillManifest[] = [
     description: 'Create a new personal note or thought',
     icon: '📝',
     hub: 'PersonalHub',
-    keywords: ['note', 'remember', 'write', 'create', 'save', 'jot', 'personal note', 'to do note'],
+    keywords: ['note', 'remember', 'write', 'create', 'save', 'jot', 'personal note', 'to do note', 'nota', 'apuntar', 'anotar', 'recordar', 'escribir', 'guardar nota', 'apunte', 'memo', 'nota personal'], // P-MOD-4
     action: 'notes/create',
     paramSchema: {
       title: {
@@ -162,8 +192,9 @@ export const personalHubSkills: SkillManifest[] = [
     description: 'Create a reminder for later',
     icon: '🔔',
     hub: 'PersonalHub',
-    keywords: ['reminder', 'set reminder', 'remind', 'remember', 'wake up', 'alarm', 'alert', 'notification', 'schedule reminder'],
-    action: 'tasks/addTask',
+    // P-MOD-4: Spanish keywords added
+    keywords: ['reminder', 'set reminder', 'remind', 'remember', 'wake up', 'alarm', 'alert', 'notification', 'schedule reminder', 'recuérdame', 'recuerda', 'recordatorio', 'alarma', 'avísame', 'no olvidar', 'avisar', 'alerta'],
+    action: 'todos/addTodo', // P-FIX-6: changed from tasks/addTask
     paramSchema: {
       title: {
         type: 'string',
@@ -190,13 +221,19 @@ export const personalHubSkills: SkillManifest[] = [
     description: 'Add to your personal todo list',
     icon: '📌',
     hub: 'PersonalHub',
-    keywords: ['todo', 'to-do', 'to do', 'add', 'personal', 'list', 'item', 'routine', 'rutina'],
-    action: 'todos/add',
+    // P-MOD-4: Spanish keywords added
+    keywords: ['todo', 'to-do', 'to do', 'add', 'personal', 'list', 'item', 'routine', 'rutina', 'tarea personal', 'pendiente', 'agregar', 'añadir', 'quiero hacer', 'debo hacer', 'necesito hacer'],
+    action: 'todos/addTodo', // P-MOD-3: fixed action name
     paramSchema: {
       text: {
         type: 'string',
         required: true,
         description: 'Todo item text'
+      },
+      dueDate: {
+        type: 'date',
+        required: false,
+        description: 'Fecha límite'
       },
       priority: {
         type: 'select',
@@ -205,6 +242,76 @@ export const personalHubSkills: SkillManifest[] = [
         enum: ['low', 'medium', 'high']
       }
     }
+  },
+
+  // P-MOD-4: new routine skills
+  {
+    id: 'complete_routine',
+    name: 'Mark Routine Done',
+    description: 'Mark a routine as completed for today',
+    icon: '🔄',
+    hub: 'PersonalHub',
+    keywords: ['rutina', 'routine', 'completar rutina', 'marcar rutina', 'hice', 'completé', 'done routine'],
+    action: 'routines/toggleRoutineToday',
+    paramSchema: {
+      id: {
+        type: 'string',
+        required: true,
+        description: 'Routine ID'
+      }
+    }
+  },
+
+  {
+    id: 'create_routine',
+    name: 'Create Routine',
+    description: 'Create a new daily or weekly routine',
+    icon: '🔁',
+    hub: 'PersonalHub',
+    keywords: ['crear rutina', 'nueva rutina', 'add routine', 'create routine', 'hábito', 'habit', 'nueva costumbre'],
+    action: 'routines/addRoutine',
+    paramSchema: {
+      title: {
+        type: 'string',
+        required: true,
+        description: 'Routine name'
+      },
+      daysOfWeek: {
+        type: 'string',
+        required: false,
+        description: 'Días de la semana (ej. lun,mié,vie)'
+      }
+    }
+  },
+  {
+    id: 'log_checkin', /* FIX-EXTRA: skill para registrar estado diario desde Omnibar */
+    name: 'Log Daily Check-in',
+    description: 'Record your mood, energy and sleep for today',
+    icon: '📊',
+    hub: 'PersonalHub',
+    keywords: ['checkin', 'check-in', 'cómo me siento', 'registrar estado', 'anotar energía', 'estado de ánimo', 'energía', 'registrar sueño', 'daily checkin', 'mi estado'],
+    action: 'navigation/openCheckin',
+    paramSchema: {}
+  },
+  {
+    id: 'write_journal',
+    name: 'Write Journal Entry',
+    description: 'Open the personal journal to write or view today\'s entry',
+    icon: '📓',
+    hub: 'PersonalHub',
+    keywords: ['diario', 'journal', 'escribir hoy', 'entrada de hoy', 'escribe en mi diario', 'abrir diario', 'mi diario', 'reflexión', 'journaling'],
+    action: 'navigation/openJournal',
+    paramSchema: {}
+  },
+  {
+    id: 'open_weekly_review',
+    name: 'Weekly Review',
+    description: 'Open the weekly review wizard',
+    icon: '📊',
+    hub: 'PersonalHub',
+    keywords: ['revisión semanal', 'weekly review', 'review de la semana', 'resumen de la semana', 'revisar semana', 'balance semanal'],
+    action: 'navigation/openWeeklyReview',
+    paramSchema: {}
   }
 ];
 
@@ -219,8 +326,9 @@ export const financeHubSkills: SkillManifest[] = [
     description: 'Log a money expense',
     icon: '💸',
     hub: 'FinanceHub',
-    keywords: ['spent', 'expense', 'cost', 'paid', 'bill', 'charge', 'money', 'spend', 'draw', 'finance', 'financial', 'budgeting'],
-    action: 'payments/addExpense',
+    keywords: ['spent', 'expense', 'cost', 'paid', 'bill', 'charge', 'money', 'spend', 'draw', 'finance', 'financial', 'budgeting',
+      'gasté', 'gaste', 'pagué', 'pague', 'compré', 'compre', 'egreso', 'gasto', 'cobro', 'cargo', 'me costó', 'me cobró'], /* F-FEAT-4 */
+    action: 'budget/addExpense', /* F-FIX-2: was 'payments/addExpense' (inexistente) */
     paramSchema: {
       description: {
         type: 'string',
@@ -259,8 +367,9 @@ export const financeHubSkills: SkillManifest[] = [
     description: 'Log money earned',
     icon: '💰',
     hub: 'FinanceHub',
-    keywords: ['earned', 'income', 'received', 'payment', 'salary', 'revenue'],
-    action: 'payments/addIncome',
+    keywords: ['earned', 'income', 'received', 'payment', 'salary', 'revenue',
+      'cobré', 'cobre', 'me pagaron', 'recibí', 'recibi', 'ingreso', 'me depositaron', 'facturé', 'facture', 'ganancia', 'ingresé'], /* F-FEAT-4 */
+    action: 'payments/recordIncome', /* F-FIX-2: was 'payments/addIncome' (sólo actualizaba balance) */
     paramSchema: {
       description: {
         type: 'string',
@@ -292,8 +401,9 @@ export const financeHubSkills: SkillManifest[] = [
     description: 'Create a budget limit for a category',
     icon: '📊',
     hub: 'FinanceHub',
-    keywords: ['budget', 'budgeting', 'budget limit', 'monthly budget', 'set budget', 'presupuesto', 'limite de presupuesto', 'establecer presupuesto', 'finance budget'],
-    action: 'payments/setBudget',
+    keywords: ['budget', 'budgeting', 'budget limit', 'monthly budget', 'set budget', 'presupuesto', 'limite de presupuesto', 'establecer presupuesto', 'finance budget',
+      'límite de gasto', 'limite de gasto', 'definir presupuesto', 'crear categoría', 'nueva categoría de gasto'], /* F-FEAT-4 */
+    action: 'budget/addCategory', /* F-FIX-2: was 'payments/setBudget' (escribía en array zombi) */
     paramSchema: {
       category: {
         type: 'select',
@@ -325,7 +435,9 @@ export const financeHubSkills: SkillManifest[] = [
       'puedo gastar', 'puedo comprar', 'tengo para', 'me alcanza',
       'can i spend', 'should i spend', 'do i have budget', 'cuanto tengo',
       'cuanto me queda', 'budget check', 'verificar presupuesto',
-      'analizar gasto', 'jarvis puedo', 'jarvis cuanto', 'puedo gastar el'
+      'analizar gasto', 'jarvis puedo', 'jarvis cuanto', 'puedo gastar el',
+      'alcanza', 'me sobra', 'mi saldo', 'cuánto tengo', 'qué tengo disponible',
+      'presupuesto disponible', 'situación financiera', 'cómo están mis finanzas', 'como van mis finanzas' /* F-FEAT-4 */
     ],
     action: 'agent/query',
     paramSchema: {
@@ -370,7 +482,7 @@ export const crossHubSkills: SkillManifest[] = [
     name: 'Sync Calendar',
     description: 'Sync external Google Calendar events into ATHENEA',
     icon: '📅',
-    hub: 'WorkHub',
+    hub: 'CrossHub', /* CAL-FIX-6: sync_calendar is cross-hub, not WorkHub-only */
     keywords: ['sync calendar', 'sync my calendar', 'google calendar', 'calendar sync', 'update calendar'],
     action: 'calendar/syncExternalEvents',
     paramSchema: {

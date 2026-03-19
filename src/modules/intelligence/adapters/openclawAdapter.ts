@@ -37,6 +37,8 @@ export interface OpenClawResponse {
 export interface AdapterResult {
   success: boolean;
   action?: ReduxAction;
+  /** Extra actions to dispatch after the primary action (e.g. calendar link side-effects) */
+  actions?: ReduxAction[];
   error?: string;
   validationErrors?: string[];
 }
@@ -76,7 +78,8 @@ export class OpenClawAdapter {
 
       return {
         success: true,
-        action
+        action,
+        actions: this.getSideEffectActions(response.skillId, action.payload, response.parameters, response.context)
       };
     } catch (error) {
       return {
@@ -139,9 +142,11 @@ export class OpenClawAdapter {
     return {
       type: 'tasks/addTask', // CORRECTED: was 'tasks/add'
       payload: {
+        id: `task-omni-${Date.now()}`,
         title: params.title,
         projectId: params.projectId || null,
         priority: params.priority || 'medium',
+        level: params.level || 'Standard',
         dueDate: this.transformDate(params.dueDate, ctx),
         estimatedHours: params.estimatedHours || null,
         status: 'pending',
@@ -181,18 +186,22 @@ export class OpenClawAdapter {
   }
 
   private mapAddReminder(params: any, ctx: SmartResolverContext): ReduxAction {
-    // CRITICAL: Reminders are stored as tasks with isReminder: true
+    // P-FIX-6: Reminders go to todos slice (not tasks) with isReminder flag
     const dueDate = this.transformDate(params.dueDate, ctx);
-    
+
     return {
-      type: 'tasks/addTask', // CORRECTED: Store as task with special flag
+      type: 'todos/addTodo',
       payload: {
+        id: `reminder-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         title: params.title,
-        isReminder: true, // Special flag for reminders
-        priority: params.priority || 'high', // Reminders default to high priority
+        isReminder: true,
+        priority: params.priority || 'high',
         dueDate: dueDate,
         status: 'pending',
-        createdAt: new Date().toISOString()
+        progress: 0,
+        notes: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       }
     };
   }
@@ -216,37 +225,37 @@ export class OpenClawAdapter {
 
   private mapAddExpense(params: any, ctx: SmartResolverContext): ReduxAction {
     return {
-      type: 'payments/recordExpense', // CORRECTED: was 'payments/addExpense'
+      type: 'budget/addExpense', /* F-FIX-2: was 'payments/recordExpense'; real gastos van a budgetSlice */
       payload: {
+        id: `exp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         amount: this.transformAmount(params.amount),
-        category: params.category || 'other',
-        description: params.description || '',
+        categoryId: params.category || null,
+        note: params.description || '',
         date: this.transformDate(params.date, ctx) || new Date().toISOString(),
-        type: 'expense'
       }
     };
   }
 
   private mapAddIncome(params: any, ctx: SmartResolverContext): ReduxAction {
     return {
-      type: 'payments/recordIncome', // CORRECTED: was 'payments/addIncome'
+      type: 'payments/recordIncome', /* F-FIX-2: action name correcto (ya existía correcto) */
       payload: {
+        id: `payment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        description: params.description || params.source || '',
         amount: this.transformAmount(params.amount),
         source: params.source || 'other',
-        description: params.description || '',
         date: this.transformDate(params.date, ctx) || new Date().toISOString(),
-        type: 'income'
       }
     };
   }
 
   private mapSetBudget(params: any, ctx: SmartResolverContext): ReduxAction {
     return {
-      type: 'payments/setBudget', // Check if this exists in Redux
+      type: 'budget/addCategory', /* F-FIX-2: was 'payments/setBudget' (escribía en array zombi) */
       payload: {
-        category: params.category,
-        amount: this.transformAmount(params.limit ?? params.amount ?? 0),
-        period: params.period || 'monthly'
+        id: `cat-skill-${Date.now()}`,
+        name: params.category,
+        limit: this.transformAmount(params.limit ?? params.amount ?? 0)
       }
     };
   }
@@ -305,6 +314,37 @@ export class OpenClawAdapter {
         targetDate: this.transformDate(params.targetDate, ctx) ?? null
       }
     };
+  }
+
+  // ============================================================================
+  // SIDE-EFFECT ACTIONS (calendar linking, etc.)
+  // ============================================================================
+
+  /**
+   * Returns extra Redux actions to dispatch after the primary action.
+   * Currently handles: add_task → calendar/linkTaskToCalendar when dueDate is set.
+   */
+  private getSideEffectActions(
+    skillId: string,
+    primaryPayload: any,
+    originalParams: any,
+    ctx: SmartResolverContext
+  ): ReduxAction[] {
+    if (skillId === 'add_task') {
+      const dueDate = primaryPayload?.dueDate;
+      if (dueDate) {
+        return [{
+          type: 'calendar/linkTaskToCalendar',
+          payload: {
+            taskId: primaryPayload.id,
+            taskTitle: primaryPayload.title,
+            dueDate,
+            level: primaryPayload.level || 'Standard'
+          }
+        }];
+      }
+    }
+    return [];
   }
 
   // ============================================================================

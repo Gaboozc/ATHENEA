@@ -4,6 +4,8 @@ import { cacheManager } from '../utils/cacheManager';
 import { IdentityPanel } from '../components/settings/IdentityPanel';
 import { simulateInterceptedNotification } from '../services/notificationListenerBridge';
 import { getActionBridge } from '../modules/actions/ActionBridge';
+import { getNeuralKey, setNeuralKey, getNeuralProvider, setNeuralProvider } from '../modules/intelligence/neuralAccess';
+import { useLanguage } from '../context/LanguageContext';
 import './Settings.css';
 
 /**
@@ -11,12 +13,42 @@ import './Settings.css';
  * Immersive control center for Identity Core + outbound webhook telemetry.
  */
 const Settings = () => {
+  const { language, setLanguage } = useLanguage();
   const { exportToJSON, exportToPDF, importFromJSON } = useDataExport();
   const [importText, setImportText] = useState('');
   const [message, setMessage] = useState(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const [debugLogs, setDebugLogs] = useState([]);
+
+  // AI / Neural settings
+  const [aiProvider, setAiProvider] = useState(() => getNeuralProvider());
+  const [aiKey, setAiKey] = useState(() => getNeuralKey());
+  const [aiKeyVisible, setAiKeyVisible] = useState(false);
+  const [aiTestStatus, setAiTestStatus] = useState(null); // null | 'testing' | 'ok' | 'error'
+
+  const handleSaveAI = () => {
+    setNeuralProvider(aiProvider);
+    setNeuralKey(aiKey);
+    showMessage('✓ Configuración de IA guardada');
+  };
+
+  const handleTestAI = async () => {
+    const key = aiKey.trim();
+    if (!key) { showMessage('Ingresa tu API key primero', 'error'); return; }
+    setAiTestStatus('testing');
+    try {
+      const url = aiProvider === 'groq'
+        ? 'https://api.groq.com/openai/v1/models'
+        : 'https://api.openai.com/v1/models';
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${key}` } });
+      setAiTestStatus(res.ok ? 'ok' : 'error');
+      showMessage(res.ok ? '✓ Conexión exitosa — IA activa' : `✗ Error ${res.status}: clave inválida`, res.ok ? 'success' : 'error');
+    } catch {
+      setAiTestStatus('error');
+      showMessage('✗ No se pudo conectar al proveedor de IA', 'error');
+    }
+  };
 
   const isProductionReadyFlagEnabled = () => {
     if (typeof window !== 'undefined' && window.localStorage) {
@@ -49,17 +81,33 @@ const Settings = () => {
     }
 
     const result = importFromJSON(importText);
-    
+
     if (result.success) {
-      // Import data into Redux store
-      Object.keys(result.data).forEach((key) => {
-        // Dispatch actions to restore each slice
-        // This would need to be implemented per slice
-        // For now, we'll just save to localStorage and reload
-      });
-      
-      showMessage('✓ Data imported successfully! Reloading app...', 'success');
-      setTimeout(() => window.location.reload(), 1500);
+      const { data } = result;
+      // Build the persist:athenea-root entry from the backup data
+      const SLICES = ['auth', 'projects', 'organizations', 'notes', 'calendar',
+        'todos', 'payments', 'routines', 'budget', 'collaborators', 'workOrders',
+        'stats', 'tasks', 'goals'];
+      try {
+        const existing = JSON.parse(localStorage.getItem('persist:athenea-root') || '{}');
+        SLICES.forEach((key) => {
+          if (data[key] !== undefined) {
+            existing[key] = JSON.stringify(data[key]);
+          }
+        });
+        localStorage.setItem('persist:athenea-root', JSON.stringify(existing));
+        const counts = [
+          data.projects?.projects?.length && `${data.projects.projects.length} proyectos`,
+          data.tasks?.length && `${data.tasks.length} tareas`,
+          data.notes?.notes?.length && `${data.notes.notes.length} notas`,
+          data.todos?.todos?.length && `${data.todos.todos.length} todos`,
+          data.payments?.payments?.length && `${data.payments.payments.length} pagos`,
+        ].filter(Boolean).join(', ');
+        showMessage(`✓ Importado: ${counts || 'datos restaurados'}. Recargando…`, 'success');
+        setTimeout(() => window.location.reload(), 1800);
+      } catch (err) {
+        showMessage(`✗ Error escribiendo datos: ${err.message}`, 'error');
+      }
     } else {
       showMessage(`✗ Import failed: ${result.error}`, 'error');
     }
@@ -118,6 +166,91 @@ const Settings = () => {
 
       <div className="settings-section">
         <IdentityPanel />
+      </div>
+
+      {/* ── Idioma ───────────────────────────────────────────────────────── */}
+      <div className="settings-section">
+        <h2 className="settings-section-title">🌐 Idioma / Language</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <select
+            className="settings-select"
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            style={{ maxWidth: 200 }}
+          >
+            <option value="en">English</option>
+            <option value="es">Español</option>
+          </select>
+          <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+            {language === 'es' ? 'La interfaz está en Español' : 'Interface is in English'}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Inteligencia Artificial ──────────────────────────────────────── */}
+      <div className="settings-section">
+        <h2 className="settings-section-title">🤖 Inteligencia Artificial</h2>
+        <p className="settings-section-desc">
+          Configura tu API key para activar los agentes Cortana, Jarvis y SHODAN con IA real.
+        </p>
+
+        <div style={{ display: 'grid', gap: '0.75rem', maxWidth: 480 }}>
+          <label style={{ display: 'grid', gap: 4 }}>
+            <span className="settings-label">Proveedor</span>
+            <select
+              className="settings-select"
+              value={aiProvider}
+              onChange={(e) => setAiProvider(e.target.value)}
+            >
+              <option value="openai">OpenAI (GPT-4o-mini)</option>
+              <option value="groq">Groq (Llama 3.1 — gratis)</option>
+            </select>
+          </label>
+
+          <label style={{ display: 'grid', gap: 4 }}>
+            <span className="settings-label">API Key</span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type={aiKeyVisible ? 'text' : 'password'}
+                className="settings-input"
+                value={aiKey}
+                onChange={(e) => setAiKey(e.target.value)}
+                placeholder={aiProvider === 'groq' ? 'gsk_...' : 'sk-...'}
+                style={{ flex: 1 }}
+              />
+              <button
+                type="button"
+                className="settings-button secondary"
+                style={{ padding: '0 12px', minWidth: 44 }}
+                onClick={() => setAiKeyVisible((v) => !v)}
+              >
+                {aiKeyVisible ? '🙈' : '👁'}
+              </button>
+            </div>
+          </label>
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button className="settings-button primary" onClick={handleSaveAI}>
+              Guardar
+            </button>
+            <button
+              className="settings-button secondary"
+              onClick={handleTestAI}
+              disabled={aiTestStatus === 'testing'}
+            >
+              {aiTestStatus === 'testing' ? '⏳ Probando…' :
+               aiTestStatus === 'ok'      ? '✓ Conectado' :
+               aiTestStatus === 'error'   ? '✗ Reintentar' :
+                                            'Probar conexión'}
+            </button>
+          </div>
+
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
+            {aiProvider === 'groq'
+              ? 'Groq es gratuito. Obtén tu key en console.groq.com'
+              : 'OpenAI requiere créditos. Obtén tu key en platform.openai.com'}
+          </p>
+        </div>
       </div>
 
       {canShowDebugConsole && (

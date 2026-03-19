@@ -160,3 +160,53 @@
   padding: 18px;
   color: var(--text-secondary);
 }
+
+/* W-FEAT-5: Inline editing */
+.mytasks-title-area {
+  display: grid;
+  gap: 2px;
+}
+
+.mytasks-title-editable {
+  font-size: 18px;
+  color: var(--text-primary);
+  margin: 0;
+  cursor: text;
+  border-radius: 6px;
+  transition: background var(--transition-fast);
+}
+
+.mytasks-title-editable:hover {
+  background: color-mix(in srgb, var(--accent-cyan) 8%, transparent);
+  padding: 0 4px;
+  margin: 0 -4px;
+}
+
+.mytasks-title-input {
+  font-size: 17px;
+  color: var(--text-primary);
+  background: var(--bg-base);
+  border: 1px solid var(--accent-cyan);
+  border-radius: 6px;
+  padding: 2px 6px;
+  outline: none;
+  width: 100%;
+}
+
+.mytasks-due {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.mytasks-level-badge {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.mytasks-level-badge:hover {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}

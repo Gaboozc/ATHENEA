@@ -176,3 +176,102 @@
   cursor: pointer;
   width: fit-content;
 }
+
+/* W-FIX-8: Clickable task item */
+.workhub-task-item {
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+.workhub-task-item:hover {
+  background: color-mix(in srgb, var(--accent-cyan) 8%, var(--bg-base));
+  border-color: var(--accent-cyan);
+}
+
+/* W-FIX-8: Level badge color variants */
+.workhub-level-badge.level-critical {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+.workhub-level-badge.level-high-velocity {
+  border-color: #f97316;
+  color: #f97316;
+}
+.workhub-level-badge.level-steady-flow {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+.workhub-level-badge.level-low-friction {
+  border-color: #22c55e;
+  color: #22c55e;
+}
+.workhub-level-badge.level-backlog {
+  border-color: var(--text-secondary);
+  color: var(--text-secondary);
+}
+.workhub-level-badge.level-standard {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+/* W-FEAT-1: Cortana briefing banner */
+.cortana-briefing {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--accent-cyan) 30%, transparent);
+  background: color-mix(in srgb, var(--accent-cyan) 6%, var(--bg-surface));
+  border-radius: 14px;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1.25rem;
+}
+.cortana-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.cortana-content {
+  display: grid;
+  gap: 0.25rem;
+}
+.cortana-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent-cyan);
+  font-weight: 700;
+}
+.cortana-message {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* ── Responsive Mobile ───────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .workhub-container {
+    padding: 1rem 0.75rem 1.5rem;
+  }
+  .workhub-header h1 {
+    font-size: 1.4rem;
+  }
+  .workhub-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+  .workhub-stat strong {
+    font-size: 1.1rem;
+  }
+  .workhub-grid {
+    grid-template-columns: 1fr;
+  }
+  .workhub-actions button {
+    min-height: 44px;
+    flex: 1 1 auto;
+    text-align: center;
+  }
+  .cortana-briefing {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

@@ -24,7 +24,7 @@ export interface SkillManifest {
   name: string;                         // Display name
   description: string;                  // What the skill does
   icon: string;                         // Emoji or icon
-  hub: 'WorkHub' | 'PersonalHub' | 'FinanceHub'; // Associated hub
+  hub: 'WorkHub' | 'PersonalHub' | 'FinanceHub' | 'CrossHub'; // Associated hub
   keywords: string[];                   // Keywords to trigger skill (NLP hints)
   action: string;                       // Redux action type to dispatch
   paramSchema: Record<string, SkillParam>; // Input parameter definitions

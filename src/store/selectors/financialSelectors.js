@@ -28,9 +28,15 @@ export const selectFinancialSnapshot = (state) => {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
+  const currentMonthKey = now.toISOString().slice(0, 7);
+
   const ingresos = payments
     .filter((payment) => (payment?.type || '').toLowerCase() === 'income')
     .filter((payment) => normalizeStatus(payment) === 'paid')
+    .filter((payment) => {
+      const dateStr = String(payment?.date || payment?.nextDueDate || payment?.createdAt || '');
+      return dateStr.slice(0, 7) === currentMonthKey;
+    })
     .reduce((sum, payment) => sum + toNumber(payment?.amount), 0);
 
   const fixedRecurring = payments
@@ -38,8 +44,6 @@ export const selectFinancialSnapshot = (state) => {
     .filter((payment) => (payment?.frequency || 'once') !== 'once')
     .filter((payment) => normalizeStatus(payment) !== 'paid')
     .reduce((sum, payment) => sum + toNumber(payment?.amount), 0);
-
-  const currentMonthKey = now.toISOString().slice(0, 7);
   const gastosVariables = expenses
     .filter((expense) => String(expense?.date || '').slice(0, 7) === currentMonthKey)
     .reduce((sum, expense) => sum + toNumber(expense?.amount), 0);

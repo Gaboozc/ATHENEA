@@ -4,15 +4,26 @@ import { useTasks } from '../context/TasksContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '../components/Skeleton/Skeleton';
+import { DailyStandup } from '../components/DailyStandup/DailyStandup';
+import EmptyState from '../components/EmptyState/EmptyState';
 import './WorkHub.css';
+
+const openGatekeeper = () => window.dispatchEvent(new CustomEvent('athenea:gatekeeper:open'));
 
 export const WorkHub = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { projects } = useSelector((state) => state.projects);
+  const lastVerdict = useSelector((state) => state.aiMemory?.lastVerdict || null); /* W-FEAT-1 */
   const { tasks } = useTasks();
   const [isReady, setIsReady] = useState(false);
   useEffect(() => { setIsReady(true); }, []);
+
+  /* NEW-WORK-2: DailyStandup — show once per day if not completed */
+  const STANDUP_KEY = `athenea.standup.${new Date().toISOString().split('T')[0]}`;
+  const [showStandup, setShowStandup] = useState(
+    () => !window.localStorage.getItem(STANDUP_KEY)
+  );
 
   const activeProjects = useMemo(
     () => (projects || []).filter((project) => project?.status !== 'cancelled'),
@@ -49,10 +60,24 @@ export const WorkHub = () => {
     [tasks]
   );
   const progressTotal = (tasks || []).length || 1;
-  const progressPercent = useMemo(
-    () => Math.round((completedTasks.length / progressTotal) * 100),
-    [completedTasks.length, progressTotal]
+  // W-FIX-5: weekly progress calculation
+  const startOfWeek = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - d.getDay());
+    d.setHours(0, 0, 0, 0);
+    return d; /* W-FIX-5 */
+  }, []);
+  const tasksThisWeek = useMemo(
+    () => (tasks || []).filter((t) => t.createdAt && new Date(t.createdAt) >= startOfWeek),
+    [tasks, startOfWeek]
   );
+  const completedThisWeek = useMemo(
+    () => tasksThisWeek.filter((t) => t.status === 'Completed' || t.completed === true),
+    [tasksThisWeek]
+  );
+  const weeklyProgress = tasksThisWeek.length > 0
+    ? Math.round((completedThisWeek.length / tasksThisWeek.length) * 100)
+    : 0; /* W-FIX-5 */
 
   return (
     <div className="workhub-container">
@@ -62,6 +87,21 @@ export const WorkHub = () => {
           <p>{t('Everything related to your daily programming work.')}</p>
         </div>
       </header>
+
+      {lastVerdict && (Date.now() - lastVerdict.timestamp < 30 * 60 * 1000) && ( /* W-FEAT-1 */
+        <div className="cortana-briefing">
+          <span className="cortana-icon">🧿</span>
+          <div className="cortana-content">
+            <span className="cortana-label">Cortana</span>
+            <p className="cortana-message">{lastVerdict.summary || lastVerdict.text}</p>
+          </div>
+        </div>
+      )}
+
+      {/* NEW-WORK-2: Daily Standup — shown once per day */}
+      {showStandup && (
+        <DailyStandup onDismiss={() => setShowStandup(false)} />
+      )}
 
       <section className="workhub-stats">
         <div className="workhub-stat">
@@ -91,13 +131,19 @@ export const WorkHub = () => {
         <div className="workhub-card">
           <h2>{t("Today's Focus")}</h2>
           {todayFocus.length === 0 ? (
-            <div className="workhub-empty">{t('No tasks yet.')}</div>
+            <EmptyState icon="📋" message={t('No tasks yet.')} ctaLabel={`+ ${t('Nueva tarea')}`} onCta={openGatekeeper} />
           ) : (
             <ul>
               {todayFocus.map((task) => (
-                <li key={task.id}>
+                <li /* W-FIX-8 */
+                  key={task.id}
+                  className="workhub-task-item"
+                  onClick={() => task.projectId ? navigate(`/projects/${task.projectId}`) : navigate('/my-tasks')}
+                >
                   <span>{task.title}</span>
-                  <span className="workhub-pill">{task.level}</span>
+                  <span className={`workhub-pill workhub-level-badge level-${(task.level || 'standard').toLowerCase().replace(/\s+/g, '-')}`}>
+                    {task.level || 'Standard'}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -130,13 +176,13 @@ export const WorkHub = () => {
           <h2>{t('Weekly Progress')}</h2>
           <div className="workhub-progress">
             <div className="workhub-progress-bar">
-              <span style={{ width: `${progressPercent}%` }} />
+              <span style={{ width: `${weeklyProgress}%` }} />
             </div>
             <div className="workhub-progress-meta">
-              <span>{t('Completed')}: {completedTasks.length}</span>
+              <span>{t('Completed')}: {completedThisWeek.length}</span>
               <span>{t('In Progress')}: {inProgressTasks.length}</span>
-              <span>{t('Pending')}: {pendingTasks.length}</span>
-              <span>{progressPercent}%</span>
+              <span>{t('Pending')}: {tasksThisWeek.length - completedThisWeek.length}</span>
+              <span>{weeklyProgress}%</span>
             </div>
           </div>
         </div>

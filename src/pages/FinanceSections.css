@@ -416,3 +416,14 @@
   }
 }
 
+/* F-FEAT-2: manual goal deposit input */
+.finance-deposit-input {
+  width: 90px;
+  padding: 2px 6px;
+  background: var(--bg-surface, #27272a);
+  border: 1px solid var(--accent-cyan);
+  border-radius: 6px;
+  color: var(--text-primary, #f4f4f5);
+  font-size: 0.85rem;
+}
+

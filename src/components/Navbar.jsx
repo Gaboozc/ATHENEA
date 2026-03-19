@@ -82,6 +82,7 @@ export const Navbar = () => {
 				{ label: t('My Tasks'), path: '/my-tasks' },
 					{ label: t('Collaborators'), path: '/fleet' },
 				{ label: t('Intelligence'), path: '/intelligence' },
+				{ label: t('Focus'), path: '/focus' },
 			],
 		},
 		{
@@ -91,6 +92,8 @@ export const Navbar = () => {
 				{ label: t('Notes'), path: '/notes' },
 				{ label: t('Todos'), path: '/todos' },
 				{ label: t('Notifications'), path: '/notifications' },
+				{ label: t('Diario'), path: '/journal' },
+				{ label: t('Rev. Semanal'), path: '/weekly-review' },
 			],
 		},
 		{

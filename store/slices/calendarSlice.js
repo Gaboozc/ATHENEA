@@ -98,7 +98,13 @@ const calendarSlice = createSlice({
     updateEvent: (state, action) => {
       const { id, ...updates } = action.payload || {};
       const event = state.events.find((entry) => entry.id === id);
-      if (event) Object.assign(event, updates);
+      if (!event) return;
+      /* CAL-FIX-5: Google calendar events are read-only locally */
+      if (event.provider === 'google') {
+        console.warn('[Calendar] Cannot edit a Google Calendar event locally.');
+        return;
+      }
+      Object.assign(event, updates);
     },
     deleteEvent: (state, action) => {
       state.events = state.events.filter((entry) => entry.id !== action.payload);
@@ -151,6 +157,37 @@ const calendarSlice = createSlice({
         (entry) => !(entry.relatedId === relatedId && entry.relatedType === relatedType)
       );
     },
+    /* CAL-FEAT-1: Link tasks and goals to calendar store */
+    linkTaskToCalendar: (state, action) => {
+      const { taskId, taskTitle, dueDate, level } = action.payload || {};
+      const id = `task-${taskId}`;
+      state.events = state.events.filter((entry) => entry.id !== id);
+      state.events.push({
+        id,
+        title: `📋 ${taskTitle || 'Task'}`,
+        startDate: dueDate,
+        endDate: dueDate,
+        relatedId: taskId,
+        relatedType: 'task',
+        color: level === 'Critical' ? '#ef4444'
+             : level === 'High Velocity' ? '#f59e0b'
+             : '#3b82f6',
+      });
+    },
+    linkGoalToCalendar: (state, action) => {
+      const { goalId, goalName, targetDate } = action.payload || {};
+      const id = `goal-${goalId}`;
+      state.events = state.events.filter((entry) => entry.id !== id);
+      state.events.push({
+        id,
+        title: `🎯 ${goalName || 'Goal'}`,
+        startDate: targetDate,
+        endDate: targetDate,
+        relatedId: goalId,
+        relatedType: 'goal',
+        color: '#d4af37',
+      });
+    },
     resetExternalSyncError: (state) => {
       state.externalSyncError = null;
     }
@@ -194,6 +231,8 @@ export const {
   linkNoteToCalendar,
   linkTodoToCalendar,
   linkPaymentToCalendar,
+  linkTaskToCalendar,
+  linkGoalToCalendar,
   unlinkFromCalendar,
   resetExternalSyncError
 } = calendarSlice.actions;

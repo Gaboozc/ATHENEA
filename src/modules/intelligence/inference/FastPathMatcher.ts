@@ -247,7 +247,9 @@ export class FastPathMatcher {
     if (hub === 'FinanceHub' && entity === 'EXPENSE') return 'record_expense';
     if (hub === 'WorkHub' && entity === 'TASK') return 'add_task';
     if (hub === 'PersonalHub' && entity === 'NOTE') return 'create_note';
-    
+    // P-FIX-7: In PersonalHub, "todo/to-do" entity routes to personal add_todo, not Work add_task
+    if (hub === 'PersonalHub' && entity === 'TASK') return 'add_todo';
+
     return null;
   }
 

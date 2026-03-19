@@ -1,6 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { taskCompleted, updateStreak } from "../../store/slices/statsSlice";
+import {
+  addTask as addTaskToSlice,
+  updateTask as updateTaskInSlice,
+  hydrateFromStorage,
+} from "../../store/slices/tasksSlice"; /* ARCH-FIX-1 */
+import { unlinkFromCalendar } from "../../store/slices/calendarSlice"; /* CAL-BUG-4 fix */
 import type { PriorityFactors, PriorityLevel } from "../utils/priorityEngine";
 
 const TASKS_STORAGE_KEY = "athenea.tasks";
@@ -19,6 +25,7 @@ export type GatekeeperTask = {
   factors: PriorityFactors;
   totalScore: number;
   level: PriorityLevel;
+  dueDate?: string;
   metadata: {
     questions?: string[];
     source?: string;
@@ -45,6 +52,7 @@ export type GatekeeperTask = {
 type TasksContextValue = {
   tasks: GatekeeperTask[];
   addTask: (task: GatekeeperTask) => void;
+  updateTask: (id: string, updates: Partial<GatekeeperTask>) => void; /* ARCH-FIX-1: was missing from type */
   updateTaskStatus: (id: string, status: string) => void;
   resolveTask: (id: string, resolvedBy?: string, resolutionNote?: string) => void;
   updateTaskAssignment: (id: string, assigneeId: string | null, teamId?: string) => void;
@@ -69,6 +77,7 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed)) {
         setTasks(parsed);
+        dispatch(hydrateFromStorage(parsed)); /* ARCH-FIX-1: seed Redux with existing tasks on mount */
       }
     } catch (error) {
       console.error("Failed to load tasks from storage", error);
@@ -81,7 +90,9 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
 
   const addTask = (task: GatekeeperTask) => {
     const orgId = task.orgId || currentOrgId || undefined;
-    setTasks((prev) => [{ ...task, orgId }, ...prev]);
+    const newTask = { ...task, orgId };
+    setTasks((prev) => [newTask, ...prev]);
+    dispatch(addTaskToSlice(newTask)); /* ARCH-FIX-1: mirror to Redux so AgentOrchestrator sees it */
   };
 
   const updateTaskStatus = (id: string, status: string) => {
@@ -150,7 +161,18 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const deleteTask = (id: string) => {
+    /* CAL-BUG-4 fix: clean up calendar event when task is removed */
+    dispatch(unlinkFromCalendar({ relatedId: id, relatedType: 'task' }));
     setTasks((prev) => prev.filter((task) => task.id !== id));
+  };
+
+  const updateTask = (id: string, updates: Partial<GatekeeperTask>) => { /* W-FEAT-5 */
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === id ? { ...task, ...updates, updatedAt: new Date().toISOString() } : task
+      )
+    );
+    dispatch(updateTaskInSlice({ id, ...updates } as any)); /* ARCH-FIX-1: mirror to Redux */
   };
 
   const scopedTasks = useMemo(() => {
@@ -162,6 +184,7 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
     () => ({
       tasks: scopedTasks,
       addTask,
+      updateTask,
       updateTaskStatus,
       resolveTask,
       updateTaskAssignment,

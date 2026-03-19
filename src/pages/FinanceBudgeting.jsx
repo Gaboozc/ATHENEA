@@ -4,6 +4,7 @@ import { useGlobalReducer } from '../hooks/useGlobalReducer';
 import { selectFinancialSnapshot } from '../store/selectors/financialSelectors';
 import { setBudgetCycleDay, setNextBudgetDate, upsertMonthlyBudget } from '../../store/slices/budgetCycleSlice';
 import './FinanceSections.css';
+import { CashFlowProjection } from '../components/CashFlowProjection/CashFlowProjection';
 
 // ── Guardrail helpers ────────────────────────────────────────────────────────
 
@@ -812,6 +813,7 @@ export const FinanceBudgeting = () => {
               </section>
             </>
           )}
+        <CashFlowProjection />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { combineReducers, configureStore, createSlice } from '@reduxjs/toolkit';
+import { combineReducers, configureStore, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { persistReducer, persistStore } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 
@@ -24,6 +24,9 @@ import { aiObserverMiddleware } from '../src/store/middleware/aiObserverMiddlewa
 import { actionHistoryMiddleware } from '../src/store/middleware/actionHistoryMiddleware';
 import goalsReducer from './slices/goalsSlice';
 import budgetCycleReducer from './slices/budgetCycleSlice';
+import checkinsReducer from '../src/store/slices/checkinsSlice';
+import journalReducer from './slices/journalSlice';
+import focusReducer from './slices/focusSlice';
 import { budgetGuardMiddleware } from '../src/store/middleware/budgetGuardMiddleware';
 import { financeDeletionAuditMiddleware } from '../src/store/middleware/financeDeletionAuditMiddleware';
 import { feedbackMiddleware } from '../src/store/middleware/feedbackMiddleware'; /* FIX UX-3 */
@@ -40,8 +43,9 @@ const placeholderSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder.addCase('intelligence/executeSearch', (state, action) => {
-      state.intelligence.lastQuery = String(action.payload?.query || '');
-      state.intelligence.lastHub = action.payload?.hub || 'WorkHub';
+      const p = (action as PayloadAction<{ query?: string; hub?: string }>).payload;
+      state.intelligence.lastQuery = String(p?.query || '');
+      state.intelligence.lastHub = p?.hub || 'WorkHub';
       state.intelligence.lastExecutedAt = new Date().toISOString();
     });
   }
@@ -69,6 +73,9 @@ const rootReducer = combineReducers({
   app: placeholderSlice.reducer,
   goals: goalsReducer,
   budgetCycle: budgetCycleReducer,
+  checkins: checkinsReducer,
+  journal: journalReducer,
+  focus: focusReducer,
 });
 
 const persistConfig = {
@@ -95,6 +102,9 @@ const persistConfig = {
     'aiMemory',
     'goals',
     'budgetCycle',
+    'checkins',
+    'journal',
+    'focus',
   ]
 };
 

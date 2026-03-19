@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { getPriorityLevel, PriorityFactors, PriorityLevel } from "../../utils/priorityEngine";
 import { useTasks } from "../../context/TasksContext";
 import { useLanguage } from "../../context/LanguageContext";
@@ -7,6 +7,7 @@ import {
   getUniversalQuestionSet,
   UniversalQuestion
 } from "../../utils/universalQuestions";
+import { linkTaskToCalendar } from "../../../store/slices/calendarSlice";
 import "./GatekeeperModal.css";
 
 type GatekeeperPayload = {
@@ -15,6 +16,7 @@ type GatekeeperPayload = {
   status: string;
   title: string;
   description: string;
+  dueDate?: string;
   workstreams: string[];
   targetTeams?: string[];
   factors: PriorityFactors;
@@ -47,12 +49,15 @@ const DEFAULT_FACTORS: PriorityFactors = {
 export const GatekeeperModal = () => {
   const { addTask } = useTasks();
   const { language, t } = useLanguage();
+  const dispatch = useDispatch();
   const { projects } = useSelector((state: { projects: { projects: any[] } }) => state.projects);
+  const { user } = useSelector((state: { auth: { user: any } }) => state.auth); /* W-FIX-1 */
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [dueDate, setDueDate] = useState("");
   const [selectedQuestions, setSelectedQuestions] = useState<UniversalQuestion[]>([]);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
@@ -87,6 +92,7 @@ export const GatekeeperModal = () => {
       setSelectedProjectId(availableProjects[0]?.id || "");
       setTitle("");
       setDescription("");
+      setDueDate("");
       setSelectedQuestions([]);
       setCheckedIds(new Set());
       setIsOpen(true);
@@ -109,6 +115,7 @@ export const GatekeeperModal = () => {
     setSelectedProjectId("");
     setTitle("");
     setDescription("");
+    setDueDate("");
     setSelectedQuestions([]);
     setCheckedIds(new Set());
     setIsSaving(false);
@@ -168,6 +175,7 @@ export const GatekeeperModal = () => {
         description: description.trim(),
         workstreams: selectedProject?.workstreamId ? [selectedProject.workstreamId] : [],
         targetTeams: selectedProject?.workstreamId ? [selectedProject.workstreamId] : [],
+        dueDate: dueDate || undefined,
         factors: DEFAULT_FACTORS,
         totalScore: normalizedScore,
         level: priorityLevel,
@@ -186,11 +194,22 @@ export const GatekeeperModal = () => {
         }
       };
 
-      addTask({
+      const newTask = {
         id: `task-${Date.now()}`,
         createdAt: new Date().toISOString(),
+        assigneeId: user?.id || user?.uid || null, /* W-FIX-1 */
         ...payload
-      });
+      };
+      addTask(newTask);
+      /* CAL-BUG-4 fix: persist task in calendar store so it survives reloads */
+      if (newTask.dueDate) {
+        dispatch(linkTaskToCalendar({
+          taskId: newTask.id,
+          taskTitle: newTask.title,
+          dueDate: newTask.dueDate,
+          level: newTask.level || 'Standard'
+        }));
+      }
       setSaveSuccess(true);
       setTimeout(() => {
         closeModal();
@@ -287,6 +306,14 @@ export const GatekeeperModal = () => {
                 onChange={(event) => setDescription(event.target.value)}
                 placeholder={t("Add context and constraints")}
                 rows={4}
+              />
+            </label>
+            <label className="gatekeeper-field">
+              <span>{t("Due Date")} ({t("optional")})</span>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(event) => setDueDate(event.target.value)}
               />
             </label>
           </section>

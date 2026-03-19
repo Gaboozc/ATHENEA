@@ -1,0 +1,82 @@
+.eb-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 24px;
+}
+
+.eb-fallback__card {
+  background: rgba(255, 59, 48, 0.06);
+  border: 1px solid rgba(255, 59, 48, 0.25);
+  border-radius: 16px;
+  padding: 32px 28px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.eb-fallback__icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.eb-fallback__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary, #e2e8f0);
+  margin: 0;
+}
+
+.eb-fallback__msg {
+  font-size: 0.88rem;
+  color: var(--text-secondary, #9ca3af);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.eb-fallback__detail {
+  font-size: 0.75rem;
+  color: rgba(255, 100, 80, 0.85);
+  background: rgba(255, 59, 48, 0.08);
+  border-radius: 6px;
+  padding: 6px 10px;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.eb-fallback__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.eb-fallback__btn {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.eb-fallback__btn:hover { opacity: 0.8; }
+
+.eb-fallback__btn.primary {
+  background: var(--accent-cyan, #1ec9ff);
+  color: #000;
+}
+
+.eb-fallback__btn.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary, #e2e8f0);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}

@@ -240,3 +240,91 @@
 .financehub-empty {
   color: var(--text-secondary);
 }
+
+/* F-FEAT-1: category delete button */
+.financehub-delete-cat {
+  border: 1px solid var(--color-error, #ef4444);
+  background: transparent;
+  color: var(--color-error, #ef4444);
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.financehub-delete-cat:hover {
+  background: var(--color-error, #ef4444);
+  color: #fff;
+}
+
+/* F-FEAT-1: inline limit input */
+.financehub-limit-input {
+  width: 80px;
+  padding: 2px 6px;
+  background: var(--bg-surface, #27272a);
+  border: 1px solid var(--accent-cyan);
+  border-radius: 6px;
+  color: var(--text-primary, #f4f4f5);
+  font-size: 0.85rem;
+}
+.financehub-limit-clickable {
+  cursor: pointer;
+  text-decoration: underline dotted;
+}
+
+/* F-FEAT-7: Jarvis briefing panel */
+.jarvis-briefing {
+  margin: 1rem 0;
+  padding: 1rem 1.25rem;
+  border-left: 3px solid var(--accent-gold, #eab308);
+  background: rgba(234, 179, 8, 0.06);
+  border-radius: 10px;
+}
+.jarvis-briefing h3 {
+  margin: 0 0 0.5rem;
+  color: var(--accent-gold, #eab308);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.jarvis-reasoning {
+  margin: 0 0 0.4rem;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+.jarvis-recommendation {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  font-style: italic;
+}
+
+/* ── Responsive Mobile ───────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .financehub-container {
+    padding: 1rem 0.75rem 1.5rem;
+  }
+  .financehub-header h1 {
+    font-size: 1.4rem;
+  }
+  .financehub-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+  .financehub-stat strong {
+    font-size: 1.1rem;
+  }
+  .financehub-budget-grid {
+    grid-template-columns: 1fr;
+  }
+  .financehub-budget-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .financehub-actions button {
+    min-height: 44px;
+    flex: 1 1 auto;
+    text-align: center;
+  }
+}

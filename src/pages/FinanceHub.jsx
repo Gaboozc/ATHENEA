@@ -1,23 +1,36 @@
 import { useMemo, useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
-import { addCategory, addExpense, deleteExpense } from '../../store/slices/budgetSlice';
-import { selectFinancialSnapshot } from '../store/selectors/financialSelectors';
+import { useGlobalReducer } from '../hooks/useGlobalReducer'; /* F-FEAT-6 */
+import { addCategory, addExpense, deleteExpense, deleteCategory, updateCategory } from '../../store/slices/budgetSlice'; /* F-FEAT-1 */
+import { selectFinancialSnapshot, selectFinancialHealthScore } from '../store/selectors/financialSelectors'; /* F-FEAT-3 */
 import { Skeleton } from '../components/Skeleton/Skeleton';
+import { SpendingCharts } from '../components/SpendingCharts/SpendingCharts';
+import EmptyState from '../components/EmptyState/EmptyState';
 import './FinanceHub.css';
 
 export const FinanceHub = () => {
-  const dispatch = useDispatch();
+  const { store, dispatch } = useGlobalReducer(); /* F-FEAT-6 */
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { payments } = useSelector((state) => state.payments);
-  const { categories: budgetCategories, expenses } = useSelector((state) => state.budget);
-  const financialSnapshot = useSelector(selectFinancialSnapshot);
+  /* F-FEAT-6: read from store instead of useSelector */
+  const payments = store?.payments?.payments || [];
+  const budgetCategories = store?.budget?.categories || [];
+  const expenses = store?.budget?.expenses || [];
+  const financialSnapshot = useMemo(() => selectFinancialSnapshot(store), [store]); /* F-FEAT-6 */
+  const healthScore = useMemo(() => selectFinancialHealthScore(store), [store]); /* F-FEAT-3 */
+  /* F-FEAT-7: Jarvis last verdict */
+  const lastVerdict = useSelector((state) => state.aiMemory?.lastVerdict);
+  const isJarvisVerdict = lastVerdict?.agent === 'auditor' || lastVerdict?.agent === 'Jarvis';
+  const isJarvisRecent = lastVerdict?.timestamp && (Date.now() - lastVerdict.timestamp) < 30 * 60 * 1000;
   const [isReady, setIsReady] = useState(false);
   useEffect(() => { setIsReady(true); }, []);
   const [categoryName, setCategoryName] = useState('');
   const [categoryLimit, setCategoryLimit] = useState('');
+  /* F-FEAT-1: inline limit editing */
+  const [editingLimitId, setEditingLimitId] = useState(null);
+  const [editingLimitValue, setEditingLimitValue] = useState('');
   const [expenseAmount, setExpenseAmount] = useState('');
   const [expenseCategory, setExpenseCategory] = useState('');
   const [expenseNote, setExpenseNote] = useState('');
@@ -89,6 +102,10 @@ export const FinanceHub = () => {
     return budgetCategories.reduce((sum, category) => sum + Number(category.limit || 0), 0);
   }, [budgetCategories]);
 
+  /* F-FEAT-3: health score label and color */
+  const healthLabel = healthScore >= 70 ? t('Saludable') : healthScore >= 40 ? t('Atención') : t('Crítico');
+  const healthColor = healthScore >= 70 ? 'var(--color-success)' : healthScore >= 40 ? 'var(--color-warning)' : 'var(--color-error)';
+
   const handleAddCategory = (event) => {
     event.preventDefault();
     if (!categoryName.trim()) return;
@@ -109,6 +126,14 @@ export const FinanceHub = () => {
     setExpenseAmount('');
     setExpenseCategory('');
     setExpenseNote('');
+  };
+
+  /* F-FEAT-1: inline limit commit */
+  const commitLimitEdit = (catId) => {
+    const val = parseFloat(editingLimitValue);
+    if (!isNaN(val) && val >= 0) dispatch(updateCategory({ id: catId, limit: val }));
+    setEditingLimitId(null);
+    setEditingLimitValue('');
   };
 
   return (
@@ -144,6 +169,13 @@ export const FinanceHub = () => {
         <div className="financehub-stat">
           <span>{t('Recurring Payments')}</span>
           {isReady ? <strong>{payments.length}</strong> : <Skeleton type="stat" />}
+        </div>
+        {/* F-FEAT-3: health score card */}
+        <div className="financehub-stat">
+          <span>{t('Salud Financiera')}</span>
+          {isReady
+            ? <strong style={{ color: healthColor }}>{healthLabel} ({healthScore})</strong>
+            : <Skeleton type="stat" />}
         </div>
       </section>
 
@@ -224,21 +256,54 @@ export const FinanceHub = () => {
         <div className="financehub-card">
           <h3>{t('Categories')}</h3>
           {budgetCategories.length === 0 ? (
-            <div className="financehub-empty">{t('No categories yet.')}</div>
+            <EmptyState icon="🏷️" message={t('No categories yet.')} ctaLabel={`+ ${t('Add Category')}`} onCta={() => {}} />
           ) : (
             <ul>
+              {/* F-FEAT-1: delete + inline limit edit */}
               {budgetCategories.map((category) => {
                 const spent = monthlyExpenses
                   .filter((expense) => expense.categoryId === category.id)
                   .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
                 const percent = category.limit ? Math.min(100, Math.round((spent / category.limit) * 100)) : 0;
+                const isEditing = editingLimitId === category.id;
                 return (
                   <li key={category.id}>
                     <span>{category.name}</span>
-                    <span className="financehub-date">{spent.toFixed(2)} / {Number(category.limit || 0).toFixed(2)}</span>
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className="financehub-limit-input"
+                        value={editingLimitValue}
+                        autoFocus
+                        onChange={(e) => setEditingLimitValue(e.target.value)}
+                        onBlur={() => commitLimitEdit(category.id)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') commitLimitEdit(category.id); if (e.key === 'Escape') { setEditingLimitId(null); setEditingLimitValue(''); } }}
+                      />
+                    ) : (
+                      <span
+                        className="financehub-date financehub-limit-clickable"
+                        title={t('Click to edit limit')}
+                        onClick={() => { setEditingLimitId(category.id); setEditingLimitValue(String(category.limit || 0)); }}
+                      >
+                        {spent.toFixed(2)} / {Number(category.limit || 0).toFixed(2)}
+                      </span>
+                    )}
                     <div className="financehub-progress">
                       <span style={{ width: `${percent}%` }} />
                     </div>
+                    <button
+                      type="button"
+                      className="financehub-delete-cat"
+                      onClick={() => {
+                        if (window.confirm(t('Delete category and orphan its expenses?'))) {
+                          dispatch(deleteCategory(category.id));
+                        }
+                      }}
+                    >
+                      {t('Delete')}
+                    </button>
                   </li>
                 );
               })}
@@ -249,7 +314,7 @@ export const FinanceHub = () => {
         <div className="financehub-card">
           <h3>{t('Monthly History')}</h3>
           {monthHistory.length === 0 ? (
-            <div className="financehub-empty">{t('No expenses yet.')}</div>
+            <EmptyState icon="💸" message={t('No expenses yet.')} ctaLabel={`+ ${t('Add Expense')}`} onCta={() => navigate('/finance/budgeting')} />
           ) : (
             <ul>
               {monthHistory.slice(0, 6).map((month) => (
@@ -265,7 +330,7 @@ export const FinanceHub = () => {
         <div className="financehub-card">
           <h3>{t('Recent Expenses')}</h3>
           {monthlyExpenses.length === 0 ? (
-            <div className="financehub-empty">{t('No expenses yet.')}</div>
+            <EmptyState icon="💸" message={t('No expenses yet.')} ctaLabel={`+ ${t('Add Expense')}`} onCta={() => navigate('/finance/budgeting')} />
           ) : (
             <ul>
               {monthlyExpenses.slice(0, 6).map((expense) => (
@@ -289,7 +354,7 @@ export const FinanceHub = () => {
       <section className="financehub-list">
         <h2>{t('Upcoming Payments')}</h2>
         {upcomingPayments.length === 0 ? (
-          <div className="financehub-empty">{t('No payments yet.')}</div>
+          <EmptyState icon="💳" message={t('No payments yet.')} ctaLabel={`+ ${t('Add Payment')}`} onCta={() => navigate('/payments')} />
         ) : (
           <ul>
             {upcomingPayments.map((payment) => (
@@ -303,6 +368,18 @@ export const FinanceHub = () => {
           </ul>
         )}
       </section>
+
+      {/* F-FEAT-7: Jarvis verdict panel */}
+      {isJarvisVerdict && isJarvisRecent && (
+        <section className="jarvis-briefing">
+          <h3>{t('Jarvis — Último análisis')}</h3>
+          {lastVerdict.reasoning && <p className="jarvis-reasoning">{lastVerdict.reasoning}</p>}
+          {lastVerdict.recommendation && <p className="jarvis-recommendation">{lastVerdict.recommendation}</p>}
+        </section>
+      )}
+
+      {/* NEW-FINANCE-1: Spending Charts */}
+      <SpendingCharts />
     </div>
   );
 };

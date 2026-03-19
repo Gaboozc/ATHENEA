@@ -175,6 +175,25 @@ export class AuditorAgent implements Agent {
       };
     }
 
+    // F-FIX-5: Query de gasto específico — si el contexto trae un monto a consultar
+    if (context.financeHub.queryAmount != null && context.financeHub.saldoLibre !== undefined) {
+      const queryAmt = context.financeHub.queryAmount;
+      const saldo = context.financeHub.saldoLibre;
+      const canSpend = saldo >= queryAmt;
+      return {
+        summary: canSpend
+          ? `Sí puedes gastar $${queryAmt.toFixed(2)}`
+          : `No recomendado — fondos insuficientes`,
+        reasoning: canSpend
+          ? `Saldo libre actual: $${saldo.toFixed(2)}. Después del gasto quedarían: $${(saldo - queryAmt).toFixed(2)}.`
+          : `Saldo libre actual: $${saldo.toFixed(2)}, insuficiente para cubrir $${queryAmt.toFixed(2)}.`,
+        recommendation: canSpend
+          ? `Gasto aprobado. Quedarían $${(saldo - queryAmt).toFixed(2)} disponibles.`
+          : `Posponer el gasto o reducir otro compromiso primero.`,
+        dataSource,
+      };
+    } /* F-FIX-5 */
+
     // Budget warning
     if (context.financeHub.budgetStatus === 'approaching-limit') {
       const recentSpending = context.financeHub.recentSpendings
@@ -183,7 +202,11 @@ export class AuditorAgent implements Agent {
 
       return {
         summary: 'Advertencia presupuestaria - Límite alcanzándose',
-        reasoning: `El presupuesto mensual se aproxima al límite. Gastos recientes suman $${recentSpending.toFixed(2)}. ${context.financeHub.pendingPayments} pagos aún pendientes.`,
+        reasoning: `Presupuesto al límite. Saldo libre: $${
+          context.financeHub.saldoLibre?.toFixed(2) ?? '—'
+        }. Ingresos del mes: $${
+          context.financeHub.ingresos?.toFixed(2) ?? '—'
+        }. Gastos recientes: $${recentSpending.toFixed(2)}. ${context.financeHub.pendingPayments} pagos pendientes.`, /* F-FIX-5 */
         recommendation: 'Reducir gastos discrecionales en las próximas 2 semanas. Revisar suscripciones innecesarias. Posponer compras no urgentes hasta el próximo ciclo.',
         dataSource,
       };
@@ -193,7 +216,11 @@ export class AuditorAgent implements Agent {
     const spendingRate = context.financeHub.recentSpendings.length > 0 ? 'activo' : 'controlado';
     return {
       summary: `Salud financiera: ${context.financeHub.budgetStatus}`,
-      reasoning: `Presupuesto bajo control (${context.financeHub.budgetStatus}). Ritmo de gasto: ${spendingRate}. ${context.financeHub.pendingPayments} pagos programados en cola.`,
+      reasoning: `Finanzas estables. Saldo libre: $${
+        context.financeHub.saldoLibre?.toFixed(2) ?? '—'
+      }. Compromisos de ahorro: $${
+        context.financeHub.commitedGoalSavings?.toFixed(2) ?? '—'
+      }/mes. Ritmo de gasto: ${spendingRate}.`, /* F-FIX-5 */
       recommendation:
         context.financeHub.budgetStatus === 'on-track'
           ? 'Perfil financiero óptimo. Puede considerar inversiones estratégicas si el Strategist las justifica para misiones críticas.'

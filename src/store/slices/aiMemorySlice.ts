@@ -145,6 +145,13 @@ export interface AiMemoryState {
     jarvis:  { lastSeen: string; patterns: string[]; recentContext: string };
     shodan:  { lastSeen: string; patterns: string[]; recentContext: string };
   };
+  // W-FEAT-1: Last Cortana verdict for WorkHub briefing display
+  lastVerdict: {
+    text: string;
+    summary: string;
+    timestamp: number;
+    priority: string;
+  } | null;
 }
 
 const initialState: AiMemoryState = {
@@ -211,6 +218,8 @@ const initialState: AiMemoryState = {
     jarvis:  { lastSeen: '', patterns: [], recentContext: '' },
     shodan:  { lastSeen: '', patterns: [], recentContext: '' },
   },
+  // W-FEAT-1: Last Cortana verdict for WorkHub briefing display
+  lastVerdict: null,
 };
 
 const MAX_SESSION_LOG = 20;
@@ -506,6 +515,12 @@ const aiMemorySlice = createSlice({
       }
       if (action.payload.recentContext !== undefined) mem.recentContext = action.payload.recentContext;
     },
+    setLastVerdict( /* W-FEAT-1 */
+      state,
+      action: PayloadAction<{ text: string; summary: string; timestamp: number; priority: string }>
+    ) {
+      state.lastVerdict = action.payload;
+    },
   },
 });
 
@@ -538,6 +553,8 @@ export const {
   clearDialogueHistory,
   // FIX 5: Persistent agent memory
   updateAgentMemory,
+  // W-FEAT-1: Cortana briefing verdict
+  setLastVerdict,
 } = aiMemorySlice.actions;
 
 export default aiMemorySlice.reducer;

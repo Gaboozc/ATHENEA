@@ -32,6 +32,7 @@ export const ReminderToasts = () => {
   const { notes } = useSelector((state) => state.notes);
   const { todos } = useSelector((state) => state.todos);
   const { payments } = useSelector((state) => state.payments);
+  const tasks = useSelector((state) => state.tasks?.tasks || []); /* CAL-FEAT-6 */
   const [toasts, setToasts] = useState([]);
   const shownRef = useRef(loadShown());
 
@@ -68,15 +69,22 @@ export const ReminderToasts = () => {
       .map((payment) => buildReminder(payment, 'payment', 'nextDueDate', '/payments'))
       .filter(Boolean);
 
-    return [...upcomingNotes, ...upcomingTodos, ...upcomingPayments]
+    /* CAL-FEAT-6: Tasks with dueDate */
+    const upcomingTasks = tasks
+      .filter((t) => !t.completed && t.status !== 'Completed' && t.status !== 'deleted')
+      .map((task) => buildReminder(task, 'task', 'dueDate', '/my-tasks'))
+      .filter(Boolean);
+
+    return [...upcomingNotes, ...upcomingTodos, ...upcomingPayments, ...upcomingTasks]
       .filter((reminder) => TRIGGER_DAYS.includes(reminder.diffDays))
       .sort((a, b) => a.diffDays - b.diffDays);
-  }, [notes, todos, payments, t]);
+  }, [notes, todos, payments, tasks, t]);
 
   const buildMessage = (reminder) => {
     if (reminder.type === 'payment') return t('Payment due');
     if (reminder.type === 'todo') return t('Todo due');
     if (reminder.type === 'note') return t('Note reminder');
+    if (reminder.type === 'task') return t('Task due'); /* CAL-FEAT-6 */
     return t('Reminder');
   };
 

@@ -9,6 +9,9 @@ import { store, persistor } from '../store/index';
 import { TasksProvider } from './context/TasksContext';
 import { LanguageProvider } from './context/LanguageContext';
 import AppInitializer from './components/AppInitializer';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 // Clear localStorage if ?clear=true is in URL (for testing)
 if (new URLSearchParams(window.location.search).get('clear') === 'true') {
@@ -30,6 +33,7 @@ if (typeof window !== 'undefined') {
 const Main = () => {
     return (
         <>
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
         <Provider store={store}>
             <PersistGate loading={null} persistor={persistor}>
                 <AppInitializer>
@@ -42,7 +46,8 @@ const Main = () => {
                 </AppInitializer>
             </PersistGate>
         </Provider>
-        </>
+        </GoogleOAuthProvider>
+</>
     );
 }
 

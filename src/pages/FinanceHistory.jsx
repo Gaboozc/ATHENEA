@@ -53,8 +53,11 @@ export const FinanceHistory = () => {
   const allEntries = useMemo(() => {
     const entries = [];
 
-    // 1) payments.payments (incomes + expenses + recurring)
-    (store?.payments?.payments || []).forEach((p) => {
+    // 1) payments.payments — F-FIX-3: only show income-type payments to avoid
+    //    duplicating expenses already tracked in budgetSlice
+    (store?.payments?.payments || [])
+      .filter((p) => (p.type || '').toLowerCase() === 'income')
+      .forEach((p) => {
       const paymentCategory = p.category ? categories.find((c) => c.id === p.category) : null;
       entries.push({
         _key: `pay-${p.id}`,
@@ -206,12 +209,10 @@ export const FinanceHistory = () => {
     if (form.txType === 'income') {
       dispatch(recordIncome({ amount, description: form.description, date: now }));
     } else {
-      // Dispatch to both budgetSlice (tracked) and paymentsSlice (full history)
-      if (form.categoryId) {
-        dispatch(addExpense({ amount, categoryId: form.categoryId, note: form.description, date: now }));
-        // addExpense → budgetGuardMiddleware auto-fires threshold check + goal sync
-      }
-      dispatch(recordExpense({ amount, description: form.description, category: form.categoryId || 'other', date: now }));
+      // F-FIX-3: Only dispatch to budgetSlice — source of truth for gastos.
+      // Removed recordExpense() call that caused duplicate entries in allEntries.
+      dispatch(addExpense({ amount, categoryId: form.categoryId || null, note: form.description, date: now }));
+      // addExpense → budgetGuardMiddleware auto-fires threshold check + goal sync
     }
 
     // Create actionHistory papertrail (Source of Truth bus event)

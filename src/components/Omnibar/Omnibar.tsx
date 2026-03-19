@@ -32,6 +32,7 @@ import { ProactiveHUD } from './ProactiveHUD.tsx';
 import { WarRoomView } from './WarRoomView';
 import { isOnboardingCompleted, markOnboardingCompleted } from '../../modules/intelligence/proactive/welcomeOnboarding';
 import { playSuccessSound, playErrorSound } from '../../modules/intelligence/utils/audioFeedback';
+import { getNeuralKey } from '../../modules/intelligence/neuralAccess';
 import './Omnibar.css';
 
 interface OmnibarProps {
@@ -807,6 +808,11 @@ export const Omnibar: React.FC<OmnibarProps> = ({
             <span className="omnibar-icon">🤖</span>
             <span>ATHENEA Assistant</span>
             <span className="omnibar-version">UI v2</span>
+            {getNeuralKey() ? (
+              <span className="omnibar-ai-badge active">IA activa</span>
+            ) : (
+              <span className="omnibar-ai-badge offline">Modo offline</span>
+            )}
           </div>
           <button
             type="button"

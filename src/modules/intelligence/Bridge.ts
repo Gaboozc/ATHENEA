@@ -714,13 +714,55 @@ export class IntelligenceBridge {
         facts = { openTasks: openTasks.length, overdueTasks: overdue };
       }
     } else if (hub === 'PersonalHub') {
-      const reminders = state.notes?.reminders || [];
-      const notes = state.notes?.notes || [];
-      fallbackAnswer = this.getLanguage() === 'es'
-        ? `En personal tienes ${reminders.length} recordatorios pendientes y ${notes.length} notas guardadas.`
-        : `In Personal you have ${reminders.length} pending reminders and ${notes.length} saved notes.`;
-      summary = `Pending reminders: ${reminders.length}. Notes: ${notes.length}.`;
-      facts = { remindersPending: reminders.length, noteCount: notes.length };
+      /* P-FIX-4: state.notes.reminders does not exist — compute from actual slices */
+      const notes: any[] = state.notes?.notes || [];
+      const todosAll: any[] = state.todos?.todos || [];
+      const routinesAll: any[] = state.routines?.routines || [];
+      const now = new Date();
+      const upcomingReminders = notes.filter(
+        (n) => n.reminderDate && new Date(n.reminderDate) > now
+      ).length;
+      const pendingTodos = todosAll.filter((t) => t.status !== 'done').length;
+      const overdueTodos = todosAll.filter(
+        (t) => t.dueDate && new Date(t.dueDate) < now && t.status !== 'done'
+      ).length;
+      const todayIdx = now.getDay();
+      const todayStr = now.toISOString().split('T')[0];
+      const todayRoutines = routinesAll.filter((r) =>
+        (r.daysOfWeek || []).includes(todayIdx)
+      ).length;
+      const completedTodayRoutines = routinesAll.filter((r) => {
+        const dates: string[] = r.completedDates || (r.lastCompleted ? [r.lastCompleted] : []);
+        return dates.includes(todayStr);
+      }).length;
+      const personalContext = {
+        notesCount: notes.length,
+        pinnedNotes: notes.filter((n) => n.pinned).length,
+        upcomingReminders,
+        pendingTodos,
+        overdueTodos,
+        todayRoutines,
+        completedTodayRoutines,
+      };
+      if (this.getLanguage() === 'es') {
+        fallbackAnswer = `En personal tienes ${personalContext.pendingTodos} todos pendientes`
+          + (personalContext.overdueTodos > 0 ? ` (${personalContext.overdueTodos} vencidos)` : '')
+          + `, ${personalContext.upcomingReminders} recordatorios próximos y ${personalContext.notesCount} notas guardadas.`
+          + (personalContext.todayRoutines > 0
+            ? ` Rutinas de hoy: ${personalContext.completedTodayRoutines}/${personalContext.todayRoutines} completadas.`
+            : '');
+      } else {
+        fallbackAnswer = `In Personal you have ${personalContext.pendingTodos} pending todos`
+          + (personalContext.overdueTodos > 0 ? ` (${personalContext.overdueTodos} overdue)` : '')
+          + `, ${personalContext.upcomingReminders} upcoming reminders and ${personalContext.notesCount} saved notes.`
+          + (personalContext.todayRoutines > 0
+            ? ` Today's routines: ${personalContext.completedTodayRoutines}/${personalContext.todayRoutines} completed.`
+            : '');
+      }
+      summary = `Pending todos: ${personalContext.pendingTodos}. Overdue: ${personalContext.overdueTodos}. `
+        + `Reminders: ${personalContext.upcomingReminders}. Notes: ${personalContext.notesCount}. `
+        + `Routines today: ${personalContext.completedTodayRoutines}/${personalContext.todayRoutines}.`;
+      facts = personalContext;
     } else {
       const budgets: any[] = state.budget?.categories || [];
       const expenses: any[] = state.budget?.expenses || [];

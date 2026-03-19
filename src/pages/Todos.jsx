@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
-import { addTodo, deleteTodo, setTodoProgress, setTodoStatus } from '../../store/slices/todosSlice';
+import { addTodo, deleteTodo, setTodoProgress, setTodoStatus, updateTodo } from '../../store/slices/todosSlice'; /* P-FIX-2 */
 import { linkTodoToCalendar, unlinkFromCalendar } from '../../store/slices/calendarSlice';
 import './Todos.css';
 
@@ -12,6 +12,9 @@ export const Todos = () => {
   const { t } = useLanguage();
   const { todos } = useSelector((state) => state.todos);
   const [formData, setFormData] = useState({ title: '', notes: '', dueDate: '', priority: 'normal' });
+  /* P-FIX-2: inline title editing state */
+  const [editingId, setEditingId] = useState(null);
+  const [editValue, setEditValue] = useState('');
 
   const sortedTodos = useMemo(() => {
     return [...todos].sort((a, b) => {
@@ -47,6 +50,26 @@ export const Todos = () => {
 
   const handleProgress = (todo, progress) => {
     dispatch(setTodoProgress({ id: todo.id, progress }));
+  };
+
+  /* P-FIX-2: inline title edit handlers */
+  const handleEditStart = (todo) => {
+    setEditingId(todo.id);
+    setEditValue(todo.title);
+  };
+
+  const handleEditCommit = (todo) => {
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed !== todo.title) {
+      dispatch(updateTodo({ id: todo.id, title: trimmed }));
+    }
+    setEditingId(null);
+    setEditValue('');
+  };
+
+  const handleEditKeyDown = (e, todo) => {
+    if (e.key === 'Enter') handleEditCommit(todo);
+    if (e.key === 'Escape') { setEditingId(null); setEditValue(''); }
   };
 
   return (
@@ -91,7 +114,31 @@ export const Todos = () => {
             <article key={todo.id} className={`todo-card${todo.status === 'done' ? ' done' : ''}`}>
               <div className="todo-card-header">
                 <div>
-                  <h2>{todo.title}</h2>
+                  {/* P-FIX-2: clickable title for inline editing */}
+                  {editingId === todo.id ? (
+                    <input
+                      className="todo-title-edit"
+                      value={editValue}
+                      autoFocus
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onBlur={() => handleEditCommit(todo)}
+                      onKeyDown={(e) => handleEditKeyDown(e, todo)}
+                    />
+                  ) : (
+                    <h2
+                      className="todo-title-clickable"
+                      title={t('Click to edit')}
+                      onClick={() => handleEditStart(todo)}
+                    >
+                      {todo.title}
+                    </h2>
+                  )}
+                  {/* P-FIX-2: priority badge */}
+                  {todo.priority && todo.priority !== 'normal' && (
+                    <span className={`todo-priority-badge priority-${todo.priority}`}>
+                      {todo.priority === 'high' ? `\u2191 ${t('Alta')}` : `\u2193 ${t('Baja')}`}
+                    </span>
+                  )}
                   {todo.dueDate && (
                     <span className="todo-date">{new Date(todo.dueDate).toLocaleDateString()}</span>
                   )}

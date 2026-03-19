@@ -1,0 +1,146 @@
+.cashflow-section {
+  background: var(--bg-secondary, #1e1e2e);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.cashflow-section h2 {
+  color: var(--text-primary, #e2e8f0);
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+}
+
+.cashflow-subtitle {
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.8rem;
+  margin: 0 0 1.25rem;
+}
+
+.cashflow-empty {
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.875rem;
+  text-align: center;
+  padding: 2rem 0;
+}
+
+/* Chart */
+.cashflow-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  padding: 0.5rem 0 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  overflow-x: auto;
+}
+
+.cashflow-month {
+  flex: 1;
+  min-width: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.cashflow-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 90px;
+}
+
+.cashflow-bar {
+  width: 10px;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.4s ease;
+  min-height: 3px;
+}
+
+.cashflow-inflow {
+  background: #22c55e;
+  opacity: 0.75;
+}
+
+.cashflow-outflow {
+  background: #ef4444;
+  opacity: 0.75;
+}
+
+.cashflow-net.pos {
+  background: #1ec9ff;
+}
+
+.cashflow-net.neg {
+  background: #f59e0b;
+}
+
+.cashflow-month-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary, #94a3b8);
+  text-align: center;
+}
+
+.cashflow-month-net {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.cashflow-month-net.text-ok {
+  color: #22c55e;
+}
+
+.cashflow-month-net.text-danger {
+  color: #ef4444;
+}
+
+/* Payment dots */
+.cashflow-payment-dots {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.cashflow-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a855f7;
+}
+
+.cashflow-dot-more {
+  font-size: 0.6rem;
+  color: #a855f7;
+  font-weight: 700;
+}
+
+/* Legend */
+.cashflow-legend {
+  display: flex;
+  gap: 1.25rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.cashflow-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.cashflow-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.cashflow-legend-dot.inflow { background: #22c55e; }
+.cashflow-legend-dot.outflow { background: #ef4444; }
+.cashflow-legend-dot.net { background: #1ec9ff; }

@@ -71,6 +71,7 @@ export const useAgentCalendar = () => {
   const goals    = useSelector((s) => s?.goals?.goals        || []);
   const expenses = useSelector((s) => s?.budget?.expenses    || []);
   const history  = useSelector((s) => s?.aiMemory?.actionHistory || []);
+  const checkins = useSelector((s) => s?.checkins?.checkins  || []); /* CAL-FEAT-2 */
 
   return useMemo(() => {
     const map = {};
@@ -247,6 +248,46 @@ export const useAgentCalendar = () => {
         day.agents[agentKey].push(e);
       });
 
+    // ── 12a. CAL-FEAT-2: Check-ins → Shodan attribution ──────────────
+    checkins.forEach((checkin) => {
+      const ds = toDateStr(checkin.date);
+      if (!ds) return;
+      const day = ensureDay(map, ds);
+      day.items = day.items || [];
+      day.items.push({
+        id: `checkin-${checkin.id}`,
+        type: 'checkin',
+        agent: 'Shodan',
+        title: `📊 Check-in: estado ${checkin.mood ?? '?'}/5`,
+        meta: checkin,
+      });
+      day.shodan = day.shodan || {};
+      day.shodan.checkin = checkin;
+      day.activityCount++;
+    });
+
+    // ── 12b. CAL-FEAT-2: Future routines projection (next 30 days) ────
+    const todayDate = new Date(todayStr + 'T00:00:00');
+    routines.forEach((routine) => {
+      if (!Array.isArray(routine.daysOfWeek) || !routine.daysOfWeek.length) return;
+      for (let i = 1; i <= 30; i++) {
+        const futureDate = new Date(todayDate);
+        futureDate.setDate(todayDate.getDate() + i);
+        if (routine.daysOfWeek.includes(futureDate.getDay())) {
+          const ds = futureDate.toISOString().split('T')[0];
+          const day = ensureDay(map, ds);
+          day.items = day.items || [];
+          day.items.push({
+            id: `routine-future-${routine.id}-${ds}`,
+            type: 'routine-scheduled',
+            agent: 'Shodan',
+            title: `🔄 ${routine.title}`,
+            meta: routine,
+          });
+        }
+      }
+    });
+
     // ── 12. Compute derived agent pressure / workload levels ──────────
     Object.values(map).forEach((day) => {
       const jpCount = day.jarvis.payments.length * 2 + day.jarvis.goals.length;
@@ -260,7 +301,7 @@ export const useAgentCalendar = () => {
     });
 
     return map;
-  }, [events, projects, tasks, notes, todos, routines, payments, goals, expenses, history]);
+  }, [events, projects, tasks, notes, todos, routines, payments, goals, expenses, history, checkins]);
 };
 
 export default useAgentCalendar;

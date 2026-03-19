@@ -6,28 +6,44 @@ import {
   useRouteError,
   Link,
 } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import { Layout } from "./pages/Layout";
-import { Dashboard } from "./pages/Dashboard";
-import { Projects } from "./pages/Projects";
-import { ProjectDetails } from "./pages/ProjectDetails";
-import Settings from "./pages/Settings";
-import { Intelligence } from "./pages/Intelligence";
-import { Fleet } from "./pages/Fleet";
-import { Notifications } from "./pages/Notifications";
-import { Profile } from "./pages/Profile";
-import { MyTasks } from "./pages/MyTasks";
-import { Notes } from "./pages/Notes";
-import { Calendar } from "./pages/Calendar";
-import { Todos } from "./pages/Todos";
-import { Payments } from "./pages/Payments";
-import { WorkHub } from "./pages/WorkHub";
-import { PersonalHub } from "./pages/PersonalHub";
-import { FinanceHub } from "./pages/FinanceHub";
-import { FinanceHistory } from "./pages/FinanceHistory";
-import { FinanceGoals } from "./pages/FinanceGoals";
-import { FinanceBudgeting } from "./pages/FinanceBudgeting";
-import { IdentityHub } from "./pages/IdentityHub";
-import StatsPage from "./pages/StatsPage";
+import { Skeleton } from "./components/Skeleton/Skeleton";
+
+// ── Lazy-loaded pages (code splitting) ────────────────────────────────────
+const Dashboard      = lazy(() => import("./pages/Dashboard").then(m => ({ default: m.Dashboard })));
+const WorkHub        = lazy(() => import("./pages/WorkHub").then(m => ({ default: m.WorkHub })));
+const PersonalHub    = lazy(() => import("./pages/PersonalHub").then(m => ({ default: m.PersonalHub })));
+const FinanceHub     = lazy(() => import("./pages/FinanceHub").then(m => ({ default: m.FinanceHub })));
+const FinanceHistory = lazy(() => import("./pages/FinanceHistory").then(m => ({ default: m.FinanceHistory })));
+const FinanceGoals   = lazy(() => import("./pages/FinanceGoals").then(m => ({ default: m.FinanceGoals })));
+const FinanceBudgeting = lazy(() => import("./pages/FinanceBudgeting").then(m => ({ default: m.FinanceBudgeting })));
+const Calendar       = lazy(() => import("./pages/Calendar").then(m => ({ default: m.Calendar })));
+const Projects       = lazy(() => import("./pages/Projects").then(m => ({ default: m.Projects })));
+const ProjectDetails = lazy(() => import("./pages/ProjectDetails").then(m => ({ default: m.ProjectDetails })));
+const Intelligence   = lazy(() => import("./pages/Intelligence").then(m => ({ default: m.Intelligence })));
+const Fleet          = lazy(() => import("./pages/Fleet").then(m => ({ default: m.Fleet })));
+const Notes          = lazy(() => import("./pages/Notes").then(m => ({ default: m.Notes })));
+const Journal        = lazy(() => import("./pages/Journal").then(m => ({ default: m.Journal })));
+const WeeklyReview   = lazy(() => import("./pages/WeeklyReview").then(m => ({ default: m.WeeklyReview })));
+const FocusMode      = lazy(() => import("./pages/FocusMode").then(m => ({ default: m.FocusMode })));
+const StatsPage      = lazy(() => import("./pages/StatsPage"));
+const IdentityHub    = lazy(() => import("./pages/IdentityHub").then(m => ({ default: m.IdentityHub })));
+const Settings       = lazy(() => import("./pages/Settings"));
+const Todos          = lazy(() => import("./pages/Todos").then(m => ({ default: m.Todos })));
+const Payments       = lazy(() => import("./pages/Payments").then(m => ({ default: m.Payments })));
+const MyTasks        = lazy(() => import("./pages/MyTasks").then(m => ({ default: m.MyTasks })));
+const Notifications  = lazy(() => import("./pages/Notifications").then(m => ({ default: m.Notifications })));
+const Profile        = lazy(() => import("./pages/Profile").then(m => ({ default: m.Profile })));
+const Inbox          = lazy(() => import("./pages/Inbox").then(m => ({ default: m.Inbox })));
+const Login          = lazy(() => import("./pages/Login").then(m => ({ default: m.Login })));
+
+// ── Loading fallback ───────────────────────────────────────────────────────
+const PageLoader = () => (
+  <div style={{ padding: '2rem' }}>
+    <Skeleton lines={4} />
+  </div>
+);
 
 const AppRouteError = () => {
   const error = useRouteError();
@@ -45,9 +61,18 @@ const AppRouteError = () => {
   );
 };
 
+// ── Wrap element in Suspense ───────────────────────────────────────────────
+const S = (element) => <Suspense fallback={<PageLoader />}>{element}</Suspense>;
+
 export const router = createHashRouter(
     createRoutesFromElements(
       <>
+        {/* Standalone routes (no Navbar/Layout) */}
+        <Route path="/login" element={S(<Login />)} errorElement={<AppRouteError />} />
+        {/* Redirect legacy auth routes → dashboard */}
+        <Route path="/register" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/awaiting-command" element={<Navigate to="/dashboard" replace />} />
+
         {/* App Routes with Layout */}
         <Route
           path="/"
@@ -55,29 +80,32 @@ export const router = createHashRouter(
           errorElement={<AppRouteError />}
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="work" element={<WorkHub />} />
-          <Route path="personal" element={<PersonalHub />} />
-          <Route path="finance" element={<FinanceHub />} />
-          <Route path="finance/history" element={<FinanceHistory />} />
-          <Route path="finance/goals" element={<FinanceGoals />} />
-          <Route path="finance/budgeting" element={<FinanceBudgeting />} />
-          <Route path="budgeting" element={<Navigate to="/finance/budgeting" replace />} />
-          <Route path="identity" element={<IdentityHub />} />
-          <Route path="todos" element={<Todos />} />
-          <Route path="payments" element={<Payments />} />
-          <Route path="projects" element={<Projects />} />
-          <Route path="projects/:id" element={<ProjectDetails />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="intelligence" element={<Intelligence />} />
-          <Route path="fleet" element={<Fleet />} />
-          <Route path="my-tasks" element={<MyTasks />} />
-          <Route path="notifications" element={<Notifications />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="notes" element={<Notes />} />
-          <Route path="calendar" element={<Calendar />} />
-          <Route path="inbox" element={<Navigate to="/calendar" replace />} />
-          <Route path="stats" element={<StatsPage />} />
+          <Route path="dashboard"          element={S(<Dashboard />)} />
+          <Route path="work"               element={S(<WorkHub />)} />
+          <Route path="personal"           element={S(<PersonalHub />)} />
+          <Route path="finance"            element={S(<FinanceHub />)} />
+          <Route path="finance/history"    element={S(<FinanceHistory />)} />
+          <Route path="finance/goals"      element={S(<FinanceGoals />)} />
+          <Route path="finance/budgeting"  element={S(<FinanceBudgeting />)} />
+          <Route path="budgeting"          element={<Navigate to="/finance/budgeting" replace />} />
+          <Route path="identity"           element={S(<IdentityHub />)} />
+          <Route path="todos"              element={S(<Todos />)} />
+          <Route path="payments"           element={S(<Payments />)} />
+          <Route path="projects"           element={S(<Projects />)} />
+          <Route path="projects/:id"       element={S(<ProjectDetails />)} />
+          <Route path="settings"           element={S(<Settings />)} />
+          <Route path="intelligence"       element={S(<Intelligence />)} />
+          <Route path="fleet"              element={S(<Fleet />)} />
+          <Route path="my-tasks"           element={S(<MyTasks />)} />
+          <Route path="notifications"      element={S(<Notifications />)} />
+          <Route path="profile"            element={S(<Profile />)} />
+          <Route path="notes"              element={S(<Notes />)} />
+          <Route path="calendar"           element={S(<Calendar />)} />
+          <Route path="inbox"              element={S(<Inbox />)} />
+          <Route path="stats"              element={S(<StatsPage />)} />
+          <Route path="journal"            element={S(<Journal />)} />
+          <Route path="weekly-review"      element={S(<WeeklyReview />)} />
+          <Route path="focus"              element={S(<FocusMode />)} />
         </Route>
       </>
     )

@@ -156,6 +156,8 @@ export function useIntelligence(
 
           try {
             dispatch(adapterResult.action as any);
+            /* Dispatch calendar link side-effects (e.g. add_task with dueDate) */
+            adapterResult.actions?.forEach((extra) => dispatch(extra as any));
             audioFeedback.playSuccess();
             actionHistoryStore.recordAction({
               type: 'voice-command',
@@ -246,6 +248,8 @@ export function useIntelligence(
       }
 
       dispatch(adapterResult.action as any);
+      /* Dispatch calendar link side-effects (e.g. add_task with dueDate) */
+      adapterResult.actions?.forEach((extra) => dispatch(extra as any));
       audioFeedback.playSuccess();
       actionHistoryStore.recordAction({
         type: 'user-command',

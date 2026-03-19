@@ -124,6 +124,23 @@ export const ProjectDetails = () => {
       totalScore: typeof task.totalScore === 'number' ? task.totalScore : null,
       isLegacy: false
     }));
+  // W-FEAT-3: collect time log entries across all project tasks
+  const projectTimeEntries = tasks
+    .filter((task) => task.projectId === project.id)
+    .flatMap((task) =>
+      (task.timeLogs || []).map((log) => ({
+        taskId: task.id,
+        taskTitle: task.title,
+        hours: Number(log.hoursWorked || 0),
+        date: log.loggedAt || log.timestamp || '',
+        notes: log.notes || ''
+      }))
+    )
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 20);
+  const totalLoggedHours = Math.round(
+    projectTimeEntries.reduce((sum, e) => sum + e.hours, 0) * 10
+  ) / 10; /* W-FEAT-3 */
   const legacyTasks = (project.tasks || []).map((task) => ({
     id: `legacy-${task}`,
     title: task,
@@ -708,6 +725,31 @@ export const ProjectDetails = () => {
           ))}
         </div>
       </section>
+
+      {projectTimeEntries.length > 0 && ( /* W-FEAT-3 */
+        <section className="project-card project-time-log">
+          <div className="time-log-header">
+            <h2>{t('Time Log')}</h2>
+            <span className="time-log-total">{totalLoggedHours} {t('hrs total')}</span>
+          </div>
+          <ul className="time-entries-list">
+            {projectTimeEntries.map((entry, i) => (
+              <li key={`${entry.taskId}-${i}`} className="time-entry">
+                <div className="entry-meta">
+                  <span className="entry-task-title">{entry.taskTitle}</span>
+                  <span className="entry-date">
+                    {entry.date ? new Date(entry.date).toLocaleDateString() : '—'}
+                  </span>
+                </div>
+                <div className="entry-footer">
+                  <span className="entry-hours">{entry.hours}h</span>
+                  {entry.notes && <span className="entry-notes">{entry.notes}</span>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 };

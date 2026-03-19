@@ -1,14 +1,18 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTasks } from '../context/TasksContext';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useLanguage } from '../context/LanguageContext';
 import LazyList from '../components/LazyList';
 import './MyTasks.css';
 
+const LEVEL_CYCLE = ['Critical', 'High Velocity', 'Steady Flow', 'Low Friction', 'Backlog'];
+
 export const MyTasks = () => {
-  const { tasks, updateTaskStatus } = useTasks();
+  const { tasks, updateTaskStatus, updateTask } = useTasks();
   const { user } = useCurrentUser();
   const { t } = useLanguage();
+  const [editingId, setEditingId] = useState(null); /* W-FEAT-5 */
+  const [editValue, setEditValue] = useState('');
 
   const myTasks = useMemo(
     () =>
@@ -21,6 +25,26 @@ export const MyTasks = () => {
   /* FIX UX-1 — exponer GatekeeperModal */
   const openGatekeeper = () =>
     window.dispatchEvent(new CustomEvent('athenea:gatekeeper:open'));
+
+  const startEdit = (task) => { /* W-FEAT-5 */
+    setEditingId(task.id);
+    setEditValue(task.title);
+  };
+
+  const commitEdit = (taskId) => { /* W-FEAT-5 */
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed.length >= 3) {
+      updateTask(taskId, { title: trimmed });
+    }
+    setEditingId(null);
+    setEditValue('');
+  };
+
+  const cycleLevel = (task) => { /* W-FEAT-5 */
+    const idx = LEVEL_CYCLE.indexOf(task.level || 'Backlog');
+    const next = LEVEL_CYCLE[(idx + 1) % LEVEL_CYCLE.length];
+    updateTask(task.id, { level: next });
+  };
 
   return (
     <div className="mytasks-container">
@@ -50,17 +74,51 @@ export const MyTasks = () => {
             renderItem={(task) => (
               <article key={task.id} className="mytasks-card">
                 <div className="mytasks-card-header">
-                  <div>
-                    <h2>{task.title}</h2>
+                  <div className="mytasks-title-area">
+                    {editingId === task.id ? ( /* W-FEAT-5 */
+                      <input
+                        className="mytasks-title-input"
+                        value={editValue}
+                        autoFocus
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={() => commitEdit(task.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') commitEdit(task.id);
+                          if (e.key === 'Escape') { setEditingId(null); setEditValue(''); }
+                        }}
+                      />
+                    ) : (
+                      <h2
+                        className="mytasks-title-editable"
+                        title={t('Click to edit')}
+                        onClick={() => startEdit(task)}
+                      >
+                        {task.title}
+                      </h2>
+                    )}
                     {task.projectName && (
                       <span className="mytasks-project">{task.projectName}</span>
+                    )}
+                    {task.dueDate && ( /* W-FEAT-5: show due date */
+                      <span className="mytasks-due">
+                        📅 {new Date(task.dueDate).toLocaleDateString()}
+                      </span>
                     )}
                   </div>
                   <span className="mytasks-status">{task.status || t('Active')}</span>
                 </div>
                 {task.description && <p className="mytasks-desc">{task.description}</p>}
                 <div className="mytasks-meta">
-                  {task.level && <span className="mytasks-pill">{task.level}</span>}
+                  {task.level && (
+                    <span /* W-FEAT-5: click to cycle level */
+                      className="mytasks-pill mytasks-level-badge"
+                      title={t('Click to change level')}
+                      onClick={() => cycleLevel(task)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {task.level}
+                    </span>
+                  )}
                   {Array.isArray(task.workstreams) &&
                     task.workstreams.map((stream) => (
                       <span key={stream} className="mytasks-pill">

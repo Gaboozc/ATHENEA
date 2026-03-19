@@ -1,0 +1,57 @@
+.habit-tracker {
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+}
+
+.habit-tracker__header {
+  margin-bottom: 0.5rem;
+}
+
+.habit-tracker__title {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.habit-tracker__grid {
+  display: grid;
+  grid-template-columns: 110px repeat(7, 1fr);
+  gap: 4px;
+  align-items: center;
+}
+
+.habit-tracker__day-label {
+  text-align: center;
+  font-size: 0.68rem;
+  color: var(--text-secondary, #94a3b8);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.habit-tracker__row {
+  margin-top: 4px;
+}
+
+.habit-tracker__name-col {
+  font-size: 0.78rem;
+  color: var(--text-primary, #f1f5f9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 4px;
+}
+
+.habit-tracker__cell {
+  height: 18px;
+  border-radius: 4px;
+  background: var(--bg-base, #0b0b0b);
+  border: 1px solid var(--border-color, #1e3a5f);
+  transition: background 0.2s;
+}
+
+.habit-tracker__cell.is-done {
+  background: var(--accent-cyan, #1ec9ff);
+  border-color: var(--accent-cyan, #1ec9ff);
+  opacity: 0.85;
+}

@@ -5,7 +5,7 @@ const budgetSlice = createSlice({
   initialState: {
     categories: [],
     expenses: [],
-    balance: 0
+    balance: 0 // DEPRECATED — zombie field. Real balance comes from selectFinancialSnapshot(). F-FEAT-5
   },
   reducers: {
     addCategory: (state, action) => {
@@ -39,9 +39,24 @@ const budgetSlice = createSlice({
     },
     deleteExpense: (state, action) => {
       state.expenses = state.expenses.filter((entry) => entry.id !== action.payload);
+    },
+    /* F-FEAT-1: delete and edit categories */
+    deleteCategory: (state, action) => {
+      state.categories = state.categories.filter((c) => c.id !== action.payload);
+      // Orphan expenses: set categoryId to null so they remain visible without a category
+      state.expenses = state.expenses.map((e) =>
+        e.categoryId === action.payload ? { ...e, categoryId: null } : e
+      );
+    },
+    updateCategory: (state, action) => {
+      const { id, name, limit } = action.payload || {};
+      const cat = state.categories.find((c) => c.id === id);
+      if (!cat) return;
+      if (name !== undefined) cat.name = name;
+      if (limit !== undefined) cat.limit = Number(limit);
     }
   }
 });
 
-export const { addCategory, addExpense, addIncome, updateExpense, deleteExpense } = budgetSlice.actions;
+export const { addCategory, addExpense, addIncome, updateExpense, deleteExpense, deleteCategory, updateCategory } = budgetSlice.actions;
 export default budgetSlice.reducer;

@@ -28,9 +28,11 @@ import { AuditorAgent } from './AuditorAgent';
 import { VitalsAgent } from './VitalsAgent';
 import { getBlackBox } from '../BlackBox';
 import { getNeuralKey, getNeuralProvider } from '../neuralAccess';
+import { selectFinancialSnapshot } from '../../../store/selectors/financialSelectors'; /* F-FIX-1 */
 import {
   recordAgentConflict,
   recordAgentDialogue,
+  setLastVerdict,
   type RecordAgentConflictPayload,
 } from '../../../store/slices/aiMemorySlice';
 // FIX 1: Use EventBus instead of direct ActionBridge import to break circular dependency
@@ -213,6 +215,17 @@ export class AgentOrchestrator {
 
     this.lastDecision = decision;
 
+    // W-FEAT-1: Store Cortana verdict in Redux for WorkHub briefing display
+    if (this.store) {
+      const leadVerdict = verdicts.find((v) => v.agentType === leadAgent);
+      this.store.dispatch(setLastVerdict({
+        text: decision.finalVerdict,
+        summary: (leadVerdict?.verdict as any)?.summary || decision.finalVerdict,
+        timestamp: Date.now(),
+        priority: leadVerdict?.priority || 'LOW',
+      }));
+    }
+
     // FASE 3.1: Dispatch dialogue to Redux
     if (this.store && dialogueLog.length > 0) {
       this.store.dispatch(recordAgentDialogue(dialogueLog));
@@ -289,7 +302,14 @@ export class AgentOrchestrator {
 
     // WorkHub metrics
     const tasks = state.tasks?.tasks || [];
-    const criticalTasks = tasks.filter((t: any) => t.priority === 'high' && !t.completed).length;
+    /* W-FIX-3: tasks use t.level ('Critical'/'High Velocity'), not t.priority */
+    const criticalTasks = tasks.filter(
+      (t: any) =>
+        (t.level === 'Critical' || t.level === 'High Velocity') &&
+        !t.completed &&
+        t.status !== 'Completed' &&
+        t.status !== 'deleted'
+    ).length;
     const overdueTasks = tasks.filter((t: any) => {
       if (t.completed) return false;
       const due = new Date(t.dueDate || '');
@@ -300,37 +320,59 @@ export class AgentOrchestrator {
       const today = new Date();
       return createdDate.toDateString() === today.toDateString();
     }).length;
+    // W-FEAT-2: additional workHub context fields
+    const todayStr = now.toISOString().split('T')[0];
+    const projects = state.projects?.projects || [];
+    const activeProjectsCount = projects.filter((p: any) => p?.status !== 'cancelled' && p?.status !== 'completed').length;
+    const topTask = (tasks.find((t: any) => t.level === 'Critical' && !t.completed && t.status !== 'Completed') as any)?.title || null;
+    const loggedHoursToday = tasks.reduce((sum: number, t: any) => {
+      const logs = Array.isArray(t.timeLogs) ? t.timeLogs : [];
+      return sum + logs
+        .filter((l: any) => (l.loggedAt || l.timestamp || '').startsWith(todayStr))
+        .reduce((s: number, l: any) => s + Number(l.hoursWorked || 0), 0);
+    }, 0);
+    const tasksWithoutDueDate = tasks.filter((t: any) => !t.dueDate && !t.completed && t.status !== 'Completed').length;
+    const overdueProjects = projects.filter((p: any) => {
+      if (!p?.deadline) return false;
+      return new Date(p.deadline) < now && p.status !== 'completed' && p.status !== 'cancelled';
+    }).length;
 
-    // FinanceHub metrics
-    const budgets = state.budget?.categories || [];
-    const expenses = state.budget?.expenses || [];
-    const spentByCategory = expenses.reduce((acc: Record<string, number>, expense: any) => {
-      const categoryId = String(expense?.categoryId || '');
-      if (!categoryId) return acc;
-      acc[categoryId] = (acc[categoryId] || 0) + Number(expense?.amount || 0);
-      return acc;
-    }, {});
-    let budgetStatus: 'on-track' | 'approaching-limit' | 'exceeded' = 'on-track';
-    budgets.forEach((b: any) => {
-      const spent = Number(spentByCategory[String(b?.id || '')] || 0);
-      const usagePercent = spent / (Number(b?.limit || 0) || 1);
-      if (usagePercent > 1) budgetStatus = 'exceeded';
-      else if (usagePercent > 0.8 && budgetStatus !== 'exceeded')
-        budgetStatus = 'approaching-limit';
-    });
+    // FinanceHub metrics — F-FIX-1: use selectFinancialSnapshot for month-accurate budgetStatus
+    const financialSnapshot = selectFinancialSnapshot(state);
+    const budgetStatus: 'on-track' | 'approaching-limit' | 'exceeded' =
+      financialSnapshot.healthScore > 70
+        ? 'on-track'
+        : financialSnapshot.healthScore > 40
+          ? 'approaching-limit'
+          : 'exceeded'; /* F-FIX-1 */
 
     const payments = state.payments?.payments || [];
-    const pendingPayments = payments.filter((p: any) => (p?.status || 'pending') !== 'paid').length;
+    const pendingPayments = payments
+      .filter((p: any) => (p?.status || 'pending') !== 'paid' && p?.type !== 'income')
+      .length;
 
-    // Recent spendings (mock - would come from interception log in real system)
-    const recentSpendings = state.aiMemory?.interception?.silentLog
-      ?.filter((log: any) => log?.category === 'finance')
-      ?.slice(0, 5)
-      ?.map((log: any) => ({
-        amount: log?.amount || 0,
-        category: log?.merchant || 'unknown',
-        timestamp: log?.detectedAt || Date.now(),
-      })) || [];
+    // F-FIX-4: recentSpendings from real budget.expenses (last 3 days)
+    const recentSpendings = (() => {
+      const expenseList: any[] = state.budget?.expenses || [];
+      const threeDaysAgo = new Date(now);
+      threeDaysAgo.setDate(now.getDate() - 3);
+      return expenseList
+        .filter((e: any) => {
+          const d = new Date(e?.date || e?.createdAt || 0);
+          return d >= threeDaysAgo;
+        })
+        .sort((a: any, b: any) =>
+          new Date(b?.date || b?.createdAt || 0).getTime() -
+          new Date(a?.date || a?.createdAt || 0).getTime()
+        )
+        .slice(0, 5)
+        .map((e: any) => ({
+          amount: Number(e?.amount || 0),
+          category: String(e?.categoryId || 'other'),
+          timestamp: new Date(e?.date || e?.createdAt || 0).getTime(),
+          note: e?.note || '',
+        }));
+    })(); /* F-FIX-4 */
 
     // External data
     const preFlightBriefing = state.aiMemory?.preFlightBriefing;
@@ -374,11 +416,21 @@ export class AgentOrchestrator {
         overdueTasks,
         completedToday,
         totalTasks: tasks.length,
+        activeProjects: activeProjectsCount, /* W-FEAT-2 */
+        topTask,
+        loggedHoursToday: Math.round(loggedHoursToday * 10) / 10,
+        tasksWithoutDueDate,
+        overdueProjects,
       },
       financeHub: {
         budgetStatus,
         pendingPayments,
         recentSpendings,
+        saldoLibre: financialSnapshot.saldoLibre,
+        ingresos: financialSnapshot.ingresos,
+        commitedGoalSavings: financialSnapshot.commitedGoalSavings,
+        healthScore: financialSnapshot.healthScore,
+        /* F-FIX-1 */
       },
       externalData: {
         weather,
@@ -393,6 +445,120 @@ export class AgentOrchestrator {
         workHourLimit: Number(state.userIdentity?.biometricBaselines?.workHourLimit ?? 8),
       },
     };
+
+    // P-MOD-1: Populate personalHub metrics for SHODAN / VitalsAgent
+    try {
+      const todayKey = now.toISOString().split('T')[0];
+      const todos = state.todos?.todos || [];
+      const routines = state.routines?.routines || [];
+      const checkins: any[] = state.checkins?.checkins || [];
+
+      const pendingTodos = todos.filter((t: any) => t.status !== 'done' && t.status !== 'completed').length;
+      const overdueTodos = todos.filter((t: any) => {
+        if (t.status === 'done' || t.status === 'completed') return false;
+        const due = new Date(t.dueDate || '');
+        return due.getTime() > 0 && due < now;
+      }).length;
+      const highPriorityTodos = todos.filter((t: any) =>
+        t.priority === 'high' && t.status !== 'done' && t.status !== 'completed'
+      ).length;
+
+      const dayOfWeek = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()];
+      const todayRoutines = routines.filter((r: any) =>
+        !r.daysOfWeek || r.daysOfWeek.length === 0 || r.daysOfWeek.includes(dayOfWeek)
+      );
+      const completedTodayRoutines = todayRoutines.filter((r: any) => {
+        const completedArr: string[] = r.completedDates || (r.lastCompleted ? [r.lastCompleted] : []);
+        return completedArr.includes(todayKey);
+      }).length;
+
+      // Abandoned: was active yesterday but not completed today and streak was > 0
+      const yesterdayKey = new Date(now.getTime() - 86400000).toISOString().split('T')[0];
+      const abandonedRoutines = todayRoutines
+        .filter((r: any) => {
+          const completedArr: string[] = r.completedDates || [];
+          const completedToday = completedArr.includes(todayKey);
+          const hadStreak = (r.streak ?? 0) > 0 || completedArr.includes(yesterdayKey);
+          return !completedToday && hadStreak && currentHour >= 20;
+        })
+        .map((r: any) => r.id);
+
+      const sortedCheckins = [...checkins].sort((a, b) =>
+        b.date.localeCompare(a.date)
+      );
+      const latestCheckin = sortedCheckins[0]
+        ? {
+            date: sortedCheckins[0].date,
+            mood: sortedCheckins[0].mood,
+            energy: sortedCheckins[0].energy,
+            sleepHours: sortedCheckins[0].sleepHours,
+          }
+        : null;
+
+      // NEW-PERSONAL-1: recent journal entries for SHODAN context
+      const journalEntries: any[] = state.journal?.entries || [];
+      const recentJournalEntries = [...journalEntries]
+        .sort((a: any, b: any) => b.date.localeCompare(a.date))
+        .slice(0, 3)
+        .map((e: any) => ({
+          date: e.date,
+          preview: String(e.content || '').slice(0, 100),
+          wordCount: e.wordCount || 0,
+          mood: e.mood,
+        }));
+
+      context.personalHub = {
+        pendingTodos,
+        overdueTodos,
+        highPriorityTodos,
+        todayRoutines: todayRoutines.length,
+        completedTodayRoutines,
+        abandonedRoutines,
+        latestCheckin,
+        recentJournalEntries,
+      };
+    } catch {
+      // Non-critical — personalHub stays undefined if data isn't available
+    }
+
+    // CAL-FIX-4: Populate calendar context so all agents are aware of upcoming events
+    try {
+      const in48h = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+      const calEvents: any[] = state.calendar?.events || [];
+      const upcomingEvents = calEvents
+        .filter((e: any) => {
+          const start = new Date(e.startDate);
+          return start >= now && start <= in48h;
+        })
+        .sort((a: any, b: any) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+        .slice(0, 10)
+        .map((e: any) => ({
+          id: e.id,
+          title: e.title,
+          startDate: e.startDate,
+          type: e.type || e.relatedType || 'event',
+          importance: e.importance || 'normal',
+          provider: e.provider || 'native',
+        }));
+
+      const importantKeywords = /reunión|meeting|client|deadline|entrega|interview|presentation|demo/i;
+      const nextImportantEvent = upcomingEvents.find(
+        (e: any) => e.importance === 'high' || importantKeywords.test(e.title)
+      ) || upcomingEvents[0] || null;
+
+      const todayStr = now.toISOString().split('T')[0];
+      context.calendar = {
+        upcomingEvents,
+        nextImportantEvent,
+        hasImportantEventToday: upcomingEvents.some(
+          (e: any) =>
+            e.startDate.startsWith(todayStr) && e.importance === 'high'
+        ),
+        eventCountToday: upcomingEvents.filter((e: any) => e.startDate.startsWith(todayStr)).length,
+      };
+    } catch {
+      // Non-critical
+    }
 
     return context;
   }

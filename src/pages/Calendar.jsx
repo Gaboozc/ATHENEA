@@ -1,11 +1,16 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import useModalClose from '../hooks/useModalClose'; /* FIX UX-9 */
 import { useDispatch, useSelector } from 'react-redux';
-import { addEvent, updateEvent, deleteEvent } from '../../store/slices/calendarSlice';
+import { addEvent, updateEvent, deleteEvent, syncExternalEvents } from '../../store/slices/calendarSlice';
+import { addNote } from '../../store/slices/notesSlice';
+import { addTodo } from '../../store/slices/todosSlice';
+import { addExpense } from '../../store/slices/budgetSlice';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { useAgentCalendar } from '../hooks/useAgentCalendar';
+import { useGoogleCalendar } from '../hooks/useGoogleCalendar';
 import { selectFinancialSnapshot } from '../store/selectors/financialSelectors';
+import { showToast } from '../components/Toast/Toast';
 import './Calendar.css';
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -70,8 +75,27 @@ export const Calendar = () => {
   const agentDayMeta = useAgentCalendar();
   const financialSnapshot = useSelector(selectFinancialSnapshot);
 
+  // Google Calendar sync
+  const { isConnected: gcalConnected, login: gcalLogin, disconnect: gcalDisconnect, sync: gcalSync, lastSyncAt } = useGoogleCalendar();
+
+  // CAL-FIX-2: Track Google calendar sync errors
+  const syncStatus = useSelector((s) => s.calendar.externalSyncStatus);
+  const syncError  = useSelector((s) => s.calendar.externalSyncError);
+
+  useEffect(() => {
+    if (syncStatus === 'failed' && syncError) {
+      showToast(
+        'No se pudo sincronizar Google Calendar. Revisa tu conexión o vuelve a conectar.',
+        'error',
+        5000
+      );
+    }
+  }, [syncStatus, syncError]);
+
   // Separate state: day detail modal (intelligence report)
   const [showDayDetail, setShowDayDetail] = useState(false);
+  const [viewMode, setViewMode] = useState('month'); /* CAL-FEAT-4 */
+  const [hubFilter, setHubFilter] = useState('all'); /* CAL-FEAT-5 */
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -124,9 +148,21 @@ export const Calendar = () => {
     return days;
   }, [year, month]);
 
+  // CAL-FEAT-5: Hub-filtered events
+  const HUB_TYPE_MAP = {
+    work:     ['deadline', 'meeting', 'task'],
+    personal: ['event', 'reminder', 'note', 'routine'],
+    finance:  ['payment', 'goal'],
+  };
+  const filteredEvents = useMemo(() => {
+    if (hubFilter === 'all') return events;
+    const allowed = HUB_TYPE_MAP[hubFilter] || [];
+    return events.filter((ev) => allowed.includes(ev.type) || ev.hub === hubFilter);
+  }, [events, hubFilter]);
+
   const getEventsForDate = (date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return events.filter((event) => {
+    return filteredEvents.filter((event) => {
       const eventStart = new Date(event.startDate).toISOString().split('T')[0];
       const eventEnd = new Date(event.endDate).toISOString().split('T')[0];
       return dateStr >= eventStart && dateStr <= eventEnd;
@@ -322,8 +358,84 @@ export const Calendar = () => {
         <button onClick={handleToday} className="calendar-today-btn">
           {t('Today')}
         </button>
+        {/* CAL-FEAT-4: View toggle */}
+        <div className="calendar-view-toggle">
+          <button
+            className={`cal-view-btn ${viewMode === 'month' ? 'cal-view-btn-active' : ''}`}
+            onClick={() => setViewMode('month')}
+            title="Vista mensual"
+          >🗓️</button>
+          <button
+            className={`cal-view-btn ${viewMode === 'agenda' ? 'cal-view-btn-active' : ''}`}
+            onClick={() => setViewMode('agenda')}
+            title="Vista agenda"
+          >📋</button>
+        </div>
       </div>
 
+      {/* Google Calendar connect / sync bar */}
+      <div className="calendar-gcal-bar">
+        {gcalConnected ? (
+          <>
+            <span className="calendar-gcal-status connected">
+              📅 Google Calendar conectado
+              {lastSyncAt && (
+                <span className="calendar-gcal-time">
+                  {' · '}última sync {new Date(lastSyncAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
+            </span>
+            <button
+              className="calendar-gcal-btn"
+              onClick={gcalSync}
+              disabled={syncStatus === 'loading'}
+            >
+              {syncStatus === 'loading' ? '⏳ Sincronizando…' : '🔄 Sincronizar'}
+            </button>
+            <button className="calendar-gcal-btn secondary" onClick={gcalDisconnect}>
+              Desconectar
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="calendar-gcal-status">📅 Google Calendar no conectado</span>
+            <button className="calendar-gcal-btn primary" onClick={() => gcalLogin()}>
+              Conectar Google Calendar
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* CAL-FIX-2: Show banner when Google sync fails */}
+      {syncStatus === 'failed' && (
+        <div className="calendar-sync-error">
+          <span>⚠ Sincronización con Google Calendar fallida</span>
+          <button onClick={() => gcalLogin()}>
+            Reconectar
+          </button>
+        </div>
+      )}
+
+      {/* CAL-FEAT-5: Hub filter toolbar */}
+      <div className="calendar-hub-filter">
+        {[
+          { key: 'all',      icon: '🌐', label: 'Todo'      },
+          { key: 'work',     icon: '💼', label: 'Trabajo'   },
+          { key: 'personal', icon: '🏠', label: 'Personal' },
+          { key: 'finance',  icon: '💰', label: 'Finanzas'  },
+        ].map(({ key, icon, label }) => (
+          <button
+            key={key}
+            className={`hub-filter-btn ${hubFilter === key ? 'hub-filter-btn-active' : ''}`}
+            onClick={() => setHubFilter(key)}
+          >
+            {icon} {label}
+          </button>
+        ))}
+      </div>
+
+      {/* CAL-FEAT-4: Month grid (only in month view) */}
+      {viewMode === 'month' && (
       <div className="calendar-grid">
         <div className="calendar-weekdays">
           {DAYS_OF_WEEK.map((day) => (
@@ -427,8 +539,21 @@ export const Calendar = () => {
           })}
         </div>
       </div>
+      )} {/* end viewMode === 'month' */}
 
-      {todayEvents.length > 0 && (
+      {/* CAL-FEAT-4: Agenda View */}
+      {viewMode === 'agenda' && (
+        <AgendaView
+          events={filteredEvents}
+          agentDayMeta={agentDayMeta}
+          onEventEdit={handleEditEvent}
+          onEventDelete={handleDeleteEvent}
+          onDateClick={(d) => { setSelectedDate(d); setShowDayDetail(true); }}
+          t={t}
+        />
+      )}
+
+      {todayEvents.length > 0 && viewMode === 'month' && (
         <div className="calendar-today-events">
           <h3>{t('Today\'s Events')}</h3>
           <div className="calendar-today-list">
@@ -600,6 +725,91 @@ export const Calendar = () => {
 };
 
 // ============================================================================
+// CAL-FEAT-4: AgendaView – chronological list of upcoming events
+// ============================================================================
+const AgendaView = ({ events, agentDayMeta, onEventEdit, onEventDelete, onDateClick, t }) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Group events by date, only future/today events, sorted
+  const grouped = useMemo(() => {
+    const map = {};
+    const sorted = [...events]
+      .filter((ev) => {
+        const d = new Date(ev.startDate);
+        d.setHours(0, 0, 0, 0);
+        return d >= today;
+      })
+      .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
+    sorted.forEach((ev) => {
+      const ds = new Date(ev.startDate).toISOString().split('T')[0];
+      if (!map[ds]) map[ds] = [];
+      map[ds].push(ev);
+    });
+    return map;
+  }, [events]);
+
+  const dateKeys = Object.keys(grouped).sort().slice(0, 60); // max 60 days ahead
+
+  if (dateKeys.length === 0) {
+    return (
+      <div className="agenda-view agenda-empty">
+        <p>No hay eventos próximos.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="agenda-view">
+      {dateKeys.map((ds) => {
+        const dateObj = new Date(ds + 'T00:00:00');
+        const isToday = ds === today.toISOString().split('T')[0];
+        const meta = agentDayMeta[ds];
+        return (
+          <div key={ds} className={`agenda-day ${isToday ? 'agenda-day-today' : ''}`}>
+            <div
+              className="agenda-day-header"
+              onClick={() => onDateClick(dateObj)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && onDateClick(dateObj)}
+            >
+              <span className="agenda-day-label">
+                {isToday ? '📍 Hoy — ' : ''}
+                {dateObj.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
+              </span>
+              {meta && meta.cortana.workloadLevel !== 'none' && (
+                <span className="agenda-workload-badge">
+                  {meta.cortana.workloadLevel === 'high' ? '🔥' : '📋'} {meta.cortana.workloadLevel}
+                </span>
+              )}
+            </div>
+            <ul className="agenda-day-events">
+              {grouped[ds].map((ev) => (
+                <li key={ev.id} className="agenda-event-item" style={{ borderLeftColor: ev.color || '#1ec9ff' }}>
+                  <span className="agenda-event-icon">{EVENT_ICONS[ev.type] || '📌'}</span>
+                  <span className="agenda-event-title">{ev.title}</span>
+                  {!ev.allDay && (
+                    <span className="agenda-event-time">
+                      {new Date(ev.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
+                  <div className="agenda-event-actions">
+                    <button type="button" onClick={(e) => onEventEdit(ev, e)} title="Editar">✏️</button>
+                    <button type="button" onClick={(e) => onEventDelete(ev.id, e)} title="Eliminar">🗑️</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// ============================================================================
 // DayDetailModal – Multi-Agent Intelligence Report
 // ============================================================================
 
@@ -627,7 +837,11 @@ const DayDetailModal = ({
   date, meta, events, projectedSaldoLibre,
   onClose, onNewEvent, onEditEvent, onDeleteEvent, onEventClick, t,
 }) => {
+  const dispatch = useDispatch(); /* CAL-FEAT-3 */
   const { handleBackdropClick } = useModalClose(onClose); /* FIX UX-9 */
+  const [quickAction, setQuickAction] = useState(null);   /* CAL-FEAT-3 */
+  const [qaTitle,    setQaTitle]    = useState('');       /* CAL-FEAT-3 */
+  const [qaAmount,   setQaAmount]   = useState('');       /* CAL-FEAT-3 */
   const dateLabel = date.toLocaleDateString(undefined, {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
@@ -642,12 +856,11 @@ const DayDetailModal = ({
 
     // Existing calendar events (already shown on tile)
     events.forEach((ev) => {
+      /* CAL-FIX-3: skip linked payment events — they come from useAgentCalendar
+         with richer context, otherwise every payment appears twice */
+      if (ev.relatedType === 'payment') return;
       items.push({
-        id: `ev-${ev.id}`,
-        type: 'event',
-        agent: null,
-        title: ev.title,
-        meta: ev,
+        ...ev,
         color: ev.color,
         sortKey: ev.allDay ? '00:00' : (new Date(ev.startDate).toTimeString().slice(0, 5)),
       });
@@ -815,6 +1028,74 @@ const DayDetailModal = ({
         {meta && (
           <FinanceDaySummary data={meta} t={t} />
         )}
+
+        {/* ── CAL-FEAT-3: Quick Actions ────────────────────────────────── */}
+        <div className="day-modal-quick-actions">
+          <span className="qa-label">⚡ Acción rápida:</span>
+          <div className="qa-buttons">
+            {[
+              { key: 'note',    icon: '📝', label: 'Nota'    },
+              { key: 'todo',    icon: '✅', label: 'Todo'    },
+              { key: 'expense', icon: '💸', label: 'Gasto'   },
+            ].map(({ key, icon, label }) => (
+              <button
+                key={key}
+                className={`qa-btn ${quickAction === key ? 'qa-btn-active' : ''}`}
+                onClick={() => { setQuickAction(quickAction === key ? null : key); setQaTitle(''); setQaAmount(''); }}
+              >
+                {icon} {label}
+              </button>
+            ))}
+          </div>
+          {quickAction && (
+            <form
+              className="qa-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const dateStr = date.toISOString().split('T')[0];
+                if (!qaTitle.trim()) return;
+                if (quickAction === 'note') {
+                  const noteId = `note-${Date.now()}`;
+                  dispatch(addNote({ id: noteId, title: qaTitle.trim(), content: '', reminderDate: dateStr }));
+                  showToast('📝 Nota creada', 'success', 2500);
+                } else if (quickAction === 'todo') {
+                  dispatch(addTodo({ title: qaTitle.trim(), dueDate: dateStr }));
+                  showToast('✅ Todo creado', 'success', 2500);
+                } else if (quickAction === 'expense') {
+                  const amount = parseFloat(qaAmount);
+                  if (!isNaN(amount) && amount > 0) {
+                    dispatch(addExpense({ description: qaTitle.trim(), amount, date: dateStr, category: 'General' }));
+                    showToast('💸 Gasto registrado', 'success', 2500);
+                  }
+                }
+                setQuickAction(null);
+                setQaTitle('');
+                setQaAmount('');
+              }}
+            >
+              <input
+                className="qa-input"
+                placeholder={quickAction === 'expense' ? 'Descripción' : 'Título…'}
+                value={qaTitle}
+                onChange={(e) => setQaTitle(e.target.value)}
+                autoFocus
+              />
+              {quickAction === 'expense' && (
+                <input
+                  className="qa-input qa-amount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Importe"
+                  value={qaAmount}
+                  onChange={(e) => setQaAmount(e.target.value)}
+                />
+              )}
+              <button type="submit" className="qa-submit">Guardar</button>
+              <button type="button" className="qa-cancel" onClick={() => setQuickAction(null)}>✕</button>
+            </form>
+          )}
+        </div>
 
         {/* ── Footer action ───────────────────────────────────────────── */}
         <div className="cal-daydetail-footer">

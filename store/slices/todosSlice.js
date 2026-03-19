@@ -16,6 +16,7 @@ const todosSlice = createSlice({
         priority: payload.priority || 'normal',
         status: payload.status || 'pending',
         progress: Number(payload.progress || 0),
+        isReminder: Boolean(payload.isReminder),  /* P-FIX-2/P-FIX-6 */
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });
@@ -39,9 +40,20 @@ const todosSlice = createSlice({
       todo.progress = safeProgress;
       todo.status = safeProgress === 100 ? 'done' : 'pending';
       todo.updatedAt = new Date().toISOString();
+    },
+    /* P-FIX-2: edit existing todo fields */
+    updateTodo: (state, action) => {
+      const { id, title, notes, dueDate, priority } = action.payload || {};
+      const todo = state.todos.find((entry) => entry.id === id);
+      if (!todo) return;
+      if (title !== undefined)    todo.title    = title;
+      if (notes !== undefined)    todo.notes    = notes;
+      if (dueDate !== undefined)  todo.dueDate  = dueDate;
+      if (priority !== undefined) todo.priority = priority;
+      todo.updatedAt = new Date().toISOString();
     }
   }
 });
 
-export const { addTodo, deleteTodo, setTodoStatus, setTodoProgress } = todosSlice.actions;
+export const { addTodo, deleteTodo, setTodoStatus, setTodoProgress, updateTodo } = todosSlice.actions;
 export default todosSlice.reducer;

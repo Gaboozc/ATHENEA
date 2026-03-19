@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useGlobalReducer } from '../hooks/useGlobalReducer';
 import { selectFinancialSnapshot } from '../store/selectors/financialSelectors';
-import { addGoal, deleteGoal, setMonthlyContribution } from '../../store/slices/goalsSlice';
+import { addGoal, deleteGoal, setMonthlyContribution, recordGoalDeposit } from '../../store/slices/goalsSlice'; /* F-FEAT-2 */
+import { linkGoalToCalendar, unlinkFromCalendar } from '../../store/slices/calendarSlice'; /* CAL-FEAT-1 */
 import './FinanceSections.css';
 
 const remainingDaysInMonth = () => {
@@ -41,6 +42,8 @@ export const FinanceGoals = () => {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_GOAL_FORM);
   const [editingContrib, setEditingContrib] = useState(null); // goalId → inline edit
+  const [depositingGoalId, setDepositingGoalId] = useState(null); /* F-FEAT-2 */
+  const [depositAmount, setDepositAmount] = useState(''); /* F-FEAT-2 */
 
   const totalCommitted = useMemo(
     () => goals.reduce((sum, g) => sum + Number(g.monthlyContribution || 0), 0),
@@ -56,8 +59,11 @@ export const FinanceGoals = () => {
   const handleAddGoal = (e) => {
     e.preventDefault();
     if (!form.name || !form.targetAmount) return;
+    /* FIX-B: generate ID once so addGoal and linkGoalToCalendar share the same ID */
+    const newGoalId = `goal-${Date.now()}`;
     dispatch(
       addGoal({
+        id: newGoalId,
         name: form.name,
         targetAmount: parseFloat(form.targetAmount) || 0,
         monthlyContribution: parseFloat(form.monthlyContribution) || 0,
@@ -77,6 +83,14 @@ export const FinanceGoals = () => {
         success: true
       }
     });
+    /* CAL-FEAT-1: link goal with deadline to calendar store — FIX-B: uses same newGoalId */
+    if (form.targetDate) {
+      dispatch(linkGoalToCalendar({
+        goalId: newGoalId,
+        goalName: form.name,
+        targetDate: form.targetDate,
+      }));
+    }
     setForm(EMPTY_GOAL_FORM);
     setShowForm(false);
   };
@@ -84,6 +98,16 @@ export const FinanceGoals = () => {
   const handleSetContrib = (goalId, amount) => {
     dispatch(setMonthlyContribution({ id: goalId, amount: parseFloat(amount) || 0 }));
     setEditingContrib(null);
+  };
+
+  /* F-FEAT-2: manual deposit to goal */
+  const handleDeposit = (goalId) => {
+    const val = parseFloat(depositAmount);
+    if (!isNaN(val) && val > 0) {
+      dispatch(recordGoalDeposit({ id: goalId, amount: val }));
+    }
+    setDepositingGoalId(null);
+    setDepositAmount('');
   };
 
   return (
@@ -206,7 +230,11 @@ export const FinanceGoals = () => {
                     </div>
                     <button
                       className="finance-action-btn finance-action-btn-sm finance-action-btn-danger"
-                      onClick={() => dispatch(deleteGoal(goal.id))}
+                      onClick={() => {
+                        /* CAL-FEAT-1: unlink goal from calendar on delete */
+                        dispatch(unlinkFromCalendar({ relatedId: goal.id, relatedType: 'goal' }));
+                        dispatch(deleteGoal(goal.id));
+                      }}
                     >
                       ✕
                     </button>
@@ -243,6 +271,34 @@ export const FinanceGoals = () => {
                           ✎
                         </button>
                       </>
+                    )}
+                  </div>
+
+                  {/* F-FEAT-2: manual deposit */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {depositingGoalId === goal.id ? (
+                      <span style={{ display: 'flex', gap: 4 }}>
+                        <input
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          className="finance-deposit-input"
+                          value={depositAmount}
+                          autoFocus
+                          onChange={(e) => setDepositAmount(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleDeposit(goal.id); if (e.key === 'Escape') { setDepositingGoalId(null); setDepositAmount(''); } }}
+                          placeholder="0.00"
+                        />
+                        <button className="finance-action-btn finance-action-btn-sm" onClick={() => handleDeposit(goal.id)}>✓</button>
+                        <button className="finance-action-btn finance-action-btn-sm" onClick={() => { setDepositingGoalId(null); setDepositAmount(''); }}>✕</button>
+                      </span>
+                    ) : (
+                      <button
+                        className="finance-action-btn finance-action-btn-sm"
+                        onClick={() => { setDepositingGoalId(goal.id); setDepositAmount(''); }}
+                      >
+                        + {t('Depositar')}
+                      </button>
                     )}
                   </div>
 

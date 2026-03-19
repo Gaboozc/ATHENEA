@@ -30,7 +30,7 @@ const paymentsSlice = createSlice({
   name: 'payments',
   initialState: {
     payments: [],
-    budgets: []
+    budgets: [] // DEPRECATED — zombie field, use store/slices/budgetSlice categories instead. F-FEAT-5
   },
   reducers: {
     addPayment: (state, action) => {
@@ -160,16 +160,8 @@ const paymentsSlice = createSlice({
         payment.status = 'paid';
         payment.nextDueDate = advanceByFrequency(payment.nextDueDate, payment.frequency);
         payment.updatedAt = new Date().toISOString();
-      })
-      .addCase('payments/markPaymentPaid', (state, action) => {
-        const { id, paidAt } = action.payload || {};
-        const payment = state.payments.find((entry) => entry.id === id);
-        if (!payment) return;
-        payment.lastPaidAt = paidAt || new Date().toISOString();
-        payment.status = 'paid';
-        payment.nextDueDate = advanceByFrequency(payment.nextDueDate, payment.frequency);
-        payment.updatedAt = new Date().toISOString();
       });
+      // F-FEAT-5: removed duplicate 'payments/markPaymentPaid' case (already handled by markPaymentPaid reducer above)
   }
 });
 

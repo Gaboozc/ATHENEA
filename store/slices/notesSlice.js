@@ -70,29 +70,9 @@ const notesSlice = createSlice({
       note.updatedAt = new Date().toISOString();
     }
   },
-  extraReducers: (builder) => {
-    builder.addCase('notes/addTag', (state, action) => {
-      const payload = action.payload || {};
-      const noteId = payload.id || payload.noteId;
-      const tags = Array.isArray(payload.tags) ? payload.tags : [];
-
-      const normalized = tags
-        .map((tag) => String(tag).trim().toLowerCase())
-        .filter(Boolean);
-
-      normalized.forEach((tag) => {
-        if (!state.tags.includes(tag)) state.tags.push(tag);
-      });
-
-      if (!noteId) return;
-      const note = state.notes.find((entry) => entry.id === noteId);
-      if (!note) return;
-
-      note.tags = Array.from(new Set([...(note.tags || []), ...normalized]));
-      note.updatedAt = new Date().toISOString();
-    });
-  }
+  /* P-FIX-5: extraReducers removed — addTag is handled exclusively in reducers above */
 });
+
 
 export const { addNote, updateNote, deleteNote, togglePinNote, addTag } = notesSlice.actions;
 export default notesSlice.reducer;

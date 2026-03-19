@@ -74,13 +74,21 @@ export class VitalsAgent implements Agent {
   }
 
   shouldActivate(context: AgentContext): boolean {
-    // Vitals agent is ALWAYS active (life support never sleeps)
-    // But only speaks up when health data is concerning
+    // Vitals agent speaks up when health data is concerning
+    const sleepHours = context.sensorData.health.sleepHours ?? context.personalHub?.latestCheckin?.sleepHours ?? 8;
+    const energy = context.personalHub?.latestCheckin?.energy ?? 3;
+
     return (
-      (context.sensorData.health.sleepHours ?? 8) < 6 ||
+      sleepHours < 6 ||
       context.sensorData.health.fatigueLevelEstimate === 'high' ||
       context.sensorData.battery.isCritical ||
-      (context.sensorData.health.steps ?? 0) < 1000 // Very low activity
+      (context.sensorData.health.steps ?? 0) < 1000 ||
+      // P-MOD-1: personalHub triggers
+      energy <= 2 ||
+      (context.personalHub?.overdueTodos ?? 0) >= 3 ||
+      (context.personalHub?.abandonedRoutines?.length ?? 0) > 0 ||
+      (context.personalHub?.highPriorityTodos ?? 0) >= 2 ||
+      (context.currentHour >= 14 && energy <= 3)
     );
   }
 

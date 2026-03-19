@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom'; /* Block 5: deep-link from PersonalHub */
 import useModalClose from '../hooks/useModalClose'; /* FIX UX-9 */
 import { useDispatch, useSelector } from 'react-redux';
 import { addNote, updateNote, deleteNote, togglePinNote, addTag } from '../../store/slices/notesSlice';
@@ -20,6 +21,7 @@ const NOTE_COLORS = [
 export const Notes = () => {
   const dispatch = useDispatch();
   const { t } = useLanguage();
+  const location = useLocation(); /* Block 5 */
   const { notes, tags } = useSelector((state) => state.notes);
   const [showModal, setShowModal] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
@@ -46,6 +48,17 @@ export const Notes = () => {
       tags: formData.tags
     });
   }, [showModal, editingNote, formData.title, formData.content, formData.tags]);
+
+  /* Block 5: deep-link — open note passed via navigate('/notes', { state: { openNoteId } }) */
+  useEffect(() => {
+    const openNoteId = location.state?.openNoteId;
+    if (!openNoteId) return;
+    const target = (notes || []).find((n) => n.id === openNoteId);
+    if (target) handleOpenModal(target);
+    // Clear location state so re-renders don't re-open
+    window.history.replaceState({}, document.title);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state?.openNoteId]);
 
   const handleOpenModal = (note = null) => {
     if (note) {
@@ -114,6 +127,11 @@ export const Notes = () => {
 
   const handleDelete = (id) => {
     if (confirm(t('Delete this note?'))) {
+      /* CAL-FIX-1: unlink orphan calendar event before deleting note */
+      const note = (notes || []).find((n) => n.id === id);
+      if (note?.reminderDate) {
+        dispatch(unlinkFromCalendar({ relatedId: id, relatedType: 'note' }));
+      }
       dispatch(deleteNote(id));
     }
   };

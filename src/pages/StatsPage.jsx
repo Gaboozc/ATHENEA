@@ -1,30 +1,78 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { initializeAchievements, resetStats } from '../../store/slices/statsSlice';
 import './StatsPage.css';
 
-/**
- * Stats & Achievements Page
- * Display user progress, achievements, and gamification elements
- */
+// Calculate consecutive-day streak from an array of 'YYYY-MM-DD' date strings
+const calcStreak = (dates) => {
+  if (!dates.length) return 0;
+  const unique = Array.from(new Set(dates)).sort().reverse();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let streak = 0;
+  let cursor = new Date(today);
+
+  for (const d of unique) {
+    const day = new Date(d);
+    day.setHours(0, 0, 0, 0);
+    const diff = Math.round((cursor - day) / 86400000);
+    if (diff === 0 || diff === 1) {
+      streak += 1;
+      cursor = day;
+    } else {
+      break;
+    }
+  }
+  return streak;
+};
+
 const StatsPage = () => {
   const dispatch = useDispatch();
-  const { stats, achievements, level, xp, xpToNextLevel } = useSelector((state) => state.stats);
+  const { achievements, level, xp, xpToNextLevel } = useSelector((s) => s.stats);
+
+  // Real data from slices
+  const tasks        = useSelector((s) => s.tasks?.tasks || []);
+  const todos        = useSelector((s) => s.todos?.todos || []);
+  const notes        = useSelector((s) => s.notes?.notes || []);
+  const focusMinutes = useSelector((s) => s.focus?.totalMinutes || 0);
+  const journalEntries = useSelector((s) => s.journal?.entries || []);
+  const checkins     = useSelector((s) => s.checkins?.checkins || []);
+  const goals        = useSelector((s) => s.goals?.goals || []);
+  const projects     = useSelector((s) => s.projects?.projects || []);
+  const expenses     = useSelector((s) => s.budget?.expenses || []);
 
   React.useEffect(() => {
-    if (achievements.length === 0) {
-      dispatch(initializeAchievements());
-    }
+    if (achievements.length === 0) dispatch(initializeAchievements());
   }, [dispatch, achievements.length]);
 
-  const xpProgress = (xp / xpToNextLevel) * 100;
-  const unlockedCount = achievements.filter(a => a.unlocked).length;
+  const derived = useMemo(() => {
+    const completedTasks  = tasks.filter((t) => t.status === 'completed' || t.status === 'Completed').length;
+    const completedTodos  = todos.filter((t) => t.status === 'done').length;
+    const completedGoals  = goals.filter((g) => Number(g.savedToDate || 0) >= Number(g.targetAmount || 1)).length;
+    const completedProjs  = projects.filter((p) => p.status === 'completed' || p.status === 'Completed').length;
+    const focusHours      = Math.floor(focusMinutes / 60);
+    const journalDays     = new Set(journalEntries.map((e) => String(e.date || e.createdAt || '').slice(0, 10))).size;
+    const checkInDays     = checkins.map((c) => c.date);
+    const streak          = calcStreak(checkInDays);
+    const avgMood         = checkins.length
+      ? (checkins.reduce((s, c) => s + Number(c.mood || 0), 0) / checkins.length).toFixed(1)
+      : '—';
+    const totalExpenses   = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+    return {
+      completedTasks, completedTodos, completedGoals, completedProjs,
+      focusHours, journalDays, streak, avgMood, totalExpenses,
+    };
+  }, [tasks, todos, goals, projects, focusMinutes, journalEntries, checkins, expenses]);
+
+  const xpProgress  = xpToNextLevel > 0 ? Math.min(100, (xp / xpToNextLevel) * 100) : 0;
+  const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
   return (
     <div className="stats-page">
       <div className="stats-header">
         <h1>📊 Stats & Achievements</h1>
-        <p>Track your progress and unlock achievements</p>
+        <p>Tu progreso real — calculado desde tus datos.</p>
       </div>
 
       {/* Level & XP */}
@@ -36,37 +84,44 @@ const StatsPage = () => {
           </div>
           <div className="xp-info">
             <div className="xp-bar">
-              <div className="xp-fill" style={{ width: `${xpProgress}%` }}></div>
+              <div className="xp-fill" style={{ width: `${xpProgress}%` }} />
             </div>
             <span className="xp-text">{xp} / {xpToNextLevel} XP</span>
           </div>
         </div>
       </div>
 
-      {/* Quick Stats */}
+      {/* Quick Stats — real data */}
       <div className="quick-stats">
         <div className="stat-card">
           <div className="stat-icon">✓</div>
-          <div className="stat-value">{stats.totalTasksCompleted}</div>
-          <div className="stat-label">Tasks Completed</div>
+          <div className="stat-value">{derived.completedTasks}</div>
+          <div className="stat-label">Tareas completadas</div>
         </div>
-
         <div className="stat-card">
-          <div className="stat-icon">📋</div>
-          <div className="stat-value">{stats.totalProjectsCompleted}</div>
-          <div className="stat-label">Projects Done</div>
+          <div className="stat-icon">☑</div>
+          <div className="stat-value">{derived.completedTodos}</div>
+          <div className="stat-label">Todos completados</div>
         </div>
-
         <div className="stat-card">
-          <div className="stat-icon">📝</div>
-          <div className="stat-value">{stats.totalNotesCreated}</div>
-          <div className="stat-label">Notes Created</div>
+          <div className="stat-icon">🎯</div>
+          <div className="stat-value">{derived.completedGoals}</div>
+          <div className="stat-label">Metas logradas</div>
         </div>
-
         <div className="stat-card">
           <div className="stat-icon">🔥</div>
-          <div className="stat-value">{stats.currentStreak}</div>
-          <div className="stat-label">Day Streak</div>
+          <div className="stat-value">{derived.streak}</div>
+          <div className="stat-label">Días seguidos</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">⏱</div>
+          <div className="stat-value">{derived.focusHours}h</div>
+          <div className="stat-label">Horas de foco</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">📓</div>
+          <div className="stat-value">{derived.journalDays}</div>
+          <div className="stat-label">Días con journal</div>
         </div>
       </div>
 
@@ -76,11 +131,10 @@ const StatsPage = () => {
           <h2>🏆 Achievements</h2>
           <span className="achievement-count">{unlockedCount} / {achievements.length}</span>
         </div>
-
         <div className="achievements-grid">
           {achievements.map((achievement) => (
-            <div 
-              key={achievement.id} 
+            <div
+              key={achievement.id}
               className={`achievement-card ${achievement.unlocked ? 'unlocked' : 'locked'}`}
             >
               <div className="achievement-icon">{achievement.icon}</div>
@@ -90,13 +144,13 @@ const StatsPage = () => {
                 {!achievement.unlocked && (
                   <div className="achievement-progress">
                     <div className="progress-bar">
-                      <div 
-                        className="progress-fill" 
-                        style={{ width: `${(achievement.progress / achievement.maxProgress) * 100}%` }}
-                      ></div>
+                      <div
+                        className="progress-fill"
+                        style={{ width: `${((achievement.progress || 0) / (achievement.maxProgress || 1)) * 100}%` }}
+                      />
                     </div>
                     <span className="progress-text">
-                      {achievement.progress} / {achievement.maxProgress}
+                      {achievement.progress || 0} / {achievement.maxProgress || 1}
                     </span>
                   </div>
                 )}
@@ -105,44 +159,49 @@ const StatsPage = () => {
                     Unlocked: {new Date(achievement.unlockedDate).toLocaleDateString()}
                   </div>
                 )}
-                <div className="achievement-xp">+{achievement.xpReward} XP</div>
+                <div className="achievement-xp">+{achievement.xpReward || 0} XP</div>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Additional Stats */}
+      {/* Detailed stats — real data */}
       <div className="detailed-stats">
-        <h2>📈 Detailed Statistics</h2>
+        <h2>📈 Estadísticas detalladas</h2>
         <div className="stats-list">
           <div className="stat-row">
-            <span className="stat-key">Longest Streak</span>
-            <span className="stat-value">{stats.longestStreak} days 🔥</span>
+            <span className="stat-key">Proyectos completados</span>
+            <span className="stat-value">{derived.completedProjs} 📋</span>
           </div>
           <div className="stat-row">
-            <span className="stat-key">Todos Completed</span>
-            <span className="stat-value">{stats.totalTodosCompleted} ☑</span>
+            <span className="stat-key">Notas creadas</span>
+            <span className="stat-value">{notes.length} 📝</span>
           </div>
           <div className="stat-row">
-            <span className="stat-key">Tags Used</span>
-            <span className="stat-value">{stats.tagsUsed.length} 🏷️</span>
+            <span className="stat-key">Check-ins totales</span>
+            <span className="stat-value">{checkins.length} 📆</span>
           </div>
           <div className="stat-row">
-            <span className="stat-key">Last Active</span>
-            <span className="stat-value">
-              {stats.lastActiveDate ? new Date(stats.lastActiveDate).toLocaleDateString() : 'Never'}
-            </span>
+            <span className="stat-key">Humor promedio</span>
+            <span className="stat-value">{derived.avgMood} / 5 😊</span>
+          </div>
+          <div className="stat-row">
+            <span className="stat-key">Minutos de foco totales</span>
+            <span className="stat-value">{focusMinutes} ⏱</span>
+          </div>
+          <div className="stat-row">
+            <span className="stat-key">Gastos registrados</span>
+            <span className="stat-value">{expenses.length} · ${derived.totalExpenses.toFixed(0)} 💸</span>
           </div>
         </div>
       </div>
 
-      {/* Reset Button (for development) */}
       <div className="stats-actions">
-        <button 
-          className="reset-button" 
+        <button
+          className="reset-button"
           onClick={() => {
-            if (window.confirm('Are you sure you want to reset all stats? This cannot be undone.')) {
+            if (window.confirm('¿Resetear stats y logros? No se puede deshacer.')) {
               dispatch(resetStats());
               dispatch(initializeAchievements());
             }

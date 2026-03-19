@@ -2,7 +2,10 @@ import { useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
-import { addRoutine, toggleRoutineToday } from '../../store/slices/routinesSlice';
+import { addRoutine, toggleRoutineToday, deleteRoutine, updateRoutine } from '../../store/slices/routinesSlice'; /* P-FIX-1 */
+import DailyCheckin from '../components/DailyCheckin/DailyCheckin'; /* Block 3 */
+import HabitTracker from '../components/HabitTracker/HabitTracker'; /* Block 5 */
+import EmptyState from '../components/EmptyState/EmptyState';
 import './PersonalHub.css';
 
 export const PersonalHub = () => {
@@ -14,6 +17,9 @@ export const PersonalHub = () => {
   const { routines } = useSelector((state) => state.routines);
   const [routineTitle, setRoutineTitle] = useState('');
   const [routineDays, setRoutineDays] = useState([1, 2, 3, 4, 5]);
+  /* P-FIX-1: inline editing state for routines */
+  const [editingRoutineId, setEditingRoutineId] = useState(null);
+  const [editingRoutineTitle, setEditingRoutineTitle] = useState('');
 
   const weekDays = [
     { value: 0, label: 'Sun' },
@@ -93,21 +99,32 @@ export const PersonalHub = () => {
       </header>
 
       <section className="personalhub-actions">
-        <button onClick={() => navigate('/inbox')}>{t('Go to Inbox')}</button>
+        <button onClick={() => navigate('/inbox')}>{t('Captura rápida')}</button> {/* P-FIX-3 */}
         <button onClick={() => navigate('/notes')}>{t('Go to Notes')}</button>
         <button onClick={() => navigate('/todos')}>{t('Go to Todos')}</button>
         <button onClick={() => navigate('/calendar')}>{t('Go to Calendar')}</button>
       </section>
 
+      {/* Block 3: Daily check-in before the grid */}
+      <DailyCheckin />
+
       <section className="personalhub-grid">
         <div className="personalhub-card">
           <h2>{t('Recent Notes')}</h2>
           {recentNotes.length === 0 ? (
-            <div className="personalhub-empty">{t('No notes yet.')}</div>
+            <EmptyState icon="📝" message={t('No notes yet.')} ctaLabel={`+ ${t('Go to Notes')}`} onCta={() => navigate('/notes')} />
           ) : (
             <ul>
               {recentNotes.map((note) => (
-                <li key={note.id}>{note.title}</li>
+                /* Block 5: click note to open it */
+                <li
+                  key={note.id}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => navigate('/notes', { state: { openNoteId: note.id } })}
+                  title={t('Open note')}
+                >
+                  {note.title}
+                </li>
               ))}
             </ul>
           )}
@@ -115,7 +132,7 @@ export const PersonalHub = () => {
         <div className="personalhub-card">
           <h2>{t('Pending Todos')}</h2>
           {pendingTodos.length === 0 ? (
-            <div className="personalhub-empty">{t('No todos yet.')}</div>
+            <EmptyState icon="✅" message={t('No todos yet.')} ctaLabel={`+ ${t('Go to Todos')}`} onCta={() => navigate('/todos')} />
           ) : (
             <ul>
               {pendingTodos.map((todo) => (
@@ -172,24 +189,68 @@ export const PersonalHub = () => {
             <button type="submit">{t('Add')}</button>
           </form>
           {routinesToday.length === 0 ? (
-            <div className="personalhub-empty">{t('No routines today.')}</div>
+            <EmptyState icon="🔁" message={t('No routines today.')} ctaLabel={`+ ${t('Add Routine')}`} onCta={() => {}} />
           ) : (
             <ul>
               {routinesToday.slice(0, 6).map((routine) => {
-                const doneToday = routine.lastCompleted === todayKey;
+                /* P-FIX-1: use completedDates with lastCompleted fallback */
+                const completedArr = routine.completedDates || (routine.lastCompleted ? [routine.lastCompleted] : []);
+                const doneToday = completedArr.includes(todayKey);
                 return (
                   <li key={routine.id} className={doneToday ? 'is-done' : ''}>
                     <div>
-                      <span>{routine.title}</span>
+                      {/* P-FIX-1: inline editing */}
+                      {editingRoutineId === routine.id ? (
+                        <input
+                          className="personalhub-routine-edit"
+                          value={editingRoutineTitle}
+                          autoFocus
+                          onChange={(e) => setEditingRoutineTitle(e.target.value)}
+                          onBlur={() => {
+                            const trimmed = editingRoutineTitle.trim();
+                            if (trimmed && trimmed !== routine.title) {
+                              dispatch(updateRoutine({ id: routine.id, title: trimmed }));
+                            }
+                            setEditingRoutineId(null);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') e.target.blur();
+                            if (e.key === 'Escape') setEditingRoutineId(null);
+                          }}
+                        />
+                      ) : (
+                        <span
+                          className="personalhub-routine-title"
+                          title={t('Click to edit')}
+                          onClick={() => { setEditingRoutineId(routine.id); setEditingRoutineTitle(routine.title); }}
+                        >
+                          {routine.title}
+                        </span>
+                      )}
                       <span className="personalhub-days-label">{formatDays(routine.daysOfWeek)}</span>
+                      {routine.streak > 0 && (
+                        <span className="personalhub-streak">{`\uD83D\uDD25 ${routine.streak}`}</span>
+                      )}
                     </div>
-                    <button
-                      type="button"
-                      className="personalhub-toggle"
-                      onClick={() => dispatch(toggleRoutineToday({ id: routine.id }))}
-                    >
-                      {doneToday ? t('Done') : t('Mark')}
-                    </button>
+                    <div className="personalhub-routine-actions">
+                      <button
+                        type="button"
+                        className="personalhub-toggle"
+                        onClick={() => dispatch(toggleRoutineToday({ id: routine.id }))}
+                      >
+                        {doneToday ? t('Done') : t('Mark')}
+                      </button>
+                      <button
+                        type="button"
+                        className="personalhub-routine-delete"
+                        title={t('Delete routine')}
+                        onClick={() => {
+                          if (confirm(t('Delete this routine?'))) dispatch(deleteRoutine(routine.id));
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
                   </li>
                 );
               })}
@@ -197,6 +258,9 @@ export const PersonalHub = () => {
           )}
         </div>
       </section>
+
+      {/* Block 5: Habit tracker — last 7 days for all routines */}
+      <HabitTracker />
     </div>
   );
 };

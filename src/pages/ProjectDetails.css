@@ -508,3 +508,88 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* W-FEAT-3: Time Log section */
+.project-time-log {
+  margin-top: 1rem;
+}
+
+.time-log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.time-log-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--accent-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.time-log-total {
+  font-size: 0.82rem;
+  color: var(--accent-cyan);
+  font-weight: 600;
+}
+
+.time-entries-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.time-entry {
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  background: var(--bg-base);
+  font-size: 0.84rem;
+}
+
+.entry-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.entry-task-title {
+  color: var(--text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70%;
+}
+
+.entry-date {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.entry-footer {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.entry-hours {
+  color: var(--accent-cyan);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.entry-notes {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -75,12 +75,24 @@ export interface AgentContext {
     overdueTasks: number;
     completedToday: number;
     totalTasks: number;
+    // W-FEAT-2: expanded context fields
+    activeProjects: number;
+    topTask: string | null;
+    loggedHoursToday: number;
+    tasksWithoutDueDate: number;
+    overdueProjects: number;
   };
 
   financeHub: {
     budgetStatus: 'on-track' | 'approaching-limit' | 'exceeded';
     pendingPayments: number;
-    recentSpendings: Array<{ amount: number; category: string; timestamp: number }>;
+    recentSpendings: Array<{ amount: number; category: string; timestamp: number; note?: string }>;
+    /* F-FIX-1: real financial data from selectFinancialSnapshot */
+    saldoLibre: number;
+    ingresos: number;
+    commitedGoalSavings: number;
+    healthScore: number;
+    queryAmount?: number; // F-FIX-5: optional amount for budget queries
   };
 
   // From Phase 2.5
@@ -105,6 +117,46 @@ export interface AgentContext {
     targetSleepHours: number;
     dailyCalorieTarget: number;
     workHourLimit: number;
+  };
+
+  // P-MOD-1: Personal area metrics for SHODAN (VitalsAgent)
+  personalHub?: {
+    pendingTodos: number;
+    overdueTodos: number;
+    highPriorityTodos: number;
+    todayRoutines: number;
+    completedTodayRoutines: number;
+    abandonedRoutines: string[]; // routine ids with streak broken today
+    latestCheckin: {
+      date: string;
+      mood: number;
+      energy: number;
+      sleepHours: number;
+    } | null;
+    recentJournalEntries?: Array<{
+      date: string;
+      preview: string;
+      wordCount: number;
+      mood?: number;
+    }>;
+  };
+
+  // CAL-FIX-4: Calendar context — upcoming events visible to all agents
+  calendar?: {
+    upcomingEvents: Array<{
+      id: string;
+      title: string;
+      startDate: string;
+      type: string;
+      importance: string;
+      provider: string;
+    }>;
+    nextImportantEvent: {
+      id: string; title: string; startDate: string;
+      type: string; importance: string; provider: string;
+    } | null;
+    hasImportantEventToday: boolean;
+    eventCountToday: number;
   };
 }
 
