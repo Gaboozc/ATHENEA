@@ -94,9 +94,12 @@ export const Intelligence = () => {
   }, [safeInsights, selectedHub, selectedSeverity]);
 
   const filteredRecentHistory = useMemo(() => {
+    const clean = safeRecentHistory.filter(
+      (action) => action?.actionType !== 'delete-action-history-entry'
+    );
     const byHub = selectedHub === 'all'
-      ? safeRecentHistory
-      : safeRecentHistory.filter((action) => normalizeHub(action?.hub) === selectedHub);
+      ? clean
+      : clean.filter((action) => normalizeHub(action?.hub) === selectedHub);
 
     return byHub.slice(0, 20);
   }, [safeRecentHistory, selectedHub]);

@@ -2,7 +2,6 @@ import type { Middleware } from '@reduxjs/toolkit';
 
 const DELETE_EXPENSE = 'budget/deleteExpense';
 const DELETE_PAYMENT = 'payments/deletePayment';
-const DELETE_ACTION_HISTORY = 'aiMemory/deleteActionHistoryEntry';
 
 export const financeDeletionAuditMiddleware: Middleware = (storeApi) => (next) => (action: any) => {
   const prevState: any = storeApi.getState();
@@ -47,27 +46,6 @@ export const financeDeletionAuditMiddleware: Middleware = (storeApi) => (next) =
           id: deletedId,
           amount: Number(deletedPayment?.amount || 0),
           kind: deletedPayment?.type || null,
-        },
-      },
-    });
-  }
-
-  if (action?.type === DELETE_ACTION_HISTORY) {
-    const targetId = action?.payload?.id;
-    const deletedEntry = (prevState?.aiMemory?.actionHistory || []).find((entry: any) => entry.id === targetId);
-
-    storeApi.dispatch({
-      type: 'actionHistory/record',
-      payload: {
-        hub: deletedEntry?.hub || 'CrossHub',
-        actionType: 'delete-action-history-entry',
-        type: 'user-command',
-        agent: 'user',
-        description: `✖ Registro de acción eliminado${deletedEntry?.description ? `: ${deletedEntry.description}` : ''}`,
-        success: true,
-        payload: {
-          id: targetId,
-          deletedActionType: deletedEntry?.actionType || null,
         },
       },
     });

@@ -245,6 +245,10 @@ const aiMemorySlice = createSlice({
       if (!Array.isArray(state.actionHistory)) {
         state.actionHistory = [];
       }
+      // Purge any stale cascade/audit-of-audit entries on every write
+      state.actionHistory = state.actionHistory.filter(
+        (e) => e.actionType !== 'delete-action-history-entry'
+      );
       state.actionHistory.unshift(action.payload);
       if (state.actionHistory.length > MAX_ACTION_HISTORY_LOG) {
         state.actionHistory.length = MAX_ACTION_HISTORY_LOG;
