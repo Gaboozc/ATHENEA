@@ -15,10 +15,27 @@ const tasksSlice = createSlice({
       state.tasks.unshift({
         id: action.payload?.id || `task-${Date.now()}`,
         title: action.payload?.title || 'Untitled Task',
-        status: action.payload?.status || 'pending',
+        status: action.payload?.status || 'Pendiente',
         dueDate: action.payload?.dueDate || null,
+        startDate: action.payload?.startDate || null,
+        parentTaskId: action.payload?.parentTaskId || null,
         createdAt: new Date().toISOString(),
         ...action.payload
+      });
+    },
+    addSubtask: (state, action) => {
+      /* NEW-WORK-3: create a child task linked to a parent */
+      const { parentTaskId, ...taskData } = action.payload || {};
+      if (!parentTaskId) return;
+      state.tasks.unshift({
+        id: taskData.id || `task-${Date.now()}`,
+        title: taskData.title || 'Subtask',
+        status: taskData.status || 'pending',
+        dueDate: taskData.dueDate || null,
+        startDate: taskData.startDate || null,
+        parentTaskId,
+        createdAt: new Date().toISOString(),
+        ...taskData,
       });
     },
     hydrateFromStorage: (state, action) => { /* ARCH-FIX-1: bulk load from localStorage on app start */
@@ -43,7 +60,7 @@ const tasksSlice = createSlice({
       const { id } = action.payload || {};
       const target = state.tasks.find((task) => task.id === id);
       if (target) {
-        target.status = 'completed';
+        target.status = 'Completado';
         target.completedAt = new Date().toISOString();
         target.updatedAt = new Date().toISOString();
       }
@@ -68,16 +85,19 @@ const tasksSlice = createSlice({
       target.updatedAt = new Date().toISOString();
     },
     updateTask: (state, action) => { /* W-FIX-4 */
-      const { id, title, description, dueDate, level, estimatedHours, projectId, workstreamId } = action.payload || {};
+      const { id, title, description, dueDate, startDate, level, estimatedHours, projectId, workstreamId, parentTaskId, status } = action.payload || {};
       const task = state.tasks.find((t) => t.id === id);
       if (!task) return;
       if (title !== undefined)          task.title          = title;
       if (description !== undefined)    task.description    = description;
       if (dueDate !== undefined)        task.dueDate        = dueDate;
+      if (startDate !== undefined)      task.startDate      = startDate;
       if (level !== undefined)          task.level          = level;
       if (estimatedHours !== undefined) task.estimatedHours = estimatedHours;
       if (projectId !== undefined)      task.projectId      = projectId;
       if (workstreamId !== undefined)   task.workstreamId   = workstreamId;
+      if (parentTaskId !== undefined)   task.parentTaskId   = parentTaskId;
+      if (status !== undefined)         task.status         = status;
       task.updatedAt = new Date().toISOString();
     },
     restoreTask: (state, action) => { /* W-FIX-7 */
@@ -103,7 +123,7 @@ const tasksSlice = createSlice({
       const { id } = action.payload || {};
       const target = state.tasks.find((task) => task.id === id);
       if (target) {
-        target.status = 'completed';
+        target.status = 'Completado';
         target.completedAt = new Date().toISOString();
         target.updatedAt = new Date().toISOString();
       }
@@ -112,5 +132,5 @@ const tasksSlice = createSlice({
   }
 });
 
-export const { addTask, hydrateFromStorage, rescheduleTask, completeTask, logTime, updateTask, restoreTask } = tasksSlice.actions;
+export const { addTask, addSubtask, hydrateFromStorage, rescheduleTask, completeTask, logTime, updateTask, restoreTask } = tasksSlice.actions;
 export default tasksSlice.reducer;

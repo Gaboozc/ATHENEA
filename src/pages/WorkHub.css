@@ -112,10 +112,20 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
   border: 1px solid var(--border-default);
   border-radius: 10px;
   padding: 0.6rem 0.8rem;
   background: var(--bg-base);
+  flex-wrap: wrap;
+}
+
+.workhub-card li > span:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .workhub-progress {
@@ -152,6 +162,8 @@
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 0.7rem;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .workhub-empty {
@@ -274,4 +286,12 @@
     flex-direction: column;
     gap: 0.5rem;
   }
+}
+
+/* NEW-WORK-3: phase badge in active projects list */
+.workhub-pill-phase {
+  background: rgba(30,201,255,0.08);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  font-size: 0.7rem;
 }

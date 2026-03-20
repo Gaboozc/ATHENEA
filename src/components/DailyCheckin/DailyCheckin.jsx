@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useLanguage } from '../../context/LanguageContext';
 import { addCheckin } from '../../store/slices/checkinsSlice';
 import { setHealthData } from '../../store/slices/sensorDataSlice';
 import './DailyCheckin.css';
@@ -9,6 +10,7 @@ const ENERGY_LABELS = ['💤', '😴', '⚡', '🔋', '🚀'];
 
 export default function DailyCheckin() {
   const dispatch = useDispatch();
+  const { t } = useLanguage();
   const today = new Date().toISOString().split('T')[0];
 
   const existing = useSelector((state) =>
@@ -39,10 +41,10 @@ export default function DailyCheckin() {
 
   return (
     <div className="daily-checkin">
-      <h3 className="daily-checkin__title">Check-in diario</h3>
+      <h3 className="daily-checkin__title">{t('Daily Check-in')}</h3>
 
       <div className="daily-checkin__row">
-        <label className="daily-checkin__label">Estado de ánimo</label>
+        <label className="daily-checkin__label">{t('Mood')}</label>
         <div className="daily-checkin__options">
           {MOOD_LABELS.map((emoji, i) => (
             <button
@@ -59,7 +61,7 @@ export default function DailyCheckin() {
       </div>
 
       <div className="daily-checkin__row">
-        <label className="daily-checkin__label">Energía</label>
+        <label className="daily-checkin__label">{t('Energy')}</label>
         <div className="daily-checkin__options">
           {ENERGY_LABELS.map((emoji, i) => (
             <button
@@ -76,7 +78,7 @@ export default function DailyCheckin() {
       </div>
 
       <div className="daily-checkin__row">
-        <label className="daily-checkin__label">Horas de sueño</label>
+        <label className="daily-checkin__label">{t('Sleep hours')}</label>
         <input
           type="number"
           min="0"
@@ -89,18 +91,18 @@ export default function DailyCheckin() {
       </div>
 
       <div className="daily-checkin__row">
-        <label className="daily-checkin__label">Nota rápida</label>
+        <label className="daily-checkin__label">{t('Quick note')}</label>
         <textarea
           className="daily-checkin__textarea"
           rows={2}
-          placeholder="¿Cómo te sientes hoy?"
+          placeholder={t('How are you feeling today?')}
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
       </div>
 
       <button type="button" className="daily-checkin__save" onClick={handleSave}>
-        {saved ? '✓ Guardado' : 'Guardar check-in'}
+        {saved ? t('✓ Saved') : t('Save check-in')}
       </button>
     </div>
   );

@@ -3,7 +3,8 @@ import { useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { useGlobalReducer } from '../hooks/useGlobalReducer'; /* F-FEAT-6 */
-import { addCategory, addExpense, deleteExpense, deleteCategory, updateCategory } from '../../store/slices/budgetSlice'; /* F-FEAT-1 */
+import { addCategory, deleteExpense, deleteCategory, updateCategory } from '../../store/slices/budgetSlice'; /* F-FEAT-1 */
+import { registerExpense } from '../store/thunks/financeThunks';
 import { selectFinancialSnapshot, selectFinancialHealthScore } from '../store/selectors/financialSelectors'; /* F-FEAT-3 */
 import { Skeleton } from '../components/Skeleton/Skeleton';
 import { SpendingCharts } from '../components/SpendingCharts/SpendingCharts';
@@ -18,6 +19,10 @@ export const FinanceHub = () => {
   const payments = store?.payments?.payments || [];
   const budgetCategories = store?.budget?.categories || [];
   const expenses = store?.budget?.expenses || [];
+  /* WALLETS-5: wallet balances */
+  const walletUSD = store?.wallets?.walletUSD || 0;
+  const walletMXN = store?.wallets?.walletMXN || 0;
+  const referenceRate = store?.wallets?.referenceRate || 0;
   const financialSnapshot = useMemo(() => selectFinancialSnapshot(store), [store]); /* F-FEAT-6 */
   const healthScore = useMemo(() => selectFinancialHealthScore(store), [store]); /* F-FEAT-3 */
   /* F-FEAT-7: Jarvis last verdict */
@@ -35,6 +40,8 @@ export const FinanceHub = () => {
   const [expenseCategory, setExpenseCategory] = useState('');
   const [expenseNote, setExpenseNote] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [expenseCurrency, setExpenseCurrency] = useState('MXN');
+  const [categoryFormCurrency, setCategoryFormCurrency] = useState('MXN');
 
   const upcomingPayments = useMemo(() => {
     return [...(payments || [])]
@@ -103,25 +110,28 @@ export const FinanceHub = () => {
   }, [budgetCategories]);
 
   /* F-FEAT-3: health score label and color */
-  const healthLabel = healthScore >= 70 ? t('Saludable') : healthScore >= 40 ? t('Atención') : t('Crítico');
+  const healthLabel = healthScore >= 70 ? t('Healthy') : healthScore >= 40 ? t('Attention') : t('Critical');
   const healthColor = healthScore >= 70 ? 'var(--color-success)' : healthScore >= 40 ? 'var(--color-warning)' : 'var(--color-error)';
 
   const handleAddCategory = (event) => {
     event.preventDefault();
     if (!categoryName.trim()) return;
-    dispatch(addCategory({ name: categoryName.trim(), limit: Number(categoryLimit || 0) }));
+    dispatch(addCategory({ name: categoryName.trim(), limit: Number(categoryLimit || 0), currency: categoryFormCurrency }));
     setCategoryName('');
     setCategoryLimit('');
   };
 
+  /* WALLETS-5: use registerExpense thunk to sync wallet + budget */
   const handleAddExpense = (event) => {
     event.preventDefault();
-    if (!expenseAmount || !expenseCategory) return;
-    dispatch(addExpense({
+    if (!expenseAmount) return;
+    dispatch(registerExpense({
+      id: `exp-${Date.now()}`,
       amount: Number(expenseAmount),
-      categoryId: expenseCategory,
+      currency: expenseCurrency,
+      categoryId: expenseCategory || null,
+      description: expenseNote || 'Gasto',
       date: new Date().toISOString(),
-      note: expenseNote,
     }));
     setExpenseAmount('');
     setExpenseCategory('');
@@ -145,6 +155,28 @@ export const FinanceHub = () => {
         </div>
       </header>
 
+      {/* WALLETS-5: Wallet KPI row */}
+      <section className="financehub-wallets-row">
+        <div className="wallet-kpi wallet-kpi-usd">
+          <span>💵 {t('Saldo USD')}</span>
+          <strong>${Number(walletUSD).toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</strong>
+        </div>
+        <div className="wallet-kpi wallet-kpi-mxn">
+          <span>💴 {t('Saldo MXN')}</span>
+          <strong>${Number(walletMXN).toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN</strong>
+        </div>
+        {referenceRate > 0 && (
+          <div className="wallet-kpi wallet-kpi-equiv">
+            <span>≈ {t('Equivalente total')}</span>
+            <strong>${(walletMXN + walletUSD * referenceRate).toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN</strong>
+            <small>{t('Tasa ref')}: ${referenceRate.toFixed(2)}</small>
+          </div>
+        )}
+        <button className="wallet-kpi-link" onClick={() => navigate('/finance/wallets')}>
+          {t('Ver billeteras')} →
+        </button>
+      </section>
+
       <section className="financehub-actions">
         <button onClick={() => navigate('/payments')}>{t('Go to Payments')}</button>
         <button onClick={() => navigate('/finance/history')}>{t('Historial')}</button>
@@ -155,7 +187,7 @@ export const FinanceHub = () => {
 
       <section className="financehub-stats">
         <div className="financehub-stat financehub-stat-saldo">
-          <span>{t('Saldo Libre')}</span>
+          <span>{t('Free Balance')}</span>
           {isReady ? <strong>{Number(financialSnapshot.saldoLibre || 0).toFixed(2)}</strong> : <Skeleton type="stat" />}
         </div>
         <div className="financehub-stat">
@@ -172,7 +204,7 @@ export const FinanceHub = () => {
         </div>
         {/* F-FEAT-3: health score card */}
         <div className="financehub-stat">
-          <span>{t('Salud Financiera')}</span>
+          <span>{t('Financial Health')}</span>
           {isReady
             ? <strong style={{ color: healthColor }}>{healthLabel} ({healthScore})</strong>
             : <Skeleton type="stat" />}
@@ -216,6 +248,13 @@ export const FinanceHub = () => {
                 onChange={(e) => setCategoryLimit(e.target.value)}
                 placeholder={t('Monthly limit')}
               />
+              <select
+                value={categoryFormCurrency}
+                onChange={(e) => setCategoryFormCurrency(e.target.value)}
+              >
+                <option value="MXN">💴 MXN</option>
+                <option value="USD">💵 USD</option>
+              </select>
               <button type="submit">{t('Add')}</button>
             </form>
           </div>
@@ -232,11 +271,18 @@ export const FinanceHub = () => {
                 placeholder={t('Amount')}
               />
               <select
+                value={expenseCurrency}
+                onChange={(e) => { setExpenseCurrency(e.target.value); setExpenseCategory(''); }}
+              >
+                <option value="MXN">💴 MXN</option>
+                <option value="USD">💵 USD</option>
+              </select>
+              <select
                 value={expenseCategory}
                 onChange={(e) => setExpenseCategory(e.target.value)}
               >
                 <option value="">{t('Select category')}</option>
-                {budgetCategories.map((category) => (
+                {budgetCategories.filter(c => (c.currency || 'MXN') === expenseCurrency).map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
                   </option>
@@ -262,13 +308,13 @@ export const FinanceHub = () => {
               {/* F-FEAT-1: delete + inline limit edit */}
               {budgetCategories.map((category) => {
                 const spent = monthlyExpenses
-                  .filter((expense) => expense.categoryId === category.id)
+                  .filter((expense) => expense.categoryId === category.id && (expense.currency || 'MXN') === (category.currency || 'MXN'))
                   .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
                 const percent = category.limit ? Math.min(100, Math.round((spent / category.limit) * 100)) : 0;
                 const isEditing = editingLimitId === category.id;
                 return (
                   <li key={category.id}>
-                    <span>{category.name}</span>
+                    <span>{category.name} <small style={{opacity:0.6, fontSize:'0.72rem'}}>({category.currency || 'MXN'})</small></span>
                     {isEditing ? (
                       <input
                         type="number"
@@ -372,14 +418,14 @@ export const FinanceHub = () => {
       {/* F-FEAT-7: Jarvis verdict panel */}
       {isJarvisVerdict && isJarvisRecent && (
         <section className="jarvis-briefing">
-          <h3>{t('Jarvis — Último análisis')}</h3>
+          <h3>{t('Jarvis — Latest analysis')}</h3>
           {lastVerdict.reasoning && <p className="jarvis-reasoning">{lastVerdict.reasoning}</p>}
           {lastVerdict.recommendation && <p className="jarvis-recommendation">{lastVerdict.recommendation}</p>}
         </section>
       )}
 
-      {/* NEW-FINANCE-1: Spending Charts */}
-      <SpendingCharts />
+      {/* NEW-FINANCE-1: Spending Charts — pass selectedMonth so chart reflects user selection */}
+      <SpendingCharts selectedMonth={selectedMonth} />
     </div>
   );
 };

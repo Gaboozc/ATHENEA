@@ -20,6 +20,13 @@ if (new URLSearchParams(window.location.search).get('clear') === 'true') {
     window.location.href = window.location.pathname;
 }
 
+// Register Service Worker for offline support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => { /* silent — SW not critical */ });
+  });
+}
+
 // Ensure direct URLs (e.g. /finance/budgeting) work with hash-based routing.
 if (typeof window !== 'undefined') {
     const { pathname, search, hash, origin } = window.location;

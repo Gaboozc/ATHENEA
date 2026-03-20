@@ -79,7 +79,7 @@ export const FinanceGoals = () => {
         actionType: 'add-goal',
         type: 'user-command',
         agent: 'user',
-        description: `Nueva meta: ${form.name} — objetivo ${form.targetAmount}`,
+        description: `New goal: ${form.name} — target ${form.targetAmount}`,
         success: true
       }
     });

@@ -18,6 +18,8 @@ const FinanceHub     = lazy(() => import("./pages/FinanceHub").then(m => ({ defa
 const FinanceHistory = lazy(() => import("./pages/FinanceHistory").then(m => ({ default: m.FinanceHistory })));
 const FinanceGoals   = lazy(() => import("./pages/FinanceGoals").then(m => ({ default: m.FinanceGoals })));
 const FinanceBudgeting = lazy(() => import("./pages/FinanceBudgeting").then(m => ({ default: m.FinanceBudgeting })));
+const FinanceWallets   = lazy(() => import("./pages/FinanceWallets").then(m => ({ default: m.FinanceWallets }))); /* WALLETS-12 */
+const Routines         = lazy(() => import("./pages/Routines").then(m => ({ default: m.Routines }))); /* ROUTINES-2 */
 const Calendar       = lazy(() => import("./pages/Calendar").then(m => ({ default: m.Calendar })));
 const Projects       = lazy(() => import("./pages/Projects").then(m => ({ default: m.Projects })));
 const ProjectDetails = lazy(() => import("./pages/ProjectDetails").then(m => ({ default: m.ProjectDetails })));
@@ -37,6 +39,17 @@ const Notifications  = lazy(() => import("./pages/Notifications").then(m => ({ d
 const Profile        = lazy(() => import("./pages/Profile").then(m => ({ default: m.Profile })));
 const Inbox          = lazy(() => import("./pages/Inbox").then(m => ({ default: m.Inbox })));
 const Login          = lazy(() => import("./pages/Login").then(m => ({ default: m.Login })));
+
+// ── Preload critical routes after initial mount ────────────────────────────
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      import("./pages/Dashboard");
+      import("./pages/WorkHub");
+      import("./pages/FinanceHub");
+    }, 1500);
+  });
+}
 
 // ── Loading fallback ───────────────────────────────────────────────────────
 const PageLoader = () => (
@@ -87,6 +100,7 @@ export const router = createHashRouter(
           <Route path="finance/history"    element={S(<FinanceHistory />)} />
           <Route path="finance/goals"      element={S(<FinanceGoals />)} />
           <Route path="finance/budgeting"  element={S(<FinanceBudgeting />)} />
+          <Route path="finance/wallets"   element={S(<FinanceWallets />)} /> {/* WALLETS-12 */}
           <Route path="budgeting"          element={<Navigate to="/finance/budgeting" replace />} />
           <Route path="identity"           element={S(<IdentityHub />)} />
           <Route path="todos"              element={S(<Todos />)} />
@@ -105,6 +119,7 @@ export const router = createHashRouter(
           <Route path="stats"              element={S(<StatsPage />)} />
           <Route path="journal"            element={S(<Journal />)} />
           <Route path="weekly-review"      element={S(<WeeklyReview />)} />
+          <Route path="routines"           element={S(<Routines />)} /> {/* ROUTINES-2 */}
           <Route path="focus"              element={S(<FocusMode />)} />
         </Route>
       </>

@@ -210,3 +210,342 @@
   border-color: var(--accent-cyan);
   color: var(--accent-cyan);
 }
+
+/* NEW-WORK-3: In Review status button */
+.mytasks-action-review { border-color: #f59e0b; color: #f59e0b; }
+.mytasks-action-review.is-active { background: rgba(245,158,11,0.15); }
+
+/* NEW-WORK-3: parent task label for subtasks */
+.mytasks-parent-label {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted, var(--text-secondary));
+  font-style: italic;
+}
+
+/* NEW-WORK-3: status select en MyTasks */
+.mytasks-status-select {
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+}
+.mytasks-status-select.status-pendiente     { color: #9aa3ad; border-color: #9aa3ad; }
+.mytasks-status-select.status-en-curso      { color: #facc15; border-color: #facc15; }
+.mytasks-status-select.status-por-terminar { color: #60a5fa; border-color: #60a5fa; }
+.mytasks-status-select.status-en-revision   { color: #f59e0b; border-color: #f59e0b; }
+.mytasks-status-select.status-completado    { color: #22c55e; border-color: #22c55e; }
+.mytasks-status-select option { background: #0d1117; color: #e5e7eb; }
+
+/* ── Subtask hierarchy ── */
+.mytasks-task-group { display: flex; flex-direction: column; gap: 0; margin-bottom: 12px; }
+.mytasks-subtask-group { display: flex; flex-direction: column; gap: 0; }
+
+.mytasks-card--sub {
+  margin-left: 20px;
+  border-left: 2px solid var(--accent-cyan);
+  background: var(--bg-elevated, var(--bg-surface));
+}
+.mytasks-card--subsub {
+  margin-left: 40px;
+  border-left: 2px solid rgba(30,201,255,0.4);
+  background: var(--bg-base);
+}
+
+.mytasks-sub-bullet {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+/* Subtask form inline */
+.mytasks-subtask-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.mytasks-subtask-input {
+  flex: 1;
+  min-width: 160px;
+  background: var(--bg-elevated, var(--bg-base));
+  border: 1px solid var(--accent-cyan);
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+.mytasks-subtask-add {
+  padding: 5px 14px;
+  border-radius: 8px;
+  border: 1px solid #22c55e;
+  background: transparent;
+  color: #22c55e;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.mytasks-subtask-cancel {
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+/* + Subtask button */
+.mytasks-subtask-btn {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--accent-cyan);
+  background: transparent;
+  color: var(--accent-cyan);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mytasks-subtask-btn:hover { background: rgba(30,201,255,0.08); }
+
+/* ════════════════════════════════════════════
+   VIEW SWITCHER
+════════════════════════════════════════════ */
+.mytasks-view-switcher {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: 3px;
+}
+.mytasks-view-btn {
+  padding: 5px 12px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.mytasks-view-btn.active {
+  background: var(--accent-cyan);
+  color: #0a0f1a;
+  font-weight: 700;
+}
+
+/* ════════════════════════════════════════════
+   KANBAN
+════════════════════════════════════════════ */
+.mytasks-kanban {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 16px;
+  align-items: flex-start;
+}
+.kanban-col {
+  flex: 0 0 240px;
+  min-width: 220px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.kanban-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-top: 3px solid transparent;
+  border-bottom: 1px solid var(--border-default);
+}
+.kanban-col-title { font-size: 0.82rem; font-weight: 700; }
+.kanban-col-count {
+  font-size: 0.75rem;
+  background: var(--bg-elevated, var(--bg-base));
+  border-radius: 999px;
+  padding: 1px 8px;
+  color: var(--text-secondary);
+}
+.kanban-col-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 60px; }
+.kanban-empty { color: var(--text-secondary); font-size: 0.8rem; text-align: center; padding: 12px 0; }
+.kanban-card {
+  background: var(--bg-elevated, var(--bg-base));
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.kanban-card-title {
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  margin: 0;
+  cursor: pointer;
+  line-height: 1.35;
+}
+.kanban-card-title:hover { color: var(--accent-cyan); }
+.kanban-card-project { font-size: 0.72rem; color: var(--accent-cyan); }
+.kanban-card-footer { display: flex; align-items: center; justify-content: space-between; }
+.kanban-card-level { font-size: 0.7rem; font-weight: 600; }
+.kanban-card-due { font-size: 0.7rem; color: var(--text-secondary); }
+.kanban-subtask-count { font-size: 0.7rem; color: var(--text-secondary); }
+
+/* ════════════════════════════════════════════
+   TABLA
+════════════════════════════════════════════ */
+.mytasks-tabla { display: flex; flex-direction: column; gap: 20px; }
+.tabla-group { display: contents; }
+.tabla-group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 10px 10px 0 0;
+  border-bottom: none;
+}
+.tabla-module-name { font-size: 0.88rem; font-weight: 700; color: var(--accent-gold); }
+.tabla-module-count { font-size: 0.75rem; color: var(--text-secondary); }
+.tabla-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border-default);
+  border-radius: 0 0 10px 10px;
+  overflow: hidden;
+}
+.tabla-table th {
+  background: var(--bg-elevated, var(--bg-base));
+  padding: 8px 12px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  text-align: left;
+  border-bottom: 1px solid var(--border-default);
+}
+.tabla-table td {
+  padding: 8px 12px;
+  font-size: 0.84rem;
+  border-bottom: 1px solid var(--border-default);
+  vertical-align: middle;
+}
+.tabla-table tr:last-child td { border-bottom: none; }
+.tabla-table tr:hover td { background: rgba(255,255,255,0.02); }
+.tabla-title { cursor: pointer; color: var(--text-primary); font-weight: 500; }
+.tabla-title:hover { color: var(--accent-cyan); }
+.tabla-sub-badge {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.68rem;
+  background: rgba(30,201,255,0.12);
+  color: var(--accent-cyan);
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+.tabla-date { color: var(--text-secondary); font-size: 0.78rem; white-space: nowrap; }
+
+/* ════════════════════════════════════════════
+   GANTT
+════════════════════════════════════════════ */
+.mytasks-gantt { overflow-x: auto; }
+.gantt-wrapper { min-width: 700px; }
+.gantt-header {
+  display: flex;
+  margin-bottom: 4px;
+}
+.gantt-label-col {
+  flex: 0 0 220px;
+  min-width: 180px;
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+.gantt-timeline-col {
+  flex: 1;
+  position: relative;
+  height: 32px;
+}
+.gantt-week-label {
+  position: absolute;
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  top: 6px;
+}
+.gantt-today-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent-cyan);
+  opacity: 0.5;
+  z-index: 2;
+}
+.gantt-row {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid var(--border-default);
+  min-height: 40px;
+}
+.gantt-row:hover { background: rgba(255,255,255,0.02); }
+.gantt-task-title {
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+  display: block;
+}
+.gantt-task-status { font-size: 0.68rem; font-weight: 600; }
+.gantt-bar {
+  position: absolute;
+  height: 20px;
+  border-radius: 4px;
+  top: 10px;
+  background: var(--accent-cyan);
+  opacity: 0.75;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  min-width: 4px;
+}
+.gantt-bar.status-en-curso     { background: #facc15; }
+.gantt-bar.status-por-terminar { background: #60a5fa; }
+.gantt-bar.status-en-revision  { background: #f59e0b; }
+.gantt-bar.status-completado   { background: #22c55e; }
+.gantt-bar.status-pendiente    { background: #9aa3ad; }
+.gantt-bar-label {
+  font-size: 0.6rem;
+  color: #0a0f1a;
+  font-weight: 700;
+  padding: 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+@media (max-width: 600px) {
+  .mytasks-header { flex-direction: column; align-items: stretch; }
+  .mytasks-header-actions { flex-wrap: wrap; }
+  .mytasks-view-switcher { width: 100%; justify-content: center; }
+  .kanban-col { flex: 0 0 80vw; }
+  .gantt-label-col { flex: 0 0 120px; min-width: 100px; }
+  .gantt-task-title { max-width: 100px; font-size: 0.72rem; }
+  .tabla-table th, .tabla-table td { padding: 6px 8px; font-size: 0.78rem; }
+}

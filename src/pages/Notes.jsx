@@ -33,6 +33,7 @@ export const Notes = () => {
     reminderDate: '',
   });
   const [filterTag, setFilterTag] = useState('all');
+  const [filterType, setFilterType] = useState('all'); // 'all' | 'notas' | 'recordatorios'
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -151,6 +152,8 @@ export const Notes = () => {
 
   const filteredNotes = notes
     .filter((note) => {
+      if (filterType === 'notas' && note.reminderDate) return false;
+      if (filterType === 'recordatorios' && !note.reminderDate) return false;
       if (filterTag !== 'all' && !note.tags.includes(filterTag)) return false;
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -164,14 +167,17 @@ export const Notes = () => {
     .sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
+      // Recordatorios próximos primero dentro de su grupo
+      if (a.reminderDate && b.reminderDate)
+        return new Date(a.reminderDate) - new Date(b.reminderDate);
       return new Date(b.updatedAt) - new Date(a.updatedAt);
     });
 
   return (
     <div className="notes-container">
       <header className="notes-header">
-        <h1>{t('Personal Notes')}</h1>
-        <p>{t('Your quick notes and ideas.')}</p>
+        <h1>{t('Notas & Recordatorios')}</h1>
+        <p>{t('Sin fecha = nota. Con fecha = recordatorio activo en notificaciones.')}</p>
       </header>
 
       <div className="notes-controls">
@@ -182,25 +188,34 @@ export const Notes = () => {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="notes-search"
         />
+        {/* Tabs de tipo */}
+        <div className="notes-type-tabs">
+          <button className={`notes-type-tab${filterType === 'all' ? ' active' : ''}`} onClick={() => setFilterType('all')}>
+            {t('Todas')}
+          </button>
+          <button className={`notes-type-tab${filterType === 'notas' ? ' active' : ''}`} onClick={() => setFilterType('notas')}>
+            📝 {t('Notas')}
+          </button>
+          <button className={`notes-type-tab notes-type-tab--reminder${filterType === 'recordatorios' ? ' active' : ''}`} onClick={() => setFilterType('recordatorios')}>
+            🔔 {t('Recordatorios')}
+            {notes.filter((n) => n.reminderDate).length > 0 && (
+              <span className="notes-type-count">{notes.filter((n) => n.reminderDate).length}</span>
+            )}
+          </button>
+        </div>
+        {/* Tags */}
         <div className="notes-filters">
-          <button
-            className={`notes-filter ${filterTag === 'all' ? 'active' : ''}`}
-            onClick={() => setFilterTag('all')}
-          >
+          <button className={`notes-filter ${filterTag === 'all' ? 'active' : ''}`} onClick={() => setFilterTag('all')}>
             {t('All')}
           </button>
           {tags.map((tag) => (
-            <button
-              key={tag}
-              className={`notes-filter ${filterTag === tag ? 'active' : ''}`}
-              onClick={() => setFilterTag(tag)}
-            >
+            <button key={tag} className={`notes-filter ${filterTag === tag ? 'active' : ''}`} onClick={() => setFilterTag(tag)}>
               #{tag}
             </button>
           ))}
         </div>
         <button className="notes-create-btn" onClick={() => handleOpenModal()}>
-          {t('New Note')}
+          + {t('Nueva')}
         </button>
       </div>
 
@@ -212,50 +227,53 @@ export const Notes = () => {
               : t('No notes yet. Create your first note!')}
           </div>
         ) : (
-          filteredNotes.map((note) => (
-            <div
-              key={note.id}
-              className="note-card"
-              style={{ borderLeft: `4px solid ${note.color}` }}
-            >
-              <div className="note-card-header">
-                <h3>{note.title}</h3>
-                <div className="note-card-actions">
-                  <button
-                    className={`note-pin-btn ${note.pinned ? 'pinned' : ''}`}
-                    onClick={() => handleTogglePin(note.id)}
-                    title={t('Pin note')}
-                  >
-                    📌
-                  </button>
-                  <button onClick={() => handleOpenModal(note)} title={t('Edit')}>
-                    ✏️
-                  </button>
-                  <button onClick={() => handleDelete(note.id)} title={t('Delete')}>
-                    🗑️
-                  </button>
-                </div>
-              </div>
-              <p className="note-card-content">{note.content}</p>
-              {note.tags.length > 0 && (
-                <div className="note-card-tags">
-                  {note.tags.map((tag) => (
-                    <span key={tag} className="note-tag">
-                      #{tag}
+          filteredNotes.map((note) => {
+            const isReminder = Boolean(note.reminderDate);
+            const reminderDate = isReminder ? new Date(note.reminderDate) : null;
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const diffDays = reminderDate
+              ? Math.ceil((reminderDate - today) / 86400000)
+              : null;
+            const isOverdue = diffDays !== null && diffDays < 0;
+            const isDueToday = diffDays === 0;
+            return (
+              <div
+                key={note.id}
+                className={`note-card${isReminder ? ' note-card--reminder' : ''}${isOverdue ? ' note-card--overdue' : ''}${isDueToday ? ' note-card--today' : ''}`}
+                style={{ borderLeft: `4px solid ${note.color}` }}
+              >
+                {isReminder && (
+                  <div className="note-reminder-banner">
+                    <span className="note-reminder-icon">🔔</span>
+                    <span className="note-reminder-date">
+                      {isOverdue
+                        ? `⚠️ ${t('Vencido')} — ${reminderDate.toLocaleDateString()}`
+                        : isDueToday
+                          ? `📅 ${t('Hoy')}`
+                          : `📅 ${reminderDate.toLocaleDateString()}${diffDays <= 3 ? ` (${diffDays}d)` : ''}`}
                     </span>
-                  ))}
-                </div>
-              )}
-              <div className="note-card-meta">
-                <div>{new Date(note.updatedAt).toLocaleString()}</div>
-                {note.reminderDate && (
-                  <div style={{ color: '#1ec9ff', marginTop: '0.25rem' }}>
-                    📅 {new Date(note.reminderDate).toLocaleDateString()}
                   </div>
                 )}
+                <div className="note-card-header">
+                  <h3>{note.title}</h3>
+                  <div className="note-card-actions">
+                    <button className={`note-pin-btn ${note.pinned ? 'pinned' : ''}`} onClick={() => handleTogglePin(note.id)} title={t('Pin note')}>📌</button>
+                    <button onClick={() => handleOpenModal(note)} title={t('Edit')}>✏️</button>
+                    <button onClick={() => handleDelete(note.id)} title={t('Delete')}>🗑️</button>
+                  </div>
+                </div>
+                <p className="note-card-content">{note.content}</p>
+                {note.tags.length > 0 && (
+                  <div className="note-card-tags">
+                    {note.tags.map((tag) => <span key={tag} className="note-tag">#{tag}</span>)}
+                  </div>
+                )}
+                <div className="note-card-meta">
+                  <div>{new Date(note.updatedAt).toLocaleString()}</div>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
@@ -299,7 +317,7 @@ export const Notes = () => {
                       }`}
                       style={{ backgroundColor: color.value }}
                       onClick={() => setFormData({ ...formData, color: color.value })}
-                      title={color.label}
+                      title={t(color.label)}
                     />
                   ))}
                 </div>
@@ -322,15 +340,18 @@ export const Notes = () => {
                 </div>
               </div>
               <div className="notes-form-group">
-                <label>{t('Reminder Date')} ({t('optional')})</label>
+                <label>
+                  🔔 {t('Fecha de recordatorio')}
+                  <span className="notes-label-hint"> — {t('opcional. Si la añades, esta nota se convierte en recordatorio y aparecerá en Notificaciones.')}</span>
+                </label>
                 <input
                   type="date"
                   value={formData.reminderDate}
                   onChange={(e) => setFormData({ ...formData, reminderDate: e.target.value })}
                 />
                 {formData.reminderDate && (
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.5rem' }}>
-                    📅 {t('Will appear in your calendar')}
+                  <p className="notes-reminder-hint">
+                    🔔 {t('Esta nota se activará como recordatorio el')} {new Date(formData.reminderDate).toLocaleDateString()}
                   </p>
                 )}
               </div>

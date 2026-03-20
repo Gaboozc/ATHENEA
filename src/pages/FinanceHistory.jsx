@@ -46,6 +46,7 @@ export const FinanceHistory = () => {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingEntry, setEditingEntry] = useState(null);
+  const [currencyFilter, setCurrencyFilter] = useState('all'); // BUDGET-DUAL-7
 
   const categories = store?.budget?.categories || [];
 
@@ -81,6 +82,7 @@ export const FinanceHistory = () => {
         _key: `exp-${e.id}`,
         kind: 'expense',
         amount: Number(e.amount || 0),
+        currency: e.currency || 'MXN', /* BUDGET-DUAL-7 */
         description: e.note || (cat ? cat.name : 'Gasto'),
         date: e.date || '',
         source: 'budget',
@@ -145,8 +147,11 @@ export const FinanceHistory = () => {
         );
       }
     }
+    if (currencyFilter !== 'all') {
+      list = list.filter((e) => (e.currency || 'MXN') === currencyFilter || e.kind === 'agent');
+    }
     return list.slice(0, 50);
-  }, [allEntries, filter, agentFilter]);
+  }, [allEntries, filter, agentFilter, currencyFilter]);
 
   // ── Add transaction handler ───────────────────────────────────────────────
   const resetFormState = () => {
@@ -267,21 +272,46 @@ export const FinanceHistory = () => {
         <p>{t('Source of Truth — all financial movements feed Budgeting, Hub and Calendar.')}</p>
       </header>
 
-      {/* KPI row */}
+      {/* KPI row — BUDGET-DUAL-7 */}
       <section className="finance-kpi-grid">
-        <article className="finance-kpi-card saldo-libre">
-          <span>{t('Saldo Libre')}</span>
-          <strong>{Number(snapshot.saldoLibre || 0).toFixed(2)}</strong>
+        <article className="finance-kpi-card" style={{ borderColor: '#22c55e' }}>
+          <span>{t('Ingresos USD')} ({t('month')})</span>
+          <strong style={{ color: '#86efac' }}>
+            +${allEntries.filter(e => e.kind === 'income' && (e.currency || 'MXN') === 'USD' && String(e.date||'').slice(0,7) === monthKey).reduce((s,e) => s+(e.amount||0), 0).toFixed(2)} USD
+          </strong>
         </article>
         <article className="finance-kpi-card" style={{ borderColor: '#22c55e' }}>
-          <span>{t('Ingresos')} ({t('month')})</span>
-          <strong style={{ color: '#86efac' }}>+{monthIncome.toFixed(2)}</strong>
+          <span>{t('Ingresos MXN')} ({t('month')})</span>
+          <strong style={{ color: '#86efac' }}>
+            +${allEntries.filter(e => e.kind === 'income' && (e.currency || 'MXN') === 'MXN' && String(e.date||'').slice(0,7) === monthKey).reduce((s,e) => s+(e.amount||0), 0).toFixed(2)} MXN
+          </strong>
         </article>
         <article className="finance-kpi-card" style={{ borderColor: '#ef4444' }}>
-          <span>{t('Egresos')} ({t('month')})</span>
-          <strong style={{ color: '#fca5a5' }}>-{monthExpense.toFixed(2)}</strong>
+          <span>{t('Egresos USD')} ({t('month')})</span>
+          <strong style={{ color: '#fca5a5' }}>
+            -${allEntries.filter(e => e.kind === 'expense' && (e.currency || 'MXN') === 'USD' && String(e.date||'').slice(0,7) === monthKey).reduce((s,e) => s+(e.amount||0), 0).toFixed(2)} USD
+          </strong>
+        </article>
+        <article className="finance-kpi-card" style={{ borderColor: '#ef4444' }}>
+          <span>{t('Egresos MXN')} ({t('month')})</span>
+          <strong style={{ color: '#fca5a5' }}>
+            -${allEntries.filter(e => e.kind === 'expense' && (e.currency || 'MXN') === 'MXN' && String(e.date||'').slice(0,7) === monthKey).reduce((s,e) => s+(e.amount||0), 0).toFixed(2)} MXN
+          </strong>
         </article>
       </section>
+
+      {/* Currency filter — BUDGET-DUAL-7 */}
+      <div className="finance-filter-tabs" style={{ marginBottom: 8 }}>
+        {['all','USD','MXN'].map((c) => (
+          <button
+            key={c}
+            className={`finance-filter-tab${currencyFilter === c ? ' active' : ''}`}
+            onClick={() => setCurrencyFilter(c)}
+          >
+            {c === 'all' ? t('Todas las divisas') : c === 'USD' ? '💵 USD' : '💴 MXN'}
+          </button>
+        ))}
+      </div>
 
       {/* Filter tabs */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
@@ -414,6 +444,11 @@ export const FinanceHistory = () => {
                     )}
                     {entry.categoryLabel && (
                       <span className="finance-agent-tag user">{entry.categoryLabel}</span>
+                    )}
+                    {entry.currency && entry.kind !== 'agent' && (
+                      <span className={`finance-agent-tag currency-${(entry.currency || 'MXN').toLowerCase()}`}>
+                        {entry.currency}
+                      </span>
                     )}
                   </div>
                   <div className="finance-list-meta">

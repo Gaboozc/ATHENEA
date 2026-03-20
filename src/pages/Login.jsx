@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser } from '../../store/slices/authSlice';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 import atheneaLogo from '../assets/img/Athena-logo.png';
 import './Login.css';
 
@@ -13,6 +14,7 @@ import './Login.css';
 export const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const user = useSelector((state) => state.auth?.user);
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,19 +50,19 @@ export const Login = () => {
             Athenea
           </h1>
           <p style={{ color: 'var(--text-secondary, #9ca3af)', fontSize: '0.9rem', marginTop: 6 }}>
-            Tu sistema de productividad personal
+            {t('Your personal productivity system')}
           </p>
         </div>
 
         <form className="login-form" onSubmit={handleStart}>
           <label className="login-label" htmlFor="setup-name">
-            ¿Cómo te llamas?
+            {t("What's your name?")}
           </label>
           <input
             id="setup-name"
             className="login-input"
             type="text"
-            placeholder="Tu nombre o alias"
+            placeholder={t('Your name or alias')}
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
@@ -72,7 +74,7 @@ export const Login = () => {
             disabled={loading}
             style={{ marginTop: 20 }}
           >
-            {loading ? 'Iniciando...' : '🚀 Empezar'}
+            {loading ? t('Starting...') : t('🚀 Start')}
           </button>
         </form>
       </div>

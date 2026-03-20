@@ -175,6 +175,52 @@ export class AuditorAgent implements Agent {
       };
     }
 
+    /* WALLETS-10: USD sin convertir por mucho tiempo */
+    if (
+      (context.financeHub.walletUSD ?? 0) > 500 &&
+      (context.financeHub.daysSinceLastConversion ?? 0) > 14
+    ) {
+      return {
+        summary: `USD estático — ${context.financeHub.daysSinceLastConversion} días sin convertir`,
+        reasoning: `Tienes $${(context.financeHub.walletUSD ?? 0).toFixed(2)} USD sin convertir hace ${context.financeHub.daysSinceLastConversion} días. El tipo de cambio puede haber cambiado significativamente.`,
+        recommendation: `Evalúa si el tipo de cambio actual es favorable. Si el MXN se depreció, convertir ahora puede ser ventajoso. Usa la pantalla de Billeteras para registrar la conversión.`,
+        dataSource,
+      };
+    }
+
+    /* WALLETS-10: Saldo MXN bajo pero hay USD disponible */
+    if (
+      (context.financeHub.walletMXN ?? 0) < 1000 &&
+      (context.financeHub.walletUSD ?? 0) > 100
+    ) {
+      return {
+        summary: `Saldo MXN bajo — tienes USD disponibles para convertir`,
+        reasoning: `Saldo MXN: $${(context.financeHub.walletMXN ?? 0).toFixed(2)} MXN. Tienes $${(context.financeHub.walletUSD ?? 0).toFixed(2)} USD disponibles.`,
+        recommendation: `Considera convertir parte de tus USD a MXN para cubrir gastos inmediatos. Registra la conversión en Billeteras con la tasa actual.`,
+        dataSource,
+      };
+    }
+
+    /* WALLETS-10: Presupuesto USD excedido */
+    if (context.financeHub.budgetUSD?.status === 'exceeded') {
+      return {
+        summary: `Presupuesto USD excedido este mes`,
+        reasoning: `Gastaste $${context.financeHub.budgetUSD.totalSpent.toFixed(2)} de $${context.financeHub.budgetUSD.totalLimit.toFixed(2)} USD este mes.`,
+        recommendation: `Revisa los gastos USD de este mes. Evita nuevos gastos en dólares hasta el próximo ciclo.`,
+        dataSource,
+      };
+    }
+
+    /* WALLETS-10: Presupuesto MXN al límite */
+    if (context.financeHub.budgetMXN?.status === 'approaching-limit') {
+      return {
+        summary: `Presupuesto MXN al ${100 - (context.financeHub.budgetMXN?.healthPct ?? 100)}% del límite`,
+        reasoning: `Presupuesto MXN: $${context.financeHub.budgetMXN.totalSpent.toFixed(2)} gastados de $${context.financeHub.budgetMXN.totalLimit.toFixed(2)} MXN este mes.`,
+        recommendation: `Reduce gastos MXN discrecionales. Quedan $${context.financeHub.budgetMXN.available.toFixed(2)} MXN disponibles en presupuesto.`,
+        dataSource,
+      };
+    }
+
     // F-FIX-5: Query de gasto específico — si el contexto trae un monto a consultar
     if (context.financeHub.queryAmount != null && context.financeHub.saldoLibre !== undefined) {
       const queryAmt = context.financeHub.queryAmount;

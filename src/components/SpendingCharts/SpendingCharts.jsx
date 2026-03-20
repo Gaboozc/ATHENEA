@@ -22,7 +22,7 @@ const getLastNMonths = (n) => {
   return months;
 };
 
-export const SpendingCharts = () => {
+export const SpendingCharts = ({ selectedMonth }) => {
   const { t } = useLanguage();
   const expenses = useSelector((s) => s.budget?.expenses || []);
   const categories = useSelector((s) => s.budget?.categories || []);
@@ -30,20 +30,21 @@ export const SpendingCharts = () => {
   const [view, setView] = useState('donut'); // 'donut' | 'bars'
 
   const last6 = useMemo(() => getLastNMonths(6), []);
-  const currentMonthKey = last6[last6.length - 1].key;
+  const defaultMonthKey = last6[last6.length - 1].key;
+  const activeMonthKey = selectedMonth || defaultMonthKey;
 
-  // Current month spending by category
+  // Selected month spending by category (for donut)
   const byCategoryThisMonth = useMemo(() => {
     const map = {};
     expenses.forEach((e) => {
-      if (!e.date?.startsWith(currentMonthKey)) return;
+      if (!e.date?.startsWith(activeMonthKey)) return;
       const cat = e.category || t('Other');
       map[cat] = (map[cat] || 0) + Number(e.amount || 0);
     });
     return Object.entries(map)
       .sort((a, b) => b[1] - a[1])
       .map(([name, amount], i) => ({ name, amount, color: PALETTE[i % PALETTE.length] }));
-  }, [expenses, currentMonthKey, t]);
+  }, [expenses, activeMonthKey, t]);
 
   const totalThisMonth = byCategoryThisMonth.reduce((s, c) => s + c.amount, 0);
 

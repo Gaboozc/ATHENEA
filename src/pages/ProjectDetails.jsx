@@ -2,10 +2,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useState } from 'react';
 import { useTasks } from '../context/TasksContext';
-import { updateProject } from '../../store/slices/projectsSlice';
+import { updateProject, setProjectPhase, addMeetingNote, deleteMeetingNote } from '../../store/slices/projectsSlice';
 import { useLanguage } from '../context/LanguageContext';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import './ProjectDetails.css';
+
+const PROJECT_PHASES = ['Discovery', 'Setup', 'Desarrollo', 'Pruebas', 'Lanzamiento']; /* NEW-WORK-3 */
+const TASK_STATUSES = ['Pendiente', 'En Curso', 'Por Terminar', 'En Revisión', 'Completado']; /* NEW-WORK-3 */
+const slugStatus = (s) =>
+  (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
 
 const PRIORITY_LEVELS = [
   'Critical',
@@ -48,6 +53,15 @@ export const ProjectDetails = () => {
   const [deletedTasks, setDeletedTasks] = useState([]);
   const [showDeletedTasks, setShowDeletedTasks] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  /* inline new task form */
+  const [showNewTaskForm, setShowNewTaskForm] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  /* NEW-WORK-3: subtask inline form */
+  const [subtaskFormFor, setSubtaskFormFor] = useState(null);
+  const [subtaskTitle, setSubtaskTitle] = useState('');
+  /* NEW-WORK-3: meeting notes form */
+  const [showMeetingForm, setShowMeetingForm] = useState(false);
+  const [meetingForm, setMeetingForm] = useState({ dateTime: '', transcription: '', link: '' });
   const [formState, setFormState] = useState(() => ({
     status: project?.status || 'planning',
     clientName: project?.clientName || '',
@@ -122,6 +136,7 @@ export const ProjectDetails = () => {
       status: task.status || 'Active',
       level: task.level || 'Backlog',
       totalScore: typeof task.totalScore === 'number' ? task.totalScore : null,
+      parentTaskId: task.parentTaskId || null,
       isLegacy: false
     }));
   // W-FEAT-3: collect time log entries across all project tasks
@@ -170,7 +185,7 @@ export const ProjectDetails = () => {
     12
   );
   const completedTasksCount = activeTasks.filter(
-    (task) => task.status === 'Completed'
+    (task) => task.status === 'Completado' || task.status === 'Finalizado' || task.status === 'Completed' || task.status === 'completed'
   ).length;
   const totalTasksCount = activeTasks.length;
   const remainingTasksCount = Math.max(totalTasksCount - completedTasksCount, 0);
@@ -178,13 +193,70 @@ export const ProjectDetails = () => {
     ? Math.round((completedTasksCount / totalTasksCount) * 100)
     : 0;
 
+  /* NEW-WORK-3: build subtask map from real (non-legacy) project tasks */
+  const projectTaskIdSet = new Set(projectTasks.map((t) => t.id));
+  const subtaskMap = {};
+  projectTasks.forEach((t) => {
+    if (t.parentTaskId && projectTaskIdSet.has(t.parentTaskId)) {
+      if (!subtaskMap[t.parentTaskId]) subtaskMap[t.parentTaskId] = [];
+      subtaskMap[t.parentTaskId].push(t);
+    }
+  });
+  /* root tasks: no parentTaskId or parent not in this project */
+  const rootFilteredTasks = filteredTasks.filter(
+    (t) => !t.parentTaskId || !projectTaskIdSet.has(t.parentTaskId)
+  );
+
+  const handleAddTask = () => {
+    const title = newTaskTitle.trim();
+    if (!title) return;
+    addTask({
+      title,
+      projectId: project.id,
+      projectName: project.name,
+      status: 'Pendiente',
+      level: 'Backlog',
+      assigneeId: user?.id,
+      createdAt: new Date().toISOString()
+    });
+    setNewTaskTitle('');
+    setShowNewTaskForm(false);
+  };
+
+  const handleAddSubtask = (parentId) => {
+    const title = subtaskTitle.trim();
+    if (!title) return;
+    addTask({
+      title,
+      projectId: project.id,
+      projectName: project.name,
+      parentTaskId: parentId,
+      status: 'pending',
+      level: 'Backlog',
+      assigneeId: user?.id,
+      createdAt: new Date().toISOString()
+    });
+    setSubtaskTitle('');
+    setSubtaskFormFor(null);
+  };
+
+  const handleAddMeetingNote = () => {
+    if (!meetingForm.transcription.trim() && !meetingForm.link.trim()) return;
+    dispatch(addMeetingNote({
+      id: project.id,
+      note: { ...meetingForm, dateTime: meetingForm.dateTime || new Date().toISOString().slice(0, 16) }
+    }));
+    setMeetingForm({ dateTime: '', transcription: '', link: '' });
+    setShowMeetingForm(false);
+  };
+
   const markLegacyComplete = (title) => {
     if (isCancelled) return;
     addTask({
       id: `legacy-${Date.now()}`,
       projectId: project.id,
       projectName: project.name,
-      status: 'Completed',
+      status: 'Completado',
       title,
       description: '',
       workstreams: project.workstreamId ? [project.workstreamId] : [],
@@ -212,7 +284,7 @@ export const ProjectDetails = () => {
       id: `legacy-${Date.now()}`,
       projectId: project.id,
       projectName: project.name,
-      status: 'In Progress',
+      status: 'En Curso',
       title,
       description: '',
       workstreams: project.workstreamId ? [project.workstreamId] : [],
@@ -341,6 +413,25 @@ export const ProjectDetails = () => {
             {t('Workstream')}: {project.workstreamName}
           </span>
         )}
+      </div>
+
+      {/* NEW-WORK-3: Project phase selector */}
+      <div className="project-phase-stepper">
+        {PROJECT_PHASES.map((phase, i) => {
+          const currentIdx = PROJECT_PHASES.indexOf(project.phase || 'Discovery');
+          const isDone = i < currentIdx;
+          const isActive = i === currentIdx;
+          return (
+            <button
+              key={phase}
+              className={`phase-step${isActive ? ' is-active' : ''}${isDone ? ' is-done' : ''}`}
+              onClick={() => dispatch(setProjectPhase({ id: project.id, phase }))}
+            >
+              {isDone && <span className="phase-check">✓</span>}
+              <span className="phase-label">{phase}</span>
+            </button>
+          );
+        })}
       </div>
 
       {showSettings && (
@@ -591,94 +682,175 @@ export const ProjectDetails = () => {
             <h2>{t('Strategic Task List')}</h2>
             <p>{t('Aligned to ATHENEA priority doctrine.')}</p>
           </div>
-          <input
-            type="text"
-            placeholder={t('Search tasks')}
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <input
+              type="text"
+              placeholder={t('Search tasks')}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+            {!isCancelled && (
+              <button
+                type="button"
+                className="tactical-button"
+                onClick={() => { setShowNewTaskForm((v) => !v); setNewTaskTitle(''); }}
+              >
+                + {t('Task')}
+              </button>
+            )}
+          </div>
         </div>
+        {showNewTaskForm && (
+          <div className="subtask-form" style={{ marginLeft: 0, marginBottom: '12px' }}>
+            <input
+              autoFocus
+              className="subtask-input"
+              placeholder={t('Task title…')}
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAddTask();
+                if (e.key === 'Escape') setShowNewTaskForm(false);
+              }}
+            />
+            <button type="button" className="task-action task-complete" onClick={handleAddTask}>{t('Add')}</button>
+            <button type="button" className="task-action task-delete" onClick={() => setShowNewTaskForm(false)}>{t('Cancel')}</button>
+          </div>
+        )}
         {isCancelled && (
           <div className="tasks-warning">
             {t('Cancelled projects cannot receive new tasks.')}
           </div>
         )}
-        {filteredTasks.length === 0 ? (
+        {rootFilteredTasks.length === 0 ? (
           <div className="tasks-empty">{t('No tasks found for this project.')}</div>
         ) : (
           <ul className="tasks-list">
-            {filteredTasks.map((task) => (
+            {rootFilteredTasks.map((task) => (
               <li key={task.id} className="task-row">
                 <div className="task-main">
-                  <span className="task-title">{task.title}</span>
-                  <span className="task-status">{task.status}</span>
-                  {!task.isLegacy && (
-                    <div className="task-actions">
-                      <button
-                        type="button"
-                        className="task-action task-complete"
-                        onClick={() => updateTaskStatus(task.id, 'Completed')}
-                      >
-                        {t('Complete')}
-                      </button>
-                      <button
-                        type="button"
-                        className="task-action task-progress"
-                        onClick={() => updateTaskStatus(task.id, 'In Progress')}
-                      >
-                        {t('In Progress')}
-                      </button>
-                      <button
-                        type="button"
-                        className="task-action task-delete"
-                        onClick={() => handleDeleteTask(task)}
-                      >
-                        {t('Delete')}
-                      </button>
-                    </div>
+                  <span className="task-title">
+                    {task.parentTaskId && !projectTaskIdSet.has(task.parentTaskId) && (
+                      <span className="task-orphan-badge" title={t('Subtask sin padre visible')}>↳</span>
+                    )}
+                    {task.title}
+                  </span>
+                  {!task.isLegacy ? (
+                    <select
+                      className={`task-status-select status-${slugStatus(task.status)}`}
+                      value={TASK_STATUSES.includes(task.status) ? task.status : 'Pendiente'}
+                      onChange={(e) => updateTaskStatus(task.id, e.target.value)}
+                    >
+                      {TASK_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  ) : (
+                    <span className={`task-status status-${slugStatus(task.status)}`}>{task.status}</span>
                   )}
-                  {task.isLegacy && (
-                    <div className="task-actions">
-                      <button
-                        type="button"
-                        className="task-action task-complete"
-                        onClick={() => markLegacyComplete(task.title)}
-                        disabled={isCancelled}
-                      >
-                        {t('Complete')}
+                  <div className="task-actions">
+                    {!task.isLegacy && (
+                      <button type="button" className="task-action task-subtask"
+                        onClick={() => { setSubtaskFormFor(task.id); setSubtaskTitle(''); }}>
+                        + {t('Subtask')}
                       </button>
-                      <button
-                        type="button"
-                        className="task-action task-progress"
-                        onClick={() => markLegacyInProgress(task.title)}
-                        disabled={isCancelled}
-                      >
-                        {t('In Progress')}
+                    )}
+                    {task.isLegacy && (
+                      <button type="button" className="task-action task-complete"
+                        onClick={() => markLegacyComplete(task.title)} disabled={isCancelled}>
+                        {t('Finalizar')}
                       </button>
-                      <button
-                        type="button"
-                        className="task-action task-delete"
-                        onClick={() => handleDeleteTask(task)}
-                      >
-                        {t('Delete')}
-                      </button>
-                    </div>
-                  )}
+                    )}
+                    <button type="button" className="task-action task-delete"
+                      onClick={() => handleDeleteTask(task)}>{t('Delete')}</button>
+                  </div>
                 </div>
                 <div className="task-metadata">
                   {task.totalScore !== null && (
                     <span className="task-score">PS: {task.totalScore}/14</span>
                   )}
-                  <span
-                    className="task-priority"
-                    style={{
-                      borderColor: getPriorityColor(task.level),
-                      color: getPriorityColor(task.level)
-                    }}
-                  >
+                  <span className="task-priority" style={{ borderColor: getPriorityColor(task.level), color: getPriorityColor(task.level) }}>
                     {task.level}
                   </span>
                 </div>
+                {/* inline form para subtarea */}
+                {subtaskFormFor === task.id && (
+                  <div className="subtask-form">
+                    <span className="subtask-form-label">↳ {t('Subtask de')}: <strong>{task.title}</strong></span>
+                    <input autoFocus className="subtask-input"
+                      placeholder={t('Subtask title…')} value={subtaskTitle}
+                      onChange={(e) => setSubtaskTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleAddSubtask(task.id);
+                        if (e.key === 'Escape') setSubtaskFormFor(null);
+                      }}
+                    />
+                    <button type="button" className="task-action task-complete" onClick={() => handleAddSubtask(task.id)}>{t('Add')}</button>
+                    <button type="button" className="task-action task-delete" onClick={() => setSubtaskFormFor(null)}>{t('Cancel')}</button>
+                  </div>
+                )}
+                {/* nivel 1: subtareas */}
+                {subtaskMap[task.id]?.length > 0 && (
+                  <ul className="subtasks-list">
+                    {subtaskMap[task.id].map((sub) => (
+                      <li key={sub.id} className="subtask-row">
+                        <span className="subtask-bullet">↳</span>
+                        <span className="task-title">{sub.title}</span>
+                        <select
+                          className={`task-status-select status-${slugStatus(sub.status)}`}
+                          value={TASK_STATUSES.includes(sub.status) ? sub.status : 'Pendiente'}
+                          onChange={(e) => updateTaskStatus(sub.id, e.target.value)}
+                        >
+                          {TASK_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                        <div className="task-actions">
+                          <button type="button" className="task-action task-subtask"
+                            onClick={() => { setSubtaskFormFor(sub.id); setSubtaskTitle(''); }}>
+                            + {t('Sub')}
+                          </button>
+                          <button type="button" className="task-action task-delete"
+                            onClick={() => handleDeleteTask(sub)}>{t('Delete')}</button>
+                        </div>
+                        {/* inline form para sub-subtarea */}
+                        {subtaskFormFor === sub.id && (
+                          <div className="subtask-form">
+                            <span className="subtask-form-label">↳↳ {t('Sub de')}: <strong>{sub.title}</strong></span>
+                            <input autoFocus className="subtask-input"
+                              placeholder={t('Sub-subtask title…')} value={subtaskTitle}
+                              onChange={(e) => setSubtaskTitle(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleAddSubtask(sub.id);
+                                if (e.key === 'Escape') setSubtaskFormFor(null);
+                              }}
+                            />
+                            <button type="button" className="task-action task-complete" onClick={() => handleAddSubtask(sub.id)}>{t('Add')}</button>
+                            <button type="button" className="task-action task-delete" onClick={() => setSubtaskFormFor(null)}>{t('Cancel')}</button>
+                          </div>
+                        )}
+                        {/* nivel 2: sub-subtareas */}
+                        {subtaskMap[sub.id]?.length > 0 && (
+                          <ul className="subtasks-list subtasks-list--l2">
+                            {subtaskMap[sub.id].map((subsub) => (
+                              <li key={subsub.id} className="subtask-row subtask-row--l2">
+                                <span className="subtask-bullet">↳</span>
+                                <span className="task-title">{subsub.title}</span>
+                                <select
+                                  className={`task-status-select status-${slugStatus(subsub.status)}`}
+                                  value={TASK_STATUSES.includes(subsub.status) ? subsub.status : 'Pendiente'}
+                                  onChange={(e) => updateTaskStatus(subsub.id, e.target.value)}
+                                >
+                                  {TASK_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                                <div className="task-actions">
+                                  <button type="button" className="task-action task-delete"
+                                    onClick={() => handleDeleteTask(subsub)}>{t('Delete')}</button>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             ))}
           </ul>
@@ -724,6 +896,69 @@ export const ProjectDetails = () => {
             </span>
           ))}
         </div>
+      </section>
+
+      {/* NEW-WORK-3: Meeting notes */}
+      <section className="project-card project-meetings">
+        <div className="meetings-header">
+          <h2>{t('Meeting Notes')}</h2>
+          <button type="button" className="tactical-button" onClick={() => setShowMeetingForm((v) => !v)}>
+            {showMeetingForm ? t('Cancel') : `+ ${t('Add Note')}`}
+          </button>
+        </div>
+        {showMeetingForm && (
+          <div className="meeting-form">
+            <label>
+              <span>{t('Meeting Date & Time')}</span>
+              <input type="datetime-local" value={meetingForm.dateTime}
+                onChange={(e) => setMeetingForm((f) => ({ ...f, dateTime: e.target.value }))} />
+            </label>
+            <label>
+              <span>{t('Transcription')}</span>
+              <textarea rows={6} placeholder={t('Paste or write the meeting transcription…')}
+                value={meetingForm.transcription}
+                onChange={(e) => setMeetingForm((f) => ({ ...f, transcription: e.target.value }))} />
+            </label>
+            <label>
+              <span>{t('Link')}</span>
+              <input type="url" placeholder="https://…"
+                value={meetingForm.link}
+                onChange={(e) => setMeetingForm((f) => ({ ...f, link: e.target.value }))} />
+            </label>
+            <div className="meeting-form-actions">
+              <button type="button" className="tactical-button" onClick={handleAddMeetingNote}>{t('Save Note')}</button>
+            </div>
+          </div>
+        )}
+        {(!project.meetingNotes || project.meetingNotes.length === 0) ? (
+          <div className="tasks-empty">{t('No meeting notes yet.')}</div>
+        ) : (
+          <ul className="meetings-list">
+            {project.meetingNotes.map((note) => (
+              <li key={note.id} className="meeting-note">
+                <div className="meeting-note-header">
+                  {note.dateTime && (
+                    <span className="meeting-note-date">
+                      {new Date(note.dateTime).toLocaleString()}
+                    </span>
+                  )}
+                  {note.link && (
+                    <a className="meeting-note-link" href={note.link} target="_blank" rel="noreferrer">
+                      🔗 {t('Link')}
+                    </a>
+                  )}
+                  <button type="button" className="task-action task-delete"
+                    onClick={() => dispatch(deleteMeetingNote({ id: project.id, noteId: note.id }))}>
+                    {t('Delete')}
+                  </button>
+                </div>
+                {note.transcription && (
+                  <pre className="meeting-note-transcription">{note.transcription}</pre>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {projectTimeEntries.length > 0 && ( /* W-FEAT-3 */

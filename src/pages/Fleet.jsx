@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
 import { useTasks } from '../context/TasksContext';
@@ -341,7 +342,7 @@ export const Fleet = () => {
       </section>
 
       {/* Modal Colaborador */}
-      {showCollaboratorModal && (
+      {showCollaboratorModal && createPortal(
         <div className="modal-overlay" onClick={() => setShowCollaboratorModal(false)}>
           <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -467,11 +468,12 @@ export const Fleet = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal Orden de Trabajo */}
-      {showWorkOrderModal && (
+      {showWorkOrderModal && createPortal(
         <div className="modal-overlay" onClick={() => setShowWorkOrderModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -592,7 +594,8 @@ export const Fleet = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

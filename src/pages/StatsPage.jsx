@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { initializeAchievements, resetStats } from '../../store/slices/statsSlice';
+import { useLanguage } from '../context/LanguageContext';
 import './StatsPage.css';
 
 // Calculate consecutive-day streak from an array of 'YYYY-MM-DD' date strings
@@ -29,6 +30,7 @@ const calcStreak = (dates) => {
 
 const StatsPage = () => {
   const dispatch = useDispatch();
+  const { t } = useLanguage();
   const { achievements, level, xp, xpToNextLevel } = useSelector((s) => s.stats);
 
   // Real data from slices
@@ -72,7 +74,7 @@ const StatsPage = () => {
     <div className="stats-page">
       <div className="stats-header">
         <h1>📊 Stats & Achievements</h1>
-        <p>Tu progreso real — calculado desde tus datos.</p>
+        <p>{t('Your real progress — calculated from your data.')}</p>
       </div>
 
       {/* Level & XP */}
@@ -96,32 +98,32 @@ const StatsPage = () => {
         <div className="stat-card">
           <div className="stat-icon">✓</div>
           <div className="stat-value">{derived.completedTasks}</div>
-          <div className="stat-label">Tareas completadas</div>
+          <div className="stat-label">{t('Tasks Completed')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-icon">☑</div>
           <div className="stat-value">{derived.completedTodos}</div>
-          <div className="stat-label">Todos completados</div>
+          <div className="stat-label">{t('Todos Completed')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-icon">🎯</div>
           <div className="stat-value">{derived.completedGoals}</div>
-          <div className="stat-label">Metas logradas</div>
+          <div className="stat-label">{t('Goals Achieved')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-icon">🔥</div>
           <div className="stat-value">{derived.streak}</div>
-          <div className="stat-label">Días seguidos</div>
+          <div className="stat-label">{t('Day Streak')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-icon">⏱</div>
           <div className="stat-value">{derived.focusHours}h</div>
-          <div className="stat-label">Horas de foco</div>
+          <div className="stat-label">{t('Focus Hours')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-icon">📓</div>
           <div className="stat-value">{derived.journalDays}</div>
-          <div className="stat-label">Días con journal</div>
+          <div className="stat-label">{t('Journal Days')}</div>
         </div>
       </div>
 
@@ -168,30 +170,30 @@ const StatsPage = () => {
 
       {/* Detailed stats — real data */}
       <div className="detailed-stats">
-        <h2>📈 Estadísticas detalladas</h2>
+        <h2>📈 {t('Detailed Statistics')}</h2>
         <div className="stats-list">
           <div className="stat-row">
-            <span className="stat-key">Proyectos completados</span>
+            <span className="stat-key">{t('Projects Completed')}</span>
             <span className="stat-value">{derived.completedProjs} 📋</span>
           </div>
           <div className="stat-row">
-            <span className="stat-key">Notas creadas</span>
+            <span className="stat-key">{t('Notes Created')}</span>
             <span className="stat-value">{notes.length} 📝</span>
           </div>
           <div className="stat-row">
-            <span className="stat-key">Check-ins totales</span>
+            <span className="stat-key">{t('Total Check-ins')}</span>
             <span className="stat-value">{checkins.length} 📆</span>
           </div>
           <div className="stat-row">
-            <span className="stat-key">Humor promedio</span>
+            <span className="stat-key">{t('Average Mood')}</span>
             <span className="stat-value">{derived.avgMood} / 5 😊</span>
           </div>
           <div className="stat-row">
-            <span className="stat-key">Minutos de foco totales</span>
+            <span className="stat-key">{t('Total Focus Minutes')}</span>
             <span className="stat-value">{focusMinutes} ⏱</span>
           </div>
           <div className="stat-row">
-            <span className="stat-key">Gastos registrados</span>
+            <span className="stat-key">{t('Recorded Expenses')}</span>
             <span className="stat-value">{expenses.length} · ${derived.totalExpenses.toFixed(0)} 💸</span>
           </div>
         </div>
@@ -201,7 +203,7 @@ const StatsPage = () => {
         <button
           className="reset-button"
           onClick={() => {
-            if (window.confirm('¿Resetear stats y logros? No se puede deshacer.')) {
+            if (window.confirm(t('Reset stats and achievements? This cannot be undone.'))) {
               dispatch(resetStats());
               dispatch(initializeAchievements());
             }

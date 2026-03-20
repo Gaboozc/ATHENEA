@@ -12,6 +12,7 @@ import {
   setVoiceTone,
   setWeatherPreferences
 } from '../store/slices/userSettingsSlice';
+import { useLanguage } from '../context/LanguageContext';
 import './IdentityHub.css';
 
 /**
@@ -20,6 +21,7 @@ import './IdentityHub.css';
  */
 export const IdentityHub = () => {
   const dispatch = useDispatch();
+  const { t } = useLanguage();
   const userSettings = useSelector((state) => state.userSettings);
 
   // Local form state
@@ -117,36 +119,36 @@ export const IdentityHub = () => {
     Number(formData.workLatitude || 0) !== Number(userSettings.geofencing?.work?.latitude || 0) ||
     Number(formData.workLongitude || 0) !== Number(userSettings.geofencing?.work?.longitude || 0);
 
-  const fullName = formData.firstName || 'Operador';
+  const fullName = formData.firstName || t('Operator');
 
   return (
     <div className="identity-hub">
       <div className="identity-header">
-        <h1>Protocolo de Identidad</h1>
+        <h1>{t('Identity Protocol')}</h1>
         <p className="subtitle">
-          ATHENEA aprenderá quién eres y cómo dirigirse a ti
+          {t('ATHENEA will learn who you are and how to address you')}
         </p>
       </div>
 
       <div className="identity-container">
         {/* Profile Card */}
         <section className="identity-section profile-section">
-          <h2>Perfil del Operador</h2>
+          <h2>{t('Operator Profile')}</h2>
           <div className="profile-preview">
             <div className="preview-card">
               <p className="preview-greeting">
-                Buenos días, <span className="title-label">{formData.title}</span>&nbsp;
+                {t('Good morning,')}&nbsp;<span className="title-label">{formData.title}</span>&nbsp;
                 <span className="name-label">{formData.preferredName || fullName}</span>
               </p>
               <p className="preview-mission">
-                {formData.missionBio || 'Tu misión aquí...'}
+                {formData.missionBio || t('Your mission here...')}
               </p>
             </div>
           </div>
 
           <div className="form-group form-row-2">
             <div className="form-field">
-              <label htmlFor="firstName">Nombre</label>
+              <label htmlFor="firstName">{t('First Name')}</label>
               <input
                 id="firstName"
                 type="text"
@@ -157,7 +159,7 @@ export const IdentityHub = () => {
               />
             </div>
             <div className="form-field">
-              <label htmlFor="lastName">Apellido</label>
+              <label htmlFor="lastName">{t('Last Name')}</label>
               <input
                 id="lastName"
                 type="text"
@@ -171,7 +173,7 @@ export const IdentityHub = () => {
 
           <div className="form-group form-row-2">
             <div className="form-field">
-              <label htmlFor="title">Título / Rango</label>
+              <label htmlFor="title">{t('Title / Rank')}</label>
               <select
                 id="title"
                 name="title"
@@ -190,8 +192,8 @@ export const IdentityHub = () => {
             </div>
             <div className="form-field">
               <label htmlFor="preferredName">
-                Nombre Preferido
-                <span className="helper">(Cómo ATHENEA te llamará)</span>
+                {t('Preferred Name')}
+                <span className="helper">({t('How ATHENEA will address you')})</span>
               </label>
               <input
                 id="preferredName"
@@ -199,15 +201,15 @@ export const IdentityHub = () => {
                 name="preferredName"
                 value={formData.preferredName}
                 onChange={handleInputChange}
-                placeholder={formData.firstName || 'Tu nombre aquí'}
+                placeholder={formData.firstName || t('Your name here')}
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label>Forma de llamarte por agente</label>
+            <label>{t('Agent aliases')}</label>
             <p className="helper-text">
-              Define cómo te llama cada agente según su origen: Jarvis (Iron Man), Cortana (Halo), SHODAN (System Shock).
+              {t('Define how each agent calls you by origin: Jarvis (Iron Man), Cortana (Halo), SHODAN (System Shock).')}
             </p>
             <div className="form-row-3">
               <div className="form-field">
@@ -248,13 +250,13 @@ export const IdentityHub = () => {
 
           <div className="form-group">
             <div className="form-field full-width">
-              <label htmlFor="missionBio">Misión / Objetivos Actuales</label>
+              <label htmlFor="missionBio">{t('Mission / Current Goals')}</label>
               <textarea
                 id="missionBio"
                 name="missionBio"
                 value={formData.missionBio}
                 onChange={handleInputChange}
-                placeholder="Describe tus objetivos actuales: ahorro, productividad, expansión, etc. ATHENEA usará esto para priorizar consejos."
+                placeholder={t('Describe your current goals: savings, productivity, expansion, etc. ATHENEA will use this to prioritize advice.')}
                 rows={5}
               />
             </div>
@@ -263,11 +265,11 @@ export const IdentityHub = () => {
 
         {/* Working Hours & Voice Protocol */}
         <section className="identity-section config-section">
-          <h2>Configuración de Comportamiento</h2>
+          <h2>{t('Behavior Configuration')}</h2>
 
           <div className="form-group form-row-2">
             <div className="form-field">
-              <label htmlFor="workStartTime">Hora de Inicio Laboral</label>
+              <label htmlFor="workStartTime">{t('Work Start Time')}</label>
               <input
                 id="workStartTime"
                 type="time"
@@ -277,7 +279,7 @@ export const IdentityHub = () => {
               />
             </div>
             <div className="form-field">
-              <label htmlFor="workEndTime">Hora de Fin Laboral</label>
+              <label htmlFor="workEndTime">{t('Work End Time')}</label>
               <input
                 id="workEndTime"
                 type="time"
@@ -289,9 +291,9 @@ export const IdentityHub = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="voiceTone">Protocolo de Voz / Tono</label>
+            <label htmlFor="voiceTone">{t('Voice / Tone Protocol')}</label>
             <p className="helper-text">
-              Selecciona cómo ATHENEA debe comunicarse contigo
+              {t('Select how ATHENEA should communicate with you')}
             </p>
             <div className="voice-toggle">
               <div
@@ -308,10 +310,10 @@ export const IdentityHub = () => {
                 <div className="voice-icon">🎩</div>
                 <div className="voice-name">JARVIS</div>
                 <div className="voice-description">
-                  Formal & Refinado
+                  {t('Formal & Refined')}
                 </div>
                 <div className="voice-detail">
-                  Eficiencia, optimización de recursos
+                  {t('Efficiency, resource optimization')}
                 </div>
               </div>
 
@@ -329,10 +331,10 @@ export const IdentityHub = () => {
                 <div className="voice-icon">⚡</div>
                 <div className="voice-name">CORTANA</div>
                 <div className="voice-description">
-                  Táctico & Empático
+                  {t('Tactical & Empathetic')}
                 </div>
                 <div className="voice-detail">
-                  Misión, bienestar, conexión directa
+                  {t('Mission, wellbeing, direct connection')}
                 </div>
               </div>
             </div>
@@ -340,16 +342,16 @@ export const IdentityHub = () => {
 
           {/* Geofencing Section */}
           <div className="form-group">
-            <label>🛰️ Zonas de Operación (Geofencing)</label>
+            <label>🛰️ {t('Operation Zones (Geofencing)')}</label>
             <p className="helper-text">
-              Define las coordenadas de tu casa y tu trabajo. ATHENEA sabrá dónde estás.
+              {t('Define coordinates for home and work. ATHENEA will know where you are.')}
             </p>
             <div className="geofencing-grid">
               <div className="geofencing-zone">
-                <h4>Casa</h4>
+                <h4>{t('Home zone')}</h4>
                 <div className="form-row-2">
                   <div className="form-field">
-                    <label htmlFor="homeLatitude">Latitud</label>
+                    <label htmlFor="homeLatitude">{t('Latitude')}</label>
                     <input
                       id="homeLatitude"
                       type="number"
@@ -361,7 +363,7 @@ export const IdentityHub = () => {
                     />
                   </div>
                   <div className="form-field">
-                    <label htmlFor="homeLongitude">Longitud</label>
+                    <label htmlFor="homeLongitude">{t('Longitude')}</label>
                     <input
                       id="homeLongitude"
                       type="number"
@@ -376,10 +378,10 @@ export const IdentityHub = () => {
               </div>
               
               <div className="geofencing-zone">
-                <h4>Trabajo</h4>
+                <h4>{t('Work zone')}</h4>
                 <div className="form-row-2">
                   <div className="form-field">
-                    <label htmlFor="workLatitude">Latitud</label>
+                    <label htmlFor="workLatitude">{t('Latitude')}</label>
                     <input
                       id="workLatitude"
                       type="number"
@@ -391,7 +393,7 @@ export const IdentityHub = () => {
                     />
                   </div>
                   <div className="form-field">
-                    <label htmlFor="workLongitude">Longitud</label>
+                    <label htmlFor="workLongitude">{t('Longitude')}</label>
                     <input
                       id="workLongitude"
                       type="number"
@@ -408,40 +410,40 @@ export const IdentityHub = () => {
           </div>
 
           <div className="protocol-info">
-            <p className="info-title">💡 Protocolo Activo</p>
+            <p className="info-title">💡 {t('Active Protocol')}</p>
             <p className="info-text">
-              ATHENEA reconocerá a &quot;<span className="accent">
+              {t('ATHENEA will recognize')} &quot;<span className="accent">
                 {formData.title} {formData.preferredName || fullName}
-              </span>&quot; usando el protocolo <span className="accent">
+              </span>&quot; {t('using protocol')} <span className="accent">
                 {formData.voiceTone.toUpperCase()}
               </span>.
             </p>
             <p className="info-text">
-              Jarvis te dirá &quot;<span className="accent">{formData.jarvisAlias || 'Sir'}</span>&quot;, 
-              Cortana te dirá &quot;<span className="accent">{formData.cortanaAlias || 'Chief'}</span>&quot; y 
-              SHODAN te dirá &quot;<span className="accent">{formData.shodanAlias || 'Insect'}</span>&quot;.
+              Jarvis {t('will call you')} &quot;<span className="accent">{formData.jarvisAlias || 'Sir'}</span>&quot;,{' '}
+              Cortana {t('will call you')} &quot;<span className="accent">{formData.cortanaAlias || 'Chief'}</span>&quot; {t('and')}{' '}
+              SHODAN {t('will call you')} &quot;<span className="accent">{formData.shodanAlias || 'Insect'}</span>&quot;.
             </p>
             {formData.missionBio && (
               <p className="info-text">
-                Tu misión de &quot;<span className="accent">{formData.missionBio.substring(0, 40)}</span>...&quot; guiará sus sugerencias.
+                {t('Your mission of')} &quot;<span className="accent">{formData.missionBio.substring(0, 40)}</span>...&quot; {t('will guide suggestions')}.
               </p>
             )}
           </div>
         </section>
 
         <section className="identity-section external-data-section">
-          <h2>🌤️ Clima Automático del Teléfono</h2>
+          <h2>🌤️ {t('Automatic Phone Weather')}</h2>
           <p className="helper-text">
-            ATHENEA usará la ubicación del dispositivo para obtener clima automáticamente, sin API key manual.
+            {t('ATHENEA will use device location for weather automatically, no manual API key needed.')}
           </p>
 
           <div className="protocol-info" style={{ marginTop: '0.5rem' }}>
-            <p className="info-title">📱 Samsung Galaxy S24 Ultra - Modo recomendado</p>
+            <p className="info-title">📱 Samsung Galaxy S24 Ultra - {t('Recommended mode')}</p>
             <p className="info-text">
-              El sistema consulta clima por geolocalización del teléfono y sincroniza alertas en segundo plano.
+              {t('The system queries weather by phone geolocation and syncs alerts in background.')}
             </p>
             <p className="info-text">
-              Proveedor activo: <span className="accent">device-auto</span> (sin configuración manual).
+              {t('Active provider:')} <span className="accent">device-auto</span> ({t('no manual setup')}).
             </p>
           </div>
 
@@ -461,15 +463,15 @@ export const IdentityHub = () => {
                   )
                 }
               />
-              Activar alertas climáticas automáticas
+              {t('Enable automatic weather alerts')}
             </label>
           </div>
 
           <div className="weather-alert-config">
-            <h4>Configuración de Alertas</h4>
+            <h4>{t('Alert Settings')}</h4>
             <div className="form-row-3">
               <div className="form-field">
-                <label htmlFor="rainAlert">Lluvia (horas previas)</label>
+                <label htmlFor="rainAlert">{t('Rain (hours ahead)')}</label>
                 <input
                   id="rainAlert"
                   type="number"
@@ -490,7 +492,7 @@ export const IdentityHub = () => {
                 />
               </div>
               <div className="form-field">
-                <label htmlFor="windAlert">Viento crítico (m/s)</label>
+                <label htmlFor="windAlert">{t('Critical wind (m/s)')}</label>
                 <input
                   id="windAlert"
                   type="number"
@@ -527,7 +529,7 @@ export const IdentityHub = () => {
                       )
                     }
                   />
-                  Alertar temperaturas extremas
+                  {t('Alert extreme temperatures')}
                 </label>
               </div>
             </div>
@@ -544,7 +546,7 @@ export const IdentityHub = () => {
           onClick={handleSave}
           disabled={!isFormDirty}
         >
-          {saved ? '✓ Identidad Guardada' : 'Guardar Identidad'}
+          {saved ? t('✓ Identity Saved') : t('Save Identity')}
         </button>
       </div>
     </div>

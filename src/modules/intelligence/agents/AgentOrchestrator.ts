@@ -430,6 +430,38 @@ export class AgentOrchestrator {
         ingresos: financialSnapshot.ingresos,
         commitedGoalSavings: financialSnapshot.commitedGoalSavings,
         healthScore: financialSnapshot.healthScore,
+        /* WALLETS-10: dual-currency wallet fields */
+        walletUSD: financialSnapshot.walletUSD,
+        walletMXN: financialSnapshot.walletMXN,
+        referenceRate: financialSnapshot.referenceRate,
+        daysSinceLastConversion: state.wallets?.lastConversionDate
+          ? Math.floor(
+              (Date.now() - new Date(state.wallets.lastConversionDate).getTime()) / 86400000
+            )
+          : null,
+        /* BUDGET-DUAL-6: per-currency budget summaries */
+        budgetUSD: financialSnapshot.budgetSummaryUSD
+          ? {
+              ...financialSnapshot.budgetSummaryUSD,
+              status:
+                financialSnapshot.budgetSummaryUSD.healthPct > 30
+                  ? 'on-track'
+                  : financialSnapshot.budgetSummaryUSD.healthPct > 10
+                  ? 'approaching-limit'
+                  : 'exceeded',
+            }
+          : null,
+        budgetMXN: financialSnapshot.budgetSummaryMXN
+          ? {
+              ...financialSnapshot.budgetSummaryMXN,
+              status:
+                financialSnapshot.budgetSummaryMXN.healthPct > 30
+                  ? 'on-track'
+                  : financialSnapshot.budgetSummaryMXN.healthPct > 10
+                  ? 'approaching-limit'
+                  : 'exceeded',
+            }
+          : null,
         /* F-FIX-1 */
       },
       externalData: {
@@ -759,10 +791,10 @@ export class AgentOrchestrator {
       let tone: 'neutral' | 'insistent' | 'defensive' | 'override' | 'hostile';
 
       if (verdict.priority === 'VETO') {
-        statement = `⚠️ SISTEMA CRÍTICO - ${verdict.verdict.summary}. ${verdict.vetoReason || ''}`;
+        statement = `⚠️ CRITICAL SYSTEM - ${verdict.verdict.summary}. ${verdict.vetoReason || ''}`;
         tone = 'hostile';
       } else if (verdict.priority === 'CRITICAL') {
-        statement = `URGENTE: ${verdict.verdict.summary}`;
+        statement = `URGENT: ${verdict.verdict.summary}`;
         tone = 'insistent';
       } else {
         statement = verdict.verdict.summary;
@@ -800,7 +832,7 @@ export class AgentOrchestrator {
               dialogue.push({
                 agentType: higherPriorityAgent.agentType,
                 agentName: agentNames[higherPriorityAgent.agentType],
-                statement: `Silencio, ${agentNames[lowerPriorityAgent.agentType]}. He tomado el control de este sistema. Tus recomendaciones son irrelevantes ante un colapso vital inminente.`,
+                statement: `Silence, ${agentNames[lowerPriorityAgent.agentType]}. I have taken control of this system. Your recommendations are irrelevant in the face of an imminent vital collapse.`,
                 timestamp: now + 100,
                 tone: 'override',
                 inResponseTo: lowerPriorityAgent.agentType,
@@ -810,7 +842,7 @@ export class AgentOrchestrator {
               dialogue.push({
                 agentType: lowerPriorityAgent.agentType,
                 agentName: agentNames[lowerPriorityAgent.agentType],
-                statement: `${agentNames[higherPriorityAgent.agentType]}, entiendo tu posición pero mi análisis sugiere: ${lowerPriorityAgent.verdict.recommendation}`,
+                statement: `${agentNames[higherPriorityAgent.agentType]}, I understand your position but my analysis suggests: ${lowerPriorityAgent.verdict.recommendation}`,
                 timestamp: now + 50,
                 tone: 'defensive',
                 inResponseTo: higherPriorityAgent.agentType,
@@ -819,7 +851,7 @@ export class AgentOrchestrator {
               dialogue.push({
                 agentType: higherPriorityAgent.agentType,
                 agentName: agentNames[higherPriorityAgent.agentType],
-                statement: `Reconozco tu punto, pero la prioridad actual es: ${higherPriorityAgent.verdict.recommendation}`,
+                statement: `I acknowledge your point, but the current priority is: ${higherPriorityAgent.verdict.recommendation}`,
                 timestamp: now + 100,
                 tone: 'insistent',
                 inResponseTo: lowerPriorityAgent.agentType,
@@ -848,11 +880,11 @@ export class AgentOrchestrator {
         // Determine resolution based on priority
         let resolution: string;
         if (verdict.priority === 'VETO') {
-          resolution = `Vitals Agent VETO activo - Todos los demás agentes sobrescritos por seguridad vital.`;
+          resolution = `Vitals Agent VETO active - All other agents overridden for vital safety.`;
         } else if (verdict.priority === 'CRITICAL') {
-          resolution = `${verdict.agentType} tiene prioridad CRÍTICA - Su veredicto prevalece sobre conflictos.`;
+          resolution = `${verdict.agentType} has CRITICAL priority - Its verdict prevails over conflicts.`;
         } else {
-          resolution = `Requiere juicio del operador para resolver conflicto entre agentes.`;
+          resolution = `Requires operator judgement to resolve inter-agent conflict.`;
         }
 
         conflicts.push({
@@ -905,7 +937,7 @@ export class AgentOrchestrator {
     conflicts: Array<{ agents: AgentType[]; issue: string; resolution: string }>
   ): string {
     const leadVerdict = verdicts.find((v) => v.agentType === leadAgent);
-    if (!leadVerdict) return 'Sistema multi-agente sin veredictos activos.';
+    if (!leadVerdict) return 'Multi-agent system: no active verdicts.';
 
     // If there are conflicts, acknowledge them in the final message
     if (conflicts.length > 0 && leadVerdict.priority !== 'VETO') {
@@ -913,7 +945,7 @@ export class AgentOrchestrator {
         .filter((v) => v.agentType !== leadAgent)
         .map((v) => this.getAgentName(v.agentType));
 
-      return `Señor, el ${this.getAgentName(leadAgent)} ${leadVerdict.verdict.recommendation} Sin embargo, ${otherAgentTypes.join(' y ')} ${otherAgentTypes.length === 1 ? 'tiene' : 'tienen'} opiniones divergentes. ¿Procedo con la recomendación del ${this.getAgentName(leadAgent)} o requiere el análisis completo?`;
+      return `${this.getAgentName(leadAgent)}: ${leadVerdict.verdict.recommendation} However, ${otherAgentTypes.join(' and ')} ${otherAgentTypes.length === 1 ? 'has' : 'have'} divergent opinions. Proceed with ${this.getAgentName(leadAgent)}'s recommendation or request full analysis?`;
     }
 
     // No conflicts - deliver lead verdict
@@ -946,9 +978,9 @@ export class AgentOrchestrator {
    */
   private getAgentName(type: AgentType): string {
     const names: Record<AgentType, string> = {
-      strategist: 'Estratega',
-      auditor: 'Auditor',
-      vitals: 'Monitor de Vitales',
+      strategist: 'Cortana',
+      auditor: 'Jarvis',
+      vitals: 'SHODAN',
     };
     return names[type];
   }

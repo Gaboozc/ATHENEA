@@ -328,3 +328,39 @@
     text-align: center;
   }
 }
+
+/* WALLETS-5: Wallet KPI row in FinanceHub */
+.financehub-wallets-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+}
+.wallet-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 130px;
+}
+.wallet-kpi span { font-size: 0.75rem; color: var(--text-muted); }
+.wallet-kpi strong { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+.wallet-kpi small { font-size: 0.72rem; color: var(--text-muted); }
+.wallet-kpi-usd strong { color: #22c55e; }
+.wallet-kpi-mxn strong { color: var(--accent-cyan); }
+.wallet-kpi-link {
+  margin-left: auto;
+  padding: 6px 14px;
+  background: none;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--accent-cyan);
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.wallet-kpi-link:hover { background: rgba(30,201,255,0.08); }

@@ -320,6 +320,79 @@ export const personalHubSkills: SkillManifest[] = [
 // ============================================================================
 
 export const financeHubSkills: SkillManifest[] = [
+  /* WALLETS-11: wallet income/conversion skills */
+  {
+    id: 'record_income_usd',
+    name: 'Record USD Income',
+    description: 'Log income received in USD',
+    icon: '💵',
+    hub: 'FinanceHub',
+    keywords: [
+      'cobré', 'me pagaron', 'ingreso usd', 'gané dólares', 'recibí dólares',
+      'pago en usd', 'me depositaron usd', 'facturé', 'income usd', 'earned usd',
+      'cobré dólares', 'me pagaron dólares', 'ingresé dólares',
+    ],
+    action: 'wallets/addIncomeUSD',
+    paramSchema: {
+      amount: { type: 'number', required: true, description: 'Amount in USD' },
+      description: { type: 'string', required: false, description: 'Income source' },
+      date: { type: 'date', required: false, description: 'Date received' },
+    },
+  },
+  {
+    id: 'record_income_mxn',
+    name: 'Record MXN Income',
+    description: 'Log income received in MXN',
+    icon: '💴',
+    hub: 'FinanceHub',
+    keywords: [
+      'ingreso mxn', 'cobré pesos', 'me pagaron pesos', 'recibí pesos',
+      'income mxn', 'me depositaron pesos', 'ingresé pesos',
+    ],
+    action: 'wallets/addIncomeMXN',
+    paramSchema: {
+      amount: { type: 'number', required: true, description: 'Amount in MXN' },
+      description: { type: 'string', required: false, description: 'Income source' },
+      date: { type: 'date', required: false, description: 'Date received' },
+    },
+  },
+  {
+    id: 'record_conversion',
+    name: 'Record Currency Conversion',
+    description: 'Log a USD to MXN currency conversion',
+    icon: '↔️',
+    hub: 'FinanceHub',
+    keywords: [
+      'convertí', 'cambié dólares', 'cambio de usd a mxn', 'hice cambio',
+      'compré pesos', 'vendí dólares', 'tipo de cambio', 'currency exchange',
+      'cambio divisas', 'cambié a pesos', 'convertí dólares',
+    ],
+    action: 'wallets/recordConversion',
+    paramSchema: {
+      amountUSD: { type: 'number', required: true, description: 'USD amount converted' },
+      amountMXN: { type: 'number', required: true, description: 'MXN amount received' },
+      description: { type: 'string', required: false, description: 'Notes' },
+    },
+  },
+  {
+    id: 'record_expense_usd',
+    name: 'Record USD Expense',
+    description: 'Log an expense paid in USD',
+    icon: '🔴',
+    hub: 'FinanceHub',
+    keywords: [
+      'gasté usd', 'pagué en dólares', 'compré en usd', 'gasto en dólares',
+      'expense usd', 'suscripción usd', 'deuda usd', 'pagué deuda en dólares',
+    ],
+    action: 'finance/registerExpense',
+    paramSchema: {
+      amount: { type: 'number', required: true, description: 'Amount in USD' },
+      currency: { type: 'string', required: false, description: 'Currency (USD)' },
+      description: { type: 'string', required: true, description: 'What was purchased' },
+      category: { type: 'string', required: false, description: 'Category' },
+    },
+  },
+
   {
     id: 'record_expense',
     name: 'Record Expense',
@@ -356,9 +429,15 @@ export const financeHubSkills: SkillManifest[] = [
         type: 'select',
         required: false,
         description: 'How paid',
-        enum: ['cash', 'credit', 'debit', 'transfer', 'other']
-      }
-    }
+        enum: ['cash', 'credit', 'debit', 'transfer', 'other'],
+      },
+      currency: {
+        type: 'select',
+        required: false,
+        description: 'Currency of the expense',
+        enum: ['MXN', 'USD'],
+      },
+    },
   },
 
   {

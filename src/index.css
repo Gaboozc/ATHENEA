@@ -76,3 +76,93 @@ body::after {
 .footer {
   margin-top: auto;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Page transition — fade+slide on route change
+   key={pathname} on ErrorBoundary triggers re-mount → animation
+──────────────────────────────────────────────────────────────── */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app-content > * {
+  animation: page-enter 0.18s ease forwards;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Global focus-visible — keyboard navigation accessibility
+──────────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Remove default ugly browser outline, keep focus-visible */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Global button polish — consistent hover/active transitions
+──────────────────────────────────────────────────────────────── */
+button,
+[role="button"],
+a.navbar-icon-button {
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+button:not(:disabled):hover,
+[role="button"]:not(:disabled):hover {
+  opacity: 0.88;
+}
+
+button:not(:disabled):active,
+[role="button"]:not(:disabled):active {
+  transform: scale(0.97);
+  transition: transform 0.08s ease;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Global link polish
+──────────────────────────────────────────────────────────────── */
+a {
+  transition: color var(--transition-fast), opacity var(--transition-fast);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Input / select / textarea baseline
+──────────────────────────────────────────────────────────────── */
+input,
+select,
+textarea {
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 2px rgba(30, 201, 255, 0.15);
+  outline: none;
+}

@@ -52,7 +52,7 @@ const EVENT_ICONS = {
 export const Calendar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { events } = useSelector((state) => state.calendar);
   
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -352,7 +352,7 @@ export const Calendar = () => {
       <div className="calendar-nav">
         <button onClick={handlePrevMonth} className="calendar-nav-btn">‹</button>
         <h2 className="calendar-month-year">
-          {MONTHS[month]} {year}
+          {new Date(year, month, 1).toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US', { month: 'long', year: 'numeric' })}
         </h2>
         <button onClick={handleNextMonth} className="calendar-nav-btn">›</button>
         <button onClick={handleToday} className="calendar-today-btn">
@@ -363,12 +363,12 @@ export const Calendar = () => {
           <button
             className={`cal-view-btn ${viewMode === 'month' ? 'cal-view-btn-active' : ''}`}
             onClick={() => setViewMode('month')}
-            title="Vista mensual"
+            title={t('Monthly view')}
           >🗓️</button>
           <button
             className={`cal-view-btn ${viewMode === 'agenda' ? 'cal-view-btn-active' : ''}`}
             onClick={() => setViewMode('agenda')}
-            title="Vista agenda"
+            title={t('Agenda view')}
           >📋</button>
         </div>
       </div>

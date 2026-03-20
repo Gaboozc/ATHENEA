@@ -103,16 +103,16 @@ export const Intelligence = () => {
 
   const noInsightsMessage = useMemo(() => {
     if (selectedHub === 'all') return t('No active insights. Your system is running smoothly!');
-    if (selectedHub === 'WorkHub') return 'No hay ningun registro aun para Work.';
-    if (selectedHub === 'PersonalHub') return 'No hay ningun registro aun para Personal.';
-    return 'No hay ningun registro aun para Finance.';
+    if (selectedHub === 'WorkHub') return t('No records yet for Work.');
+    if (selectedHub === 'PersonalHub') return t('No records yet for Personal.');
+    return t('No records yet for Finance.');
   }, [selectedHub, t]);
 
   const noActionsMessage = useMemo(() => {
     if (selectedHub === 'all') return t('No actions executed yet.');
-    if (selectedHub === 'WorkHub') return 'No hay ningun registro aun para Work.';
-    if (selectedHub === 'PersonalHub') return 'No hay ningun registro aun para Personal.';
-    return 'No hay ningun registro aun para Finance.';
+    if (selectedHub === 'WorkHub') return t('No records yet for Work.');
+    if (selectedHub === 'PersonalHub') return t('No records yet for Personal.');
+    return t('No records yet for Finance.');
   }, [selectedHub, t]);
 
   const handleInsightClick = (insight) => {
@@ -127,14 +127,14 @@ export const Intelligence = () => {
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    
+    if (diffMins < 1) return t('Just now');
+    if (diffMins < 60) return `${diffMins}${t('m ago')}`;
+
     const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    
+    if (diffHours < 24) return `${diffHours}${t('h ago')}`;
+
     const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays}d ago`;
+    return `${diffDays}${t('d ago')}`;
   };
 
   return (
@@ -151,13 +151,13 @@ export const Intelligence = () => {
             className={`view-toggle-btn ${viewMode === 'live' ? 'active' : ''}`}
             onClick={() => setViewMode('live')}
           >
-            📡 Live Feed
+            📡 {t('Live Feed')}
           </button>
           <button
             className={`view-toggle-btn ${viewMode === 'analytics' ? 'active' : ''}`}
             onClick={() => setViewMode('analytics')}
           >
-            📊 Analytics
+            📊 {t('Analytics')}
           </button>
         </div>
       </header>
@@ -166,7 +166,7 @@ export const Intelligence = () => {
         <>
           {/* Action History Section */}
           <section className="intel-action-history">
-            <h2>⚡ Recent Actions</h2>
+            <h2>⚡ {t('Recent Actions')}</h2>
             <div className="action-history-list">
               {filteredRecentHistory.length > 0 ? (
                 filteredRecentHistory.map((action) => (
@@ -202,10 +202,10 @@ export const Intelligence = () => {
                 onChange={(e) => setSelectedHub(e.target.value)}
                 className="filter-select"
               >
-                <option value="all">All Hubs</option>
-                <option value="WorkHub">💼 Work</option>
-                <option value="PersonalHub">📝 Personal</option>
-                <option value="FinanceHub">💰 Finance</option>
+                <option value="all">{t('All Hubs')}</option>
+                <option value="WorkHub">💼 {t('Work')}</option>
+                <option value="PersonalHub">📝 {t('Personal')}</option>
+                <option value="FinanceHub">💰 {t('Finance')}</option>
               </select>
             </div>
 
@@ -216,11 +216,11 @@ export const Intelligence = () => {
                 onChange={(e) => setSelectedSeverity(e.target.value)}
                 className="filter-select"
               >
-                <option value="all">All Levels</option>
-                <option value="high">🔴 High</option>
-                <option value="medium">🟡 Medium</option>
-                <option value="low">🔵 Low</option>
-                <option value="info">⚪ Info</option>
+                <option value="all">{t('All Levels')}</option>
+                <option value="high">🔴 {t('High')}</option>
+                <option value="medium">🟡 {t('Medium')}</option>
+                <option value="low">🔵 {t('Low')}</option>
+                <option value="info">⚪ {t('Info')}</option>
               </select>
             </div>
 

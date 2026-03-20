@@ -25,22 +25,22 @@ class ErrorBoundary extends Component {
         <div className="eb-fallback">
           <div className="eb-fallback__card">
             <span className="eb-fallback__icon">⚠️</span>
-            <h2 className="eb-fallback__title">Algo salió mal</h2>
+            <h2 className="eb-fallback__title">Something went wrong</h2>
             <p className="eb-fallback__msg">
-              {this.props.message || 'Esta sección tuvo un error inesperado.'}
+              {this.props.message || 'This section had an unexpected error.'}
             </p>
             {this.state.error?.message && (
               <code className="eb-fallback__detail">{this.state.error.message}</code>
             )}
             <div className="eb-fallback__actions">
               <button className="eb-fallback__btn primary" onClick={this.handleReset}>
-                Reintentar
+                Retry
               </button>
               <button
                 className="eb-fallback__btn secondary"
-                onClick={() => { window.location.href = '/dashboard'; }}
+                onClick={() => { window.location.href = '/#/dashboard'; }}
               >
-                Ir al Dashboard
+                Go to Dashboard
               </button>
             </div>
           </div>

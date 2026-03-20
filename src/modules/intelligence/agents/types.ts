@@ -93,6 +93,13 @@ export interface AgentContext {
     commitedGoalSavings: number;
     healthScore: number;
     queryAmount?: number; // F-FIX-5: optional amount for budget queries
+    /* WALLETS-10: dual-currency wallet fields */
+    walletUSD?: number;
+    walletMXN?: number;
+    referenceRate?: number;
+    daysSinceLastConversion?: number | null;
+    budgetUSD?: { totalLimit: number; totalSpent: number; available: number; healthPct: number; status: string } | null;
+    budgetMXN?: { totalLimit: number; totalSpent: number; available: number; healthPct: number; status: string } | null;
   };
 
   // From Phase 2.5

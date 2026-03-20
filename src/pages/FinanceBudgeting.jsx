@@ -144,22 +144,39 @@ export const FinanceBudgeting = () => {
     return now >= dueDate;
   }, [nextBudgetDate]);
 
-  const rows = useMemo(() => categories.map((cat) => {
-    const spent = expenses
-      .filter((e) => e.categoryId === cat.id && String(e.date || '').slice(0, 7) === currentMonthKey)
-      .reduce((sum, e) => sum + Number(e.amount || 0), 0);
-    const limit       = Number(cat.limit || 0);
-    const usage       = limit > 0 ? (spent / limit) * 100 : 0;
-    const remaining   = Math.max(0, limit - spent);
-    const remainingPct = limit > 0 ? (remaining / limit) * 100 : 100;
-    return {
-      id: cat.id, name: cat.name, spent, limit,
-      usage: Math.min(usage, 100),
-      overBudget: spent > limit && limit > 0,
-      isAlert:    remainingPct <= 10 && limit > 0,
-      colorClass: getBarColor(usage),
-    };
-  }), [categories, expenses, currentMonthKey]);
+  /* BUDGET-DUAL-6: build rows per currency so tracking tables are independent */
+  const buildRows = (currency) =>
+    categories
+      .filter((cat) => (cat.currency || 'MXN') === currency)
+      .map((cat) => {
+        const spent = expenses
+          .filter(
+            (e) =>
+              e.categoryId === cat.id &&
+              (e.currency || 'MXN') === currency &&
+              String(e.date || '').slice(0, 7) === currentMonthKey
+          )
+          .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+        const limit = Number(cat.limit || 0);
+        const usage = limit > 0 ? (spent / limit) * 100 : 0;
+        const remaining = Math.max(0, limit - spent);
+        const remainingPct = limit > 0 ? (remaining / limit) * 100 : 100;
+        return {
+          id: cat.id, name: cat.name, currency, spent, limit,
+          usage: Math.min(usage, 100),
+          available: limit - spent,
+          overBudget: spent > limit && limit > 0,
+          isAlert: remainingPct <= 10 && limit > 0,
+          colorClass: getBarColor(usage),
+          pct: limit > 0 ? Math.round((spent / limit) * 100) : 0,
+        };
+      });
+
+  const rowsMXN = useMemo(() => buildRows('MXN'), [categories, expenses, currentMonthKey]); // eslint-disable-line
+  const rowsUSD = useMemo(() => buildRows('USD'), [categories, expenses, currentMonthKey]); // eslint-disable-line
+
+  // legacy — kept for budgetAlerts (uses all categories)
+  const rows = useMemo(() => [...rowsMXN, ...rowsUSD], [rowsMXN, rowsUSD]);
 
   const budgetAlerts = useMemo(() =>
     (store?.aiMemory?.actionHistory || [])
@@ -504,6 +521,154 @@ export const FinanceBudgeting = () => {
               </div>
             )}
           </section>
+
+          {/* BUDGET-DUAL-6: Dual tracking tables — USD and MXN */}
+          {(rowsUSD.length > 0 || rowsMXN.length > 0) && (
+            <section className="finance-panel bp-card bp-tracking-section">
+              <h2>📊 {t('Seguimiento')} — {monthLabel(currentMonthKey)}</h2>
+
+              {/* Alerts banner */}
+              {atRiskCount > 0 && (
+                <div className="bp-alerts-banner">
+                  ⚠️ {atRiskCount} {atRiskCount === 1 ? t('categoría al límite') : t('categorías al límite o excedidas')}
+                </div>
+              )}
+
+              <div className="bp-tracking-panels">
+                {/* USD tracking table */}
+                {rowsUSD.length > 0 && (
+                  <div className="bp-tracking-panel">
+                    <h3 className="bp-tracking-currency-header">💵 {t('Presupuesto USD')} — {t('Este mes')}</h3>
+                    <table className="bp-tracking-table">
+                      <thead>
+                        <tr>
+                          <th>{t('Categoría')}</th>
+                          <th>{t('Gastado')}</th>
+                          <th>{t('Límite')}</th>
+                          <th>{t('Disponible')}</th>
+                          <th>%</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rowsUSD.map((row) => (
+                          <tr
+                            key={row.id}
+                            className={row.overBudget ? 'bp-tr-over' : row.isAlert ? 'bp-tr-warn' : ''}
+                          >
+                            <td>{row.name}</td>
+                            <td>${row.spent.toFixed(2)}</td>
+                            <td>${row.limit.toFixed(2)}</td>
+                            <td className={row.available < 0 ? 'bp-td-danger' : ''}>
+                              ${row.available.toFixed(2)}
+                            </td>
+                            <td>
+                              <div className="bp-mini-bar-wrap">
+                                <div
+                                  className={`bp-mini-bar bp-mini-bar-${row.colorClass}`}
+                                  style={{ width: `${row.pct}%` }}
+                                />
+                                <span>{row.pct}%</span>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        <tr className="bp-tr-total">
+                          <td><strong>{t('Total')}</strong></td>
+                          <td><strong>${rowsUSD.reduce((s, r) => s + r.spent, 0).toFixed(2)}</strong></td>
+                          <td><strong>${rowsUSD.reduce((s, r) => s + r.limit, 0).toFixed(2)}</strong></td>
+                          <td>
+                            <strong>
+                              ${(rowsUSD.reduce((s, r) => s + r.limit, 0) - rowsUSD.reduce((s, r) => s + r.spent, 0)).toFixed(2)}
+                            </strong>
+                          </td>
+                          <td>
+                            <strong>
+                              {rowsUSD.reduce((s, r) => s + r.limit, 0) > 0
+                                ? Math.round((rowsUSD.reduce((s, r) => s + r.spent, 0) / rowsUSD.reduce((s, r) => s + r.limit, 0)) * 100)
+                                : 0}%
+                            </strong>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* MXN tracking table */}
+                {rowsMXN.length > 0 && (
+                  <div className="bp-tracking-panel">
+                    <h3 className="bp-tracking-currency-header">💴 {t('Presupuesto MXN')} — {t('Este mes')}</h3>
+                    <table className="bp-tracking-table">
+                      <thead>
+                        <tr>
+                          <th>{t('Categoría')}</th>
+                          <th>{t('Gastado')}</th>
+                          <th>{t('Límite')}</th>
+                          <th>{t('Disponible')}</th>
+                          <th>%</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rowsMXN.map((row) => (
+                          <tr
+                            key={row.id}
+                            className={row.overBudget ? 'bp-tr-over' : row.isAlert ? 'bp-tr-warn' : ''}
+                          >
+                            <td>{row.name}</td>
+                            <td>${row.spent.toFixed(2)}</td>
+                            <td>${row.limit.toFixed(2)}</td>
+                            <td className={row.available < 0 ? 'bp-td-danger' : ''}>
+                              ${row.available.toFixed(2)}
+                            </td>
+                            <td>
+                              <div className="bp-mini-bar-wrap">
+                                <div
+                                  className={`bp-mini-bar bp-mini-bar-${row.colorClass}`}
+                                  style={{ width: `${row.pct}%` }}
+                                />
+                                <span>{row.pct}%</span>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        <tr className="bp-tr-total">
+                          <td><strong>{t('Total')}</strong></td>
+                          <td><strong>${rowsMXN.reduce((s, r) => s + r.spent, 0).toFixed(2)}</strong></td>
+                          <td><strong>${rowsMXN.reduce((s, r) => s + r.limit, 0).toFixed(2)}</strong></td>
+                          <td>
+                            <strong>
+                              ${(rowsMXN.reduce((s, r) => s + r.limit, 0) - rowsMXN.reduce((s, r) => s + r.spent, 0)).toFixed(2)}
+                            </strong>
+                          </td>
+                          <td>
+                            <strong>
+                              {rowsMXN.reduce((s, r) => s + r.limit, 0) > 0
+                                ? Math.round((rowsMXN.reduce((s, r) => s + r.spent, 0) / rowsMXN.reduce((s, r) => s + r.limit, 0)) * 100)
+                                : 0}%
+                            </strong>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Budget alerts */}
+              {budgetAlerts.length > 0 && (
+                <div className="bp-alerts-list">
+                  <h4>{t('Alertas recientes')}</h4>
+                  <ul>
+                    {budgetAlerts.slice(0, 5).map((alert) => (
+                      <li key={alert.id} className="bp-alert-item">
+                        {alert.description}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+          )}
 
           {/* Step indicator */}
           <div className="bp-steps">

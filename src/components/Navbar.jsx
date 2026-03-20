@@ -91,6 +91,7 @@ export const Navbar = () => {
 				{ label: t('Personal Hub'), path: '/personal' },
 				{ label: t('Notes'), path: '/notes' },
 				{ label: t('Todos'), path: '/todos' },
+				{ label: t('Rutinas'), path: '/routines' },
 				{ label: t('Notifications'), path: '/notifications' },
 				{ label: t('Diario'), path: '/journal' },
 				{ label: t('Rev. Semanal'), path: '/weekly-review' },
@@ -101,6 +102,7 @@ export const Navbar = () => {
 			items: [
 				{ label: t('Finance Hub'), path: '/finance' },
 				{ label: t('Payments'), path: '/payments' },
+				{ label: t('Billeteras'), path: '/finance/wallets' }, /* WALLETS-12 */
 				{ label: t('Historial'), path: '/finance/history' },
 				{ label: t('Metas'), path: '/finance/goals' },
 				{ label: t('Budgeting'), path: '/finance/budgeting' },
@@ -179,8 +181,8 @@ export const Navbar = () => {
 							<button
 								onClick={toggleLanguage}
 								className="navbar-language-toggle"
-								title={language === 'en' ? 'Cambiar a Español' : 'Switch to English'}
-								aria-label={language === 'en' ? 'Change to Spanish' : 'Switch to English'}
+								title={language === 'en' ? t('Switch to Spanish') : t('Switch to English')}
+								aria-label={language === 'en' ? t('Switch to Spanish') : t('Switch to English')}
 							>
 								<span className="navbar-language-text">
 									{language === 'en' ? 'EN' : 'ES'}
@@ -201,7 +203,7 @@ export const Navbar = () => {
 						<Link
 							to="/settings"
 						className={`navbar-icon-button system-icon${location.pathname.startsWith('/settings') ? ' is-active' : ''}`}
-							title={t('Configuración')}
+							title={t('Settings')}
 						>
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
 								<circle cx="12" cy="12" r="3" />
@@ -211,8 +213,8 @@ export const Navbar = () => {
 						<Link
 							to="/stats"
 							className={`navbar-icon-button system-icon${location.pathname.startsWith('/stats') ? ' is-active' : ''}`}
-							aria-label={t('Stats')}
-							title={t('Estadísticas')}
+							aria-label={t('Statistics')}
+							title={t('Statistics')}
 						>
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
 								<line x1="18" y1="20" x2="18" y2="10" />
@@ -223,7 +225,7 @@ export const Navbar = () => {
 						<Link
 							to="/identity"
 							className={`navbar-icon-button system-icon${location.pathname.startsWith('/identity') ? ' is-active' : ''}`}
-							title={t('Identidad')}
+							title={t('Identity')}
 						>
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
 								<rect x="3" y="4" width="18" height="16" rx="2" />

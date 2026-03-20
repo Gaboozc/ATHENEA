@@ -27,6 +27,7 @@ import budgetCycleReducer from './slices/budgetCycleSlice';
 import checkinsReducer from '../src/store/slices/checkinsSlice';
 import journalReducer from './slices/journalSlice';
 import focusReducer from './slices/focusSlice';
+import walletsReducer from './slices/walletsSlice'; /* WALLETS-1 */
 import { budgetGuardMiddleware } from '../src/store/middleware/budgetGuardMiddleware';
 import { financeDeletionAuditMiddleware } from '../src/store/middleware/financeDeletionAuditMiddleware';
 import { feedbackMiddleware } from '../src/store/middleware/feedbackMiddleware'; /* FIX UX-3 */
@@ -76,6 +77,7 @@ const rootReducer = combineReducers({
   checkins: checkinsReducer,
   journal: journalReducer,
   focus: focusReducer,
+  wallets: walletsReducer, /* WALLETS-1 */
 });
 
 const persistConfig = {
@@ -105,6 +107,7 @@ const persistConfig = {
     'checkins',
     'journal',
     'focus',
+    'wallets', /* WALLETS-1 */
   ]
 };
 

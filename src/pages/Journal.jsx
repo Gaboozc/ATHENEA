@@ -168,7 +168,7 @@ export const Journal = () => {
                 ))}
               </div>
               <span className="journal-autosave-indicator">
-                {dirty ? '⏺ Guardando…' : '✓ Guardado'}
+                {dirty ? `⏺ ${t('Saving…')}` : `✓ ${t('Saved')}`}
               </span>
             </div>
             <textarea

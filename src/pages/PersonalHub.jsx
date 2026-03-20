@@ -99,7 +99,7 @@ export const PersonalHub = () => {
       </header>
 
       <section className="personalhub-actions">
-        <button onClick={() => navigate('/inbox')}>{t('Captura rápida')}</button> {/* P-FIX-3 */}
+        <button onClick={() => navigate('/inbox')}>{t('Quick Capture')}</button>
         <button onClick={() => navigate('/notes')}>{t('Go to Notes')}</button>
         <button onClick={() => navigate('/todos')}>{t('Go to Todos')}</button>
         <button onClick={() => navigate('/calendar')}>{t('Go to Calendar')}</button>

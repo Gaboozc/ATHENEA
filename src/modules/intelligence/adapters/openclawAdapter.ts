@@ -109,6 +109,11 @@ export class OpenClawAdapter {
       'record_income': this.mapAddIncome.bind(this),
       'set_budget': this.mapSetBudget.bind(this),
       'pay_debt': this.mapPayDebt.bind(this),
+      /* WALLETS-11: wallet skills */
+      'record_income_usd': this.mapAddIncomeUSD.bind(this),
+      'record_income_mxn': this.mapAddIncomeMXN.bind(this),
+      'record_conversion': this.mapRecordConversion.bind(this),
+      'record_expense_usd': this.mapRegisterExpenseUSD.bind(this),
 
       // ========== GLOBAL ==========
       'search': this.mapSearch.bind(this),
@@ -344,6 +349,22 @@ export class OpenClawAdapter {
         }];
       }
     }
+
+    /* WALLETS-11: record_expense_usd — also deduct from wallet after budget entry */
+    if (skillId === 'record_expense_usd' && primaryPayload?.id) {
+      const currency = primaryPayload.currency || 'USD';
+      return [{
+        type: currency === 'USD' ? 'wallets/addExpenseUSD' : 'wallets/addExpenseMXN',
+        payload: {
+          id: `wallet-exp-${primaryPayload.id}`,
+          amount: primaryPayload.amount,
+          description: primaryPayload.note || '',
+          category: primaryPayload.categoryId || null,
+          date: primaryPayload.date,
+        },
+      }];
+    }
+
     return [];
   }
 
@@ -430,6 +451,68 @@ export class OpenClawAdapter {
   }
 
   // ============================================================================
+  // WALLET MAPPERS (WALLETS-11)
+  // ============================================================================
+
+  private mapAddIncomeUSD(params: any, ctx: SmartResolverContext): ReduxAction {
+    return {
+      type: 'wallets/addIncomeUSD',
+      payload: {
+        id: `inc-usd-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        amount: this.transformAmount(params.amount),
+        description: params.description || 'Ingreso USD',
+        category: params.category || 'income',
+        date: this.transformDate(params.date, ctx) || new Date().toISOString(),
+      },
+    };
+  }
+
+  private mapAddIncomeMXN(params: any, ctx: SmartResolverContext): ReduxAction {
+    return {
+      type: 'wallets/addIncomeMXN',
+      payload: {
+        id: `inc-mxn-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        amount: this.transformAmount(params.amount),
+        description: params.description || 'Ingreso MXN',
+        category: params.category || 'income',
+        date: this.transformDate(params.date, ctx) || new Date().toISOString(),
+      },
+    };
+  }
+
+  private mapRecordConversion(params: any, _ctx: SmartResolverContext): ReduxAction {
+    return {
+      type: 'wallets/recordConversion',
+      payload: {
+        id: `conv-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        amountUSD: this.transformAmount(params.amountUSD),
+        amountMXN: this.transformAmount(params.amountMXN),
+        description: params.description || '',
+        date: new Date().toISOString(),
+      },
+    };
+  }
+
+  private mapRegisterExpenseUSD(params: any, ctx: SmartResolverContext): ReduxAction {
+    /* WALLETS-11: USD expense — primary action goes to budgetSlice;
+     * side-effect (wallets/addExpenseUSD) added via getSideEffectActions */
+    const id = `exp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const currency = /usd|dólar|dollar/i.test(params.description || '') ? 'USD'
+      : (params.currency || 'USD');
+    return {
+      type: 'budget/addExpense',
+      payload: {
+        id,
+        amount: this.transformAmount(params.amount),
+        currency,
+        categoryId: params.categoryId || params.category || null,
+        note: params.description || '',
+        date: this.transformDate(params.date, ctx) || new Date().toISOString(),
+      },
+    };
+  }
+
+  // ============================================================================
   // VALIDATION
   // ============================================================================
 
@@ -480,7 +563,18 @@ export class OpenClawAdapter {
       'navigation/openCalendar',
 
       // Intelligence
-      'intelligence/executeSearch'
+      'intelligence/executeSearch',
+
+      // Budget (corrected)
+      'budget/addExpense',
+      'budget/addCategory',
+
+      // Wallets (WALLETS-11)
+      'wallets/addIncomeUSD',
+      'wallets/addIncomeMXN',
+      'wallets/addExpenseUSD',
+      'wallets/addExpenseMXN',
+      'wallets/recordConversion',
     ];
 
     return knownActions.includes(actionType);

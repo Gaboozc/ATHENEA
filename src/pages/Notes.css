@@ -383,3 +383,73 @@
     padding: 1rem;
   }
 }
+
+/* Unificación Notas & Recordatorios */
+.notes-type-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-surface, #1e293b);
+  border: 1px solid var(--border-default, #334155);
+  border-radius: 8px;
+  padding: 4px;
+}
+.notes-type-tab {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #9ca3af);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.notes-type-tab.active {
+  background: var(--bg-elevated, #0f172a);
+  color: var(--text-primary, #e5e7eb);
+}
+.notes-type-tab--reminder.active { color: #f59e0b; }
+.notes-type-count {
+  background: #f59e0b;
+  color: #000;
+  border-radius: 999px;
+  padding: 1px 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+/* Reminder banner en tarjeta */
+.note-reminder-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  margin: -1px -1px 10px;
+  border-radius: 6px 6px 0 0;
+  background: rgba(245, 158, 11, 0.1);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.25);
+}
+.note-reminder-icon { font-size: 0.9rem; }
+.note-reminder-date { font-size: 0.78rem; color: #f59e0b; font-weight: 600; }
+
+/* Variantes de tarjeta */
+.note-card--reminder { box-shadow: 0 0 0 1px rgba(245,158,11,0.2); }
+.note-card--today .note-reminder-banner { background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.3); }
+.note-card--today .note-reminder-date { color: #22c55e; }
+.note-card--overdue .note-reminder-banner { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); }
+.note-card--overdue .note-reminder-date { color: #ef4444; }
+
+/* Hints en formulario */
+.notes-label-hint { font-size: 0.78rem; color: var(--text-muted, #9ca3af); font-weight: 400; }
+.notes-reminder-hint {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+  color: #f59e0b;
+  padding: 6px 10px;
+  background: rgba(245,158,11,0.08);
+  border-radius: 6px;
+  border: 1px solid rgba(245,158,11,0.2);
+}

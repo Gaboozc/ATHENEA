@@ -15,6 +15,7 @@ import {
     useWidgetDataBridge
 } from "../modules/intelligence"
 import ErrorBoundary from "../components/ErrorBoundary/ErrorBoundary"
+import { useRoutineAlarms } from "../hooks/useRoutineAlarms"
 
 // Base component that maintains the navbar and footer throughout the page and the scroll to top functionality.
 export const Layout = () => {
@@ -23,6 +24,7 @@ export const Layout = () => {
     useInsightNotificationBridge(true);
     useExternalCalendarObserver(true);
     useWidgetDataBridge(true);
+    useRoutineAlarms();  /* ROUTINES-2 */
 
     const highInsightsCount = insights.filter((insight) => insight.severity === 'high').length;
 
@@ -37,13 +39,13 @@ export const Layout = () => {
 
     return (
         <ScrollToTop>
-            <ErrorBoundary message="La barra de navegación tuvo un error.">
+            <ErrorBoundary message="The navigation bar had an error.">
                 <Navbar />
             </ErrorBoundary>
             <div className="app-shell">
                 <main className="app-content">
-                    {/* key={pathname} reinicia el boundary al navegar, aislando cada página */}
-                    <ErrorBoundary key={location.pathname} message="Esta página tuvo un error inesperado.">
+                    {/* key={pathname} resets boundary on navigation, isolating each page */}
+                    <ErrorBoundary key={location.pathname} message="This page had an unexpected error.">
                         <Outlet />
                     </ErrorBoundary>
                 </main>
@@ -51,7 +53,7 @@ export const Layout = () => {
             <GatekeeperModal />
             <ReminderToasts />
             <NativeReminderNotifications />
-            <ErrorBoundary message="El asistente tuvo un error.">
+            <ErrorBoundary message="The assistant had an error.">
                 <Omnibar defaultHub="WorkHub" onActionExecuted={handleOmnibarActionExecuted} />
             </ErrorBoundary>
             <ToastContainer />

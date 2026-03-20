@@ -4,6 +4,7 @@ import { useTasks } from '../context/TasksContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '../components/Skeleton/Skeleton';
+import { getNeuralKey } from '../modules/intelligence/neuralAccess';
 import { DailyStandup } from '../components/DailyStandup/DailyStandup';
 import EmptyState from '../components/EmptyState/EmptyState';
 import './WorkHub.css';
@@ -88,7 +89,7 @@ export const WorkHub = () => {
         </div>
       </header>
 
-      {lastVerdict && (Date.now() - lastVerdict.timestamp < 30 * 60 * 1000) && ( /* W-FEAT-1 */
+      {lastVerdict && getNeuralKey() && (Date.now() - lastVerdict.timestamp < 30 * 60 * 1000) && ( /* W-FEAT-1 */
         <div className="cortana-briefing">
           <span className="cortana-icon">🧿</span>
           <div className="cortana-content">
@@ -123,7 +124,7 @@ export const WorkHub = () => {
           className="workhub-btn-gatekeeper"
           onClick={() => window.dispatchEvent(new CustomEvent('athenea:gatekeeper:open'))}
         >
-          🎯 {t('Crear tarea prioritaria')}
+          🎯 {t('Create priority task')}
         </button>
       </section>
 
@@ -131,7 +132,7 @@ export const WorkHub = () => {
         <div className="workhub-card">
           <h2>{t("Today's Focus")}</h2>
           {todayFocus.length === 0 ? (
-            <EmptyState icon="📋" message={t('No tasks yet.')} ctaLabel={`+ ${t('Nueva tarea')}`} onCta={openGatekeeper} />
+            <EmptyState icon="📋" message={t('No tasks yet.')} ctaLabel={`+ ${t('New task')}`} onCta={openGatekeeper} />
           ) : (
             <ul>
               {todayFocus.map((task) => (
@@ -166,6 +167,9 @@ export const WorkHub = () => {
               {activeProjects.slice(0, 3).map((project) => (
                 <li key={project.id}>
                   <span>{project.name}</span>
+                  {project.phase && (
+                    <span className="workhub-pill workhub-pill-phase">{project.phase}</span>
+                  )}
                   <span className="workhub-pill">{t(project.status || 'Active')}</span>
                 </li>
               ))}

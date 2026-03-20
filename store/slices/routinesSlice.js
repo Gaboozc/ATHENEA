@@ -14,10 +14,42 @@ const routinesSlice = createSlice({
         title: action.payload?.title || 'Untitled Routine',
         frequency: action.payload?.frequency || 'daily',
         daysOfWeek: action.payload?.daysOfWeek || [0, 1, 2, 3, 4, 5, 6],
+        tasks: [],            /* ROUTINES-2: lista de tareas con hora */
         lastCompleted: null,
-        completedDates: [],  /* P-FIX-1: replaces single lastCompleted */
+        completedDates: [],
         streak: 0
       });
+    },
+    addRoutineTask: (state, action) => {     /* ROUTINES-2 */
+      const { routineId, task } = action.payload || {};
+      const routine = state.routines.find((r) => r.id === routineId);
+      if (!routine) return;
+      if (!routine.tasks) routine.tasks = [];
+      routine.tasks.push({
+        id: task?.id || `rtask-${Date.now()}`,
+        name: task?.name || 'Tarea',
+        startTime: task?.startTime || '08:00',
+        endTime: task?.endTime || '09:00',
+      });
+      // mantener ordenadas por startTime
+      routine.tasks.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    },
+    updateRoutineTask: (state, action) => {  /* ROUTINES-2 */
+      const { routineId, taskId, name, startTime, endTime } = action.payload || {};
+      const routine = state.routines.find((r) => r.id === routineId);
+      const task = (routine?.tasks || []).find((t) => t.id === taskId);
+      if (!task) return;
+      if (name !== undefined)      task.name      = name;
+      if (startTime !== undefined) task.startTime = startTime;
+      if (endTime !== undefined)   task.endTime   = endTime;
+      routine.tasks.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    },
+    deleteRoutineTask: (state, action) => {  /* ROUTINES-2 */
+      const { routineId, taskId } = action.payload || {};
+      const routine = state.routines.find((r) => r.id === routineId);
+      if (routine?.tasks) {
+        routine.tasks = routine.tasks.filter((t) => t.id !== taskId);
+      }
     },
     toggleRoutineToday: (state, action) => {
       const id = action.payload?.id;
@@ -72,5 +104,5 @@ const routinesSlice = createSlice({
   }
 });
 
-export const { addRoutine, toggleRoutineToday, deleteRoutine, updateRoutine } = routinesSlice.actions;
+export const { addRoutine, addRoutineTask, updateRoutineTask, deleteRoutineTask, toggleRoutineToday, deleteRoutine, updateRoutine } = routinesSlice.actions;
 export default routinesSlice.reducer;

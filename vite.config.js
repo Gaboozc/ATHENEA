@@ -10,6 +10,24 @@ export default defineConfig({
         port: 3000
     },
     build: {
-        outDir: 'dist'
-    }
+        outDir: 'dist',
+        chunkSizeWarningLimit: 600,
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    // React core
+                    'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+                    // Redux stack
+                    'vendor-redux': ['@reduxjs/toolkit', 'react-redux', 'redux-persist'],
+                    // Google OAuth
+                    'vendor-google': ['@react-oauth/google'],
+                    // ML / Transformers (ONNX — very large)
+                    'vendor-ml': ['@xenova/transformers'],
+                    // PDF generation / rendering
+                    'vendor-pdf': ['jspdf', 'jspdf-autotable'],
+                    'vendor-pdfjs': ['pdfjs-dist'],
+                },
+            },
+        },
+    },
 })

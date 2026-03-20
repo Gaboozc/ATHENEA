@@ -13,7 +13,7 @@ import './Settings.css';
  * Immersive control center for Identity Core + outbound webhook telemetry.
  */
 const Settings = () => {
-  const { language, setLanguage } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const { exportToJSON, exportToPDF, importFromJSON } = useDataExport();
   const [importText, setImportText] = useState('');
   const [message, setMessage] = useState(null);
@@ -30,12 +30,12 @@ const Settings = () => {
   const handleSaveAI = () => {
     setNeuralProvider(aiProvider);
     setNeuralKey(aiKey);
-    showMessage('✓ Configuración de IA guardada');
+    showMessage(t('AI configuration saved'));
   };
 
   const handleTestAI = async () => {
     const key = aiKey.trim();
-    if (!key) { showMessage('Ingresa tu API key primero', 'error'); return; }
+    if (!key) { showMessage(t('Enter your API key first'), 'error'); return; }
     setAiTestStatus('testing');
     try {
       const url = aiProvider === 'groq'
@@ -43,10 +43,10 @@ const Settings = () => {
         : 'https://api.openai.com/v1/models';
       const res = await fetch(url, { headers: { Authorization: `Bearer ${key}` } });
       setAiTestStatus(res.ok ? 'ok' : 'error');
-      showMessage(res.ok ? '✓ Conexión exitosa — IA activa' : `✗ Error ${res.status}: clave inválida`, res.ok ? 'success' : 'error');
+      showMessage(res.ok ? t('Connection successful — AI active') : `✗ Error ${res.status}: ${t('invalid key')}`, res.ok ? 'success' : 'error');
     } catch {
       setAiTestStatus('error');
-      showMessage('✗ No se pudo conectar al proveedor de IA', 'error');
+      showMessage(t('Could not connect to AI provider'), 'error');
     }
   };
 
@@ -155,7 +155,7 @@ const Settings = () => {
     <div className="settings-page">
       <div className="settings-header">
         <h1>🧠 Neural Core</h1>
-        <p>ATHENEA personal, local y privada. Sin nube multiusuario.</p>
+        <p>{t('ATHENEA — personal, local and private.')}</p>
       </div>
 
       {message && (
@@ -170,7 +170,7 @@ const Settings = () => {
 
       {/* ── Idioma ───────────────────────────────────────────────────────── */}
       <div className="settings-section">
-        <h2 className="settings-section-title">🌐 Idioma / Language</h2>
+        <h2 className="settings-section-title">🌐 {t('Language')}</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
           <select
             className="settings-select"
@@ -182,28 +182,28 @@ const Settings = () => {
             <option value="es">Español</option>
           </select>
           <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-            {language === 'es' ? 'La interfaz está en Español' : 'Interface is in English'}
+            {t('Interface is in English')}
           </span>
         </div>
       </div>
 
       {/* ── Inteligencia Artificial ──────────────────────────────────────── */}
       <div className="settings-section">
-        <h2 className="settings-section-title">🤖 Inteligencia Artificial</h2>
+        <h2 className="settings-section-title">🤖 {t('Artificial Intelligence')}</h2>
         <p className="settings-section-desc">
-          Configura tu API key para activar los agentes Cortana, Jarvis y SHODAN con IA real.
+          {t('Configure your API key to activate Cortana, Jarvis and SHODAN with real AI.')}
         </p>
 
         <div style={{ display: 'grid', gap: '0.75rem', maxWidth: 480 }}>
           <label style={{ display: 'grid', gap: 4 }}>
-            <span className="settings-label">Proveedor</span>
+            <span className="settings-label">{t('Provider')}</span>
             <select
               className="settings-select"
               value={aiProvider}
               onChange={(e) => setAiProvider(e.target.value)}
             >
               <option value="openai">OpenAI (GPT-4o-mini)</option>
-              <option value="groq">Groq (Llama 3.1 — gratis)</option>
+              <option value="groq">Groq (Llama 3.1 — {t('free')})</option>
             </select>
           </label>
 
@@ -231,24 +231,24 @@ const Settings = () => {
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button className="settings-button primary" onClick={handleSaveAI}>
-              Guardar
+              {t('Save')}
             </button>
             <button
               className="settings-button secondary"
               onClick={handleTestAI}
               disabled={aiTestStatus === 'testing'}
             >
-              {aiTestStatus === 'testing' ? '⏳ Probando…' :
-               aiTestStatus === 'ok'      ? '✓ Conectado' :
-               aiTestStatus === 'error'   ? '✗ Reintentar' :
-                                            'Probar conexión'}
+              {aiTestStatus === 'testing' ? `⏳ ${t('Testing…')}` :
+               aiTestStatus === 'ok'      ? `✓ ${t('Connected')}` :
+               aiTestStatus === 'error'   ? `✗ ${t('Retry')}` :
+                                            t('Test connection')}
             </button>
           </div>
 
           <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
             {aiProvider === 'groq'
-              ? 'Groq es gratuito. Obtén tu key en console.groq.com'
-              : 'OpenAI requiere créditos. Obtén tu key en platform.openai.com'}
+              ? t('Groq is free. Get your key at console.groq.com')
+              : t('OpenAI requires credits. Get your key at platform.openai.com')}
           </p>
         </div>
       </div>
@@ -269,14 +269,14 @@ const Settings = () => {
             <div className="import-section" style={{ marginTop: '1rem' }}>
               <h3>Simulation & Internal Logs</h3>
               <p className="help-text">
-                Herramientas internas movidas fuera de la Omnibar principal.
+                {t('Internal tools moved outside the main Omnibar.')}
               </p>
               <div className="settings-actions">
                 <button className="settings-button secondary" onClick={handleSimulateBankIntercept}>
-                  Simular Banco
+                  {t('Simulate Bank')}
                 </button>
                 <button className="settings-button secondary" onClick={handleRefreshDebugLogs}>
-                  Refrescar ActionBridge Log
+                  {t('Refresh ActionBridge Log')}
                 </button>
               </div>
 
@@ -307,17 +307,17 @@ const Settings = () => {
         {advancedOpen && (
           <>
             <div className="import-section" style={{ marginTop: '1.25rem', borderTop: 'none', paddingTop: 0 }}>
-              <h3>📥 Data Backup & Restore</h3>
+              <h3>📥 {t('Data Backup & Restore')}</h3>
               <p className="help-text">
-                Export or recover full state snapshots.
+                {t('Export or recover full state snapshots.')}
               </p>
 
               <div className="settings-actions">
                 <button className="settings-button primary" onClick={handleExportPDF}>
-                  📄 Export Complete PDF Backup
+                  📄 {t('Export PDF Backup')}
                 </button>
                 <button className="settings-button secondary" onClick={handleExportJSON}>
-                  💾 Export JSON Backup
+                  💾 {t('Export JSON Backup')}
                 </button>
               </div>
 
@@ -325,7 +325,7 @@ const Settings = () => {
                 className="import-textarea"
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
-                placeholder="Paste your backup JSON here..."
+                placeholder={t('Paste your backup JSON here...')}
                 rows={6}
               />
               <button
@@ -333,22 +333,22 @@ const Settings = () => {
                 onClick={handleImport}
                 disabled={!importText.trim()}
               >
-                Import & Restore Data
+                {t('Import & Restore Data')}
               </button>
             </div>
 
             <div className="settings-section danger-zone" style={{ marginTop: '1rem', marginBottom: 0 }}>
-              <h2>⚠️ Danger Zone</h2>
+              <h2>⚠️ {t('Danger Zone')}</h2>
               <p className="section-description">
-                Irreversible actions. Proceed with caution.
+                {t('Irreversible actions. Proceed with caution.')}
               </p>
 
               <div className="settings-actions">
                 <button className="settings-button secondary" onClick={handleBackupBeforeClear}>
-                  💾 Create Emergency Backup
+                  💾 {t('Create Emergency Backup')}
                 </button>
                 <button className="settings-button danger" onClick={handleClearAll}>
-                  🔥 Clear All Data (Cannot Undo!)
+                  🔥 {t('Clear All Data (Cannot Undo!)')}
                 </button>
               </div>
             </div>

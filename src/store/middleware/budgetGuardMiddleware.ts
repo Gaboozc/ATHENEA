@@ -15,6 +15,8 @@ const getMonthKey = () => new Date().toISOString().slice(0, 7);
  *  1. BUDGET ALERT  — if a category drops below 10% of its limit, dispatches
  *     an `actionHistory/record` (hub: FinanceHub, actionType: budget-alert,
  *     agent: Jarvis) so that VitalsAgent / Dashboard can surface the warning.
+ *     BUDGET-DUAL: alerts respect the expense currency — only checks categories
+ *     that match the same currency as the expense.
  *
  *  2. GOAL SYNC — if the expense's category name matches a saved goal's
  *     `category` field, auto-deposits the expense amount into that goal via
@@ -35,41 +37,49 @@ export const budgetGuardMiddleware: Middleware = (storeApi) => (next) => (action
   const goals: any[] = Array.isArray(state?.goals?.goals) ? state.goals.goals : [];
   const monthKey = getMonthKey();
 
-  // 1 ─ Budget threshold check
-  categories.forEach((category) => {
-    const limit = Number(category?.limit || 0);
-    if (limit <= 0) return;
+  /* BUDGET-DUAL-4: respect currency of the triggering expense */
+  const expenseCurrency: string = action.payload?.currency || 'MXN';
+  const currencyLabel = expenseCurrency;
 
-    const spent = expenses
-      .filter((e) => e.categoryId === category.id)
-      .filter((e) => String(e.date || '').slice(0, 7) === monthKey)
-      .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  // 1 ─ Budget threshold check (only categories matching the expense currency)
+  categories
+    .filter((cat) => (cat?.currency || 'MXN') === expenseCurrency)
+    .forEach((category) => {
+      const limit = Number(category?.limit || 0);
+      if (limit <= 0) return;
 
-    const remaining = limit - spent;
-    const remainingPct = remaining / limit;
+      const spent = expenses
+        .filter((e) => e.categoryId === category.id)
+        .filter((e) => (e.currency || 'MXN') === expenseCurrency)
+        .filter((e) => String(e.date || '').slice(0, 7) === monthKey)
+        .reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-    if (remainingPct <= ALERT_THRESHOLD && remaining >= 0) {
-      storeApi.dispatch({
-        type: 'actionHistory/record',
-        payload: {
-          hub: 'FinanceHub',
-          actionType: 'budget-alert',
-          type: 'proactive-insight',
-          agent: 'Jarvis',
-          description: `⚠️ ${category.name}: queda ${remaining.toFixed(2)} (${Math.round(remainingPct * 100)}% del límite)`,
-          success: true,
+      const remaining = limit - spent;
+      const remainingPct = remaining / limit;
+
+      if (remainingPct <= ALERT_THRESHOLD && remaining >= 0) {
+        storeApi.dispatch({
+          type: 'actionHistory/record',
           payload: {
-            categoryId: category.id,
-            categoryName: category.name,
-            remaining,
-            limit,
-            spent,
-            remainingPct: Math.round(remainingPct * 100)
-          }
-        }
-      });
-    }
-  });
+            hub: 'FinanceHub',
+            actionType: 'budget-alert',
+            type: 'proactive-insight',
+            agent: 'Jarvis',
+            description: `⚠️ ${category.name} (${currencyLabel}): quedan $${remaining.toFixed(2)} ${currencyLabel} (${Math.round(remainingPct * 100)}% del límite)`,
+            success: true,
+            payload: {
+              categoryId: category.id,
+              categoryName: category.name,
+              currency: expenseCurrency,
+              remaining,
+              limit,
+              spent,
+              remainingPct: Math.round(remainingPct * 100),
+            },
+          },
+        });
+      }
+    });
 
   // 2 ─ Goal deposit sync
   const expensePayload = action?.payload || {};

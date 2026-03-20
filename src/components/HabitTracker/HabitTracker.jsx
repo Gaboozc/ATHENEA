@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
+import { useLanguage } from '../../context/LanguageContext';
 import './HabitTracker.css';
 
 function getLast7Days() {
@@ -12,13 +13,15 @@ function getLast7Days() {
   return days;
 }
 
-function formatDayLabel(dateStr) {
+function formatDayLabel(dateStr, locale) {
   const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('es-ES', { weekday: 'short' }).slice(0, 2).toUpperCase();
+  return d.toLocaleDateString(locale, { weekday: 'short' }).slice(0, 2).toUpperCase();
 }
 
 export default function HabitTracker() {
   const routines = useSelector((state) => state.routines?.routines || []);
+  const { language, t } = useLanguage();
+  const locale = language === 'es' ? 'es-ES' : 'en-US';
   const last7 = getLast7Days();
 
   if (routines.length === 0) return null;
@@ -26,7 +29,7 @@ export default function HabitTracker() {
   return (
     <div className="habit-tracker">
       <div className="habit-tracker__header">
-        <span className="habit-tracker__title">Hábitos — últimos 7 días</span>
+        <span className="habit-tracker__title">{t('Habits — last 7 days')}</span>
       </div>
 
       {/* Day header row */}
@@ -34,7 +37,7 @@ export default function HabitTracker() {
         <div className="habit-tracker__name-col" />
         {last7.map((day) => (
           <div key={day} className="habit-tracker__day-label">
-            {formatDayLabel(day)}
+            {formatDayLabel(day, locale)}
           </div>
         ))}
       </div>
@@ -53,7 +56,7 @@ export default function HabitTracker() {
                 <div
                   key={day}
                   className={`habit-tracker__cell ${done ? 'is-done' : ''}`}
-                  title={done ? `Completado el ${day}` : `Sin completar el ${day}`}
+                  title={done ? `${t('Done')} ${day}` : `${t('Pending')} ${day}`}
                 />
               );
             })}
