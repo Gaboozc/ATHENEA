@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/wptRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:padding="10dp"
+    android:gravity="center_vertical"
+    android:background="@drawable/widget_bg_dark">
+
+    <TextView
+        android:id="@+id/wptIcon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="📋"
+        android:textSize="24sp"
+        android:layout_marginEnd="10dp" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/wptCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textColor="#1ec9ff"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:lineSpacingExtra="-4dp" />
+
+        <TextView
+            android:id="@+id/wptCritical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 críticas"
+            android:textColor="#ef4444"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+</LinearLayout>

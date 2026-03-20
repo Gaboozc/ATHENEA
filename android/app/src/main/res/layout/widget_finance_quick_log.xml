@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/wfqlRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="10dp"
+    android:background="@drawable/widget_bg_dark">
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/wfqlTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="💰 Registrar"
+        android:textColor="#e2e8f0"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="6dp" />
+
+    <!-- Row 1: cat1 + cat2 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/wfqlCat1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:gravity="center"
+            android:text="🍔 Comida"
+            android:textColor="#e2e8f0"
+            android:textSize="11sp"
+            android:background="@drawable/widget_btn_muted" />
+
+        <TextView
+            android:id="@+id/wfqlCat2"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="🚗 Trans."
+            android:textColor="#e2e8f0"
+            android:textSize="11sp"
+            android:background="@drawable/widget_btn_muted" />
+    </LinearLayout>
+
+    <!-- Row 2: cat3 + cat4 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/wfqlCat3"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:gravity="center"
+            android:text="💊 Salud"
+            android:textColor="#e2e8f0"
+            android:textSize="11sp"
+            android:background="@drawable/widget_btn_muted" />
+
+        <TextView
+            android:id="@+id/wfqlCat4"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="🎮 Ocio"
+            android:textColor="#e2e8f0"
+            android:textSize="11sp"
+            android:background="@drawable/widget_btn_muted" />
+    </LinearLayout>
+
+</LinearLayout>

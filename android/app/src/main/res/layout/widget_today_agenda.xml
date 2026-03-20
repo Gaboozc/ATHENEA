@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/wtaRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@drawable/widget_bg_dark">
+
+    <!-- Header -->
+    <TextView
+        android:id="@+id/wtaHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="📅 Hoy"
+        android:textColor="#e2e8f0"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <!-- Event 1 -->
+    <LinearLayout
+        android:id="@+id/wtaEvent1Row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/wtaEvent1Time"
+            android:layout_width="44dp"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textColor="#9aa3ad"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/wtaEvent1Dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/widget_btn_cyan"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/wtaEvent1Title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text=""
+            android:textColor="#e2e8f0"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- Event 2 -->
+    <LinearLayout
+        android:id="@+id/wtaEvent2Row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/wtaEvent2Time"
+            android:layout_width="44dp"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textColor="#9aa3ad"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/wtaEvent2Dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/widget_btn_cyan"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/wtaEvent2Title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text=""
+            android:textColor="#e2e8f0"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- Event 3 -->
+    <LinearLayout
+        android:id="@+id/wtaEvent3Row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/wtaEvent3Time"
+            android:layout_width="44dp"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textColor="#9aa3ad"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/wtaEvent3Dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/widget_btn_cyan"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/wtaEvent3Title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text=""
+            android:textColor="#e2e8f0"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- Event 4 -->
+    <LinearLayout
+        android:id="@+id/wtaEvent4Row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/wtaEvent4Time"
+            android:layout_width="44dp"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textColor="#9aa3ad"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/wtaEvent4Dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/widget_btn_cyan"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/wtaEvent4Title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text=""
+            android:textColor="#e2e8f0"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- Empty state -->
+    <TextView
+        android:id="@+id/wtaEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:text="📭 Sin eventos hoy"
+        android:textColor="#9aa3ad"
+        android:textSize="12sp"
+        android:visibility="gone" />
+
+</LinearLayout>
