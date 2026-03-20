@@ -90,7 +90,9 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
 
   const addTask = (task: GatekeeperTask) => {
     const orgId = task.orgId || currentOrgId || undefined;
-    const newTask = { ...task, orgId };
+    /* Always ensure a stable id so local state and Redux stay in sync */
+    const id = task.id || `task-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const newTask = { ...task, id, orgId };
     setTasks((prev) => [newTask, ...prev]);
     dispatch(addTaskToSlice(newTask)); /* ARCH-FIX-1: mirror to Redux so AgentOrchestrator sees it */
   };
