@@ -6,7 +6,7 @@
  * allowing users to see how decisions are made.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import './WarRoomView.css';
 
@@ -37,23 +37,13 @@ export const WarRoomView: React.FC = () => {
   const needsIntervention = useSelector((state: any) => state.aiMemory?.conflictMemory?.needsUserIntervention || false);
   const lastSession = useSelector((state: any) => state.aiMemory?.agentDialogue?.lastWarRoomSession || 0);
 
-  const [currentDecision, setCurrentDecision] = useState<any>(null);
-
-  // Reactively update decision when panel opens or lastSession changes in Redux.
-  // No interval — Redux drives updates; orchestrator is queried on-demand only.
-  useEffect(() => {
-    if (!isExpanded) return;
-    try {
-      // @ts-ignore
-      const { getAgentOrchestrator } = require('../../modules/intelligence/agents/AgentOrchestrator');
-      const orchestrator = getAgentOrchestrator();
-      if (orchestrator) {
-        setCurrentDecision(orchestrator.getLastDecision());
-      }
-    } catch (e) {
-      // Orchestrator not available
-    }
-  }, [isExpanded, lastSession]);
+  const lastVerdict = useSelector((s: any) => s.aiMemory?.lastVerdict || null);
+  const currentDecision = lastVerdict ? {
+    verdict: lastVerdict.text,
+    summary: lastVerdict.summary,
+    priority: lastVerdict.priority,
+    timestamp: lastVerdict.timestamp
+  } : null; /* OMNI-FIX-3 */
 
   const getAgentColor = (agentType: string): string => {
     switch (agentType) {
@@ -150,12 +140,17 @@ export const WarRoomView: React.FC = () => {
                   <div className="current-decision-banner">
                     <div className="decision-status">
                       <span className="status-label">Current Decision:</span>
-                      <span className="lead-agent" style={{ color: getAgentColor(currentDecision.leadAgent) }}>
-                        {currentDecision.leadAgent.toUpperCase()}
-                      </span>
-                      {currentDecision.vetoActivated && <span className="veto-badge">VETO ACTIVE</span>}
+                      {currentDecision.priority && (
+                        <span className="lead-agent">
+                          {String(currentDecision.priority).toUpperCase()}
+                        </span>
+                      )}
                     </div>
-                    <div className="decision-verdict">{currentDecision.finalVerdict}</div>
+                    {/* OMNI-FIX-3: campos mapeados desde lastVerdict en Redux */}
+                    <div className="decision-verdict">{currentDecision.verdict}</div>
+                    {currentDecision.summary && (
+                      <div className="decision-summary">{currentDecision.summary}</div>
+                    )}
                   </div>
                 )}
 

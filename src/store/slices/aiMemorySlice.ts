@@ -152,6 +152,14 @@ export interface AiMemoryState {
     timestamp: number;
     priority: string;
   } | null;
+  /* OMNI-FIX-2: historial de chat del Omnibar persistido en Redux */
+  omnibarChatHistory: Array<{
+    id: string;
+    role: 'user' | 'agent' | 'typing';
+    text: string;
+    timestamp: number;
+    artifact?: any;
+  }>;
 }
 
 const initialState: AiMemoryState = {
@@ -220,6 +228,8 @@ const initialState: AiMemoryState = {
   },
   // W-FEAT-1: Last Cortana verdict for WorkHub briefing display
   lastVerdict: null,
+  /* OMNI-FIX-2: historial de chat del Omnibar */
+  omnibarChatHistory: [],
 };
 
 const MAX_SESSION_LOG = 20;
@@ -525,6 +535,39 @@ const aiMemorySlice = createSlice({
     ) {
       state.lastVerdict = action.payload;
     },
+    updateOmnibarChatHistory(state, action: PayloadAction<any[]>) {
+      /* OMNI-FIX-2: persistir historial de chat del Omnibar */
+      state.omnibarChatHistory = (action.payload || []).slice(-20);
+    },
+    clearOmnibarChatHistory(state) {
+      state.omnibarChatHistory = [];
+    },
+  },
+  extraReducers: (builder) => {
+    builder.addCase('actionHistory/record', (state, action: any) => {
+      /* OMNI-FIX-1: conectar actionHistoryStore.recordAction() con Redux */
+      const entry = action.payload;
+      if (!entry) return;
+      if (!Array.isArray(state.actionHistory)) state.actionHistory = [];
+      // Purge cascade entries before adding new one
+      state.actionHistory = state.actionHistory.filter(
+        (e) => e.actionType !== 'delete-action-history-entry'
+      );
+      state.actionHistory.unshift({
+        id: entry.id || `action-${Date.now()}`,
+        timestamp: entry.timestamp || new Date().toISOString(),
+        type: entry.type || 'user-command',
+        hub: entry.hub || 'CrossHub',
+        actionType: entry.actionType || entry.type || 'unknown',
+        description: entry.description || '',
+        agent: entry.agent || 'user',
+        success: entry.success !== false,
+        payload: entry.payload || entry.metadata || {}
+      });
+      if (state.actionHistory.length > 100) {
+        state.actionHistory = state.actionHistory.slice(0, 100);
+      }
+    });
   },
 });
 
@@ -559,6 +602,9 @@ export const {
   updateAgentMemory,
   // W-FEAT-1: Cortana briefing verdict
   setLastVerdict,
+  // OMNI-FIX-2: persistir historial de chat del Omnibar
+  updateOmnibarChatHistory,
+  clearOmnibarChatHistory,
 } = aiMemorySlice.actions;
 
 export default aiMemorySlice.reducer;

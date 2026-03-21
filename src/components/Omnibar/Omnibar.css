@@ -163,9 +163,12 @@
 }
 
 .omnibar-icon {
-  font-size: 18px;
   display: inline-block;
-  animation: spin 3s linear infinite;
+  /* OMNI-PERF-3: eliminada animación perpetua que consumía GPU */
+  transition: transform 0.3s ease;
+}
+.omnibar-icon:hover {
+  animation: spin 0.6s ease-out forwards;
 }
 
 @keyframes spin {
@@ -495,12 +498,14 @@
 
 
 
+/* OMNI-CLEAN-3: clase sin uso en JSX actual */
 .omnibar-results {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+/* OMNI-CLEAN-3: clase sin uso en JSX actual */
 .omnibar-reasoning {
   padding: 12px 14px;
   background: linear-gradient(135deg, #11243a 0%, #1a2d4a 100%);
@@ -509,6 +514,7 @@
   border-left: 4px solid #8db7ff;
 }
 
+/* OMNI-CLEAN-3: clase sin uso en JSX actual */
 .reasoning-flex {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -516,6 +522,7 @@
   gap: 10px;
 }
 
+/* OMNI-CLEAN-3: clase sin uso en JSX actual */
 .confidence-badge {
   display: inline-flex;
   align-items: center;
@@ -548,6 +555,7 @@
   box-shadow: 0 2px 4px rgba(114, 28, 36, 0.1);
 }
 
+/* OMNI-CLEAN-3: clase sin uso en JSX actual */
 .reasoning-text {
   font-size: 13px;
   color: #e8f1ff;
@@ -694,12 +702,14 @@
    INSIGHTS LIST
    ============================================================================ */
 
+/* OMNI-CLEAN-3: clase sin uso en JSX actual */
 .insight-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
+/* OMNI-CLEAN-3: clase sin uso en JSX actual */
 .insight-card {
   width: 100%;
   text-align: left;
@@ -769,6 +779,7 @@
   flex: 1;
 }
 
+/* OMNI-CLEAN-3: clase sin uso en JSX actual */
 .insight-badge {
   font-size: 9px;
   font-weight: 800;
@@ -781,12 +792,14 @@
   white-space: nowrap;
 }
 
+/* OMNI-CLEAN-3: clase sin uso en JSX actual */
 .insight-hub {
   font-size: 10px;
   color: var(--text-tertiary);
   font-weight: 500;
 }
 
+/* OMNI-CLEAN-3: clase sin uso en JSX actual */
 .insight-description {
   font-size: 12px;
   color: var(--text-secondary);
@@ -794,12 +807,14 @@
   font-weight: 400;
 }
 
+/* OMNI-CLEAN-3: clase sin uso en JSX actual */
 .insight-actions {
   margin-top: 10px;
   display: flex;
   gap: 8px;
 }
 
+/* OMNI-CLEAN-3: clase sin uso en JSX actual */
 .insight-action-btn {
   border: 1px solid rgba(124, 143, 245, 0.45);
   background: rgba(20, 28, 58, 0.65);
@@ -1114,4 +1129,16 @@
   background: rgba(148, 163, 184, 0.1);
   border: 1px solid rgba(148, 163, 184, 0.25);
   color: var(--text-secondary, #9ca3af);
+}
+
+/* OMNI-FIX-5: estilos para Markdown renderizado en chat bubbles */
+.chat-bubble-text strong { font-weight: 700; color: #ffffff; }
+.chat-bubble-text em { font-style: italic; opacity: 0.88; }
+.chat-bubble-text code {
+  font-family: 'Fira Mono', monospace;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: #a5f3fc;
 }

@@ -33,6 +33,7 @@ import {
   recordAgentConflict,
   recordAgentDialogue,
   setLastVerdict,
+  updateAgentMemory, /* PERSONA-3 */
   type RecordAgentConflictPayload,
 } from '../../../store/slices/aiMemorySlice';
 // FIX 1: Use EventBus instead of direct ActionBridge import to break circular dependency
@@ -249,6 +250,19 @@ export class AgentOrchestrator {
 
     // FIX 1: Emit decision on EventBus — ActionBridge listens independently
     eventBus.emit('orchestrator:decision', decision);
+
+    /* PERSONA-3: Write episodic memory for lead agent — fire-and-forget, non-blocking */
+    const llmConfForMemory = this.getLLMConfig();
+    if (llmConfForMemory && options?.userPrompt) {
+      const leadVerdict = verdicts.find((v) => v.agentType === leadAgent);
+      if (leadVerdict) {
+        this.writeEpisodicMemory(
+          leadAgent,
+          `${leadVerdict.verdict.summary} ${leadVerdict.verdict.recommendation}`,
+          llmConfForMemory
+        ).catch(() => { /* non-critical */ });
+      }
+    }
 
     return decision;
   }
@@ -611,6 +625,119 @@ export class AgentOrchestrator {
     return verdicts;
   }
 
+  /* PERSONA-2: Build human-readable context string injected into each agent's system prompt */
+  private buildAgentContext(agentType: 'strategist' | 'auditor' | 'vitals'): string {
+    const state: any = this.store?.getState?.() || {};
+
+    switch (agentType) {
+      case 'strategist': {
+        const tasks: any[] = state.tasks?.tasks || [];
+        const critical = tasks.filter((t: any) =>
+          (t.level === 'Critical' || t.level === 'High Velocity') &&
+          !t.completed && t.status !== 'Completed' && t.status !== 'deleted'
+        );
+        const overdue = tasks.filter((t: any) => {
+          if (t.completed || t.status === 'Completed') return false;
+          const due = new Date(t.dueDate || '');
+          return due.getTime() > 0 && due < new Date();
+        });
+        const projects: any[] = state.projects?.projects || [];
+        const activeProjects = projects.filter(
+          (p: any) => p.status !== 'cancelled' && p.status !== 'completed'
+        );
+        return [
+          `Tareas críticas activas: ${critical.length}`,
+          ...critical.slice(0, 3).map((t: any) => `- ${t.title} (${t.level})`),
+          `Tareas vencidas: ${overdue.length}`,
+          `Proyectos activos: ${activeProjects.length}`,
+          ...activeProjects.slice(0, 2).map((p: any) => `- ${p.name}`),
+        ].filter(Boolean).join('\n');
+      }
+      case 'auditor': {
+        const snapshot = selectFinancialSnapshot(state);
+        const wallets = state.wallets;
+        return [
+          wallets ? `Saldo USD: $${(wallets.walletUSD ?? 0).toFixed(2)} USD` : null,
+          wallets ? `Saldo MXN: $${(wallets.walletMXN ?? 0).toFixed(2)} MXN` : null,
+          wallets?.referenceRate ? `Última tasa: $${Number(wallets.referenceRate).toFixed(2)} MXN/USD` : null,
+          `Salud financiera: ${snapshot.healthScore}/100`,
+          snapshot.budgetSummaryUSD
+            ? `Presupuesto USD: ${snapshot.budgetSummaryUSD.totalSpent.toFixed(2)} / ${snapshot.budgetSummaryUSD.totalLimit.toFixed(2)} USD`
+            : null,
+          snapshot.budgetSummaryMXN
+            ? `Presupuesto MXN: ${snapshot.budgetSummaryMXN.totalSpent.toFixed(2)} / ${snapshot.budgetSummaryMXN.totalLimit.toFixed(2)} MXN`
+            : null,
+        ].filter(Boolean).join('\n');
+      }
+      case 'vitals': {
+        const checkins: any[] = state.checkins?.checkins || [];
+        const latestCheckin = [...checkins].sort(
+          (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        )[0];
+        const routines: any[] = state.routines?.routines || [];
+        const today = new Date().toISOString().split('T')[0];
+        const dayOfWeek = new Date().getDay();
+        const completedToday = routines.filter((r: any) => r.completedDates?.includes(today)).length;
+        const todayRoutinesCount = routines.filter((r: any) => r.daysOfWeek?.includes(dayOfWeek)).length;
+        const avgStreak = routines.length > 0
+          ? Math.round(routines.reduce((s: number, r: any) => s + (r.streak || 0), 0) / routines.length)
+          : 0;
+        const journal: any[] = state.journal?.entries || [];
+        const recentEntry = [...journal].sort(
+          (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        )[0];
+        const checkinBlock = latestCheckin
+          ? [
+              `Último check-in (${latestCheckin.date}):`,
+              `  Humor: ${latestCheckin.mood}/5`,
+              `  Energía: ${latestCheckin.energy}/5`,
+              `  Sueño: ${latestCheckin.sleepHours}h`,
+              latestCheckin.note ? `  Nota: "${latestCheckin.note}"` : null,
+            ].filter(Boolean).join('\n')
+          : 'Sin check-in reciente.';
+        return [
+          checkinBlock,
+          `Rutinas hoy: ${completedToday}/${todayRoutinesCount} completadas`,
+          `Racha promedio de hábitos: ${avgStreak} días`,
+          recentEntry ? `Diario reciente: "${String(recentEntry.content || '').slice(0, 80)}..."` : null,
+        ].filter(Boolean).join('\n');
+      }
+      default:
+        return '';
+    }
+  }
+
+  /* PERSONA-3: Persist a 2-line episodic summary to Redux agentMemory after orchestration */
+  private async writeEpisodicMemory(
+    agentType: 'strategist' | 'auditor' | 'vitals',
+    verdictText: string,
+    llmConfig: { provider: 'openai' | 'groq'; apiKey: string }
+  ): Promise<void> {
+    if (!this.store) return;
+    const memoryKey: 'cortana' | 'jarvis' | 'shodan' =
+      agentType === 'strategist' ? 'cortana' : agentType === 'auditor' ? 'jarvis' : 'shodan';
+    const context = this.buildAgentContext(agentType);
+    try {
+      const summary = await this.callLLM(
+        llmConfig,
+        'Genera un resumen de 2 líneas máximo de esta interacción para memoria futura del agente. ' +
+          'Solo hechos relevantes sobre el usuario. Sin saludos. Sin nombre del usuario.',
+        `Veredicto del agente: ${verdictText}\nContexto: ${context}`,
+        80
+      );
+      if (summary.trim()) {
+        this.store.dispatch(updateAgentMemory({
+          agent: memoryKey,
+          lastSeen: new Date().toISOString(),
+          recentContext: summary.trim(),
+          patterns: [],
+        }));
+      }
+    } catch {
+      /* memory write failure is non-critical */
+    }
+  }
+
   private async generateWarRoomSession(
     verdicts: AgentVerdict[],
     leadAgent: AgentType,
@@ -682,21 +809,79 @@ export class AgentOrchestrator {
     userPrompt: string
   ): Promise<string> {
     const languageInstruction = this.getLanguageInstruction();
-    const personaPrompt =
-      verdict.agentType === 'strategist'
-        ? 'You are Cortana. Focus on execution, prioritization, momentum, and work strategy. Be tactical and concrete.'
-        : verdict.agentType === 'auditor'
-          ? 'You are Jarvis. Focus on finance, risk, cost, resource efficiency, and tradeoffs. Be analytical and concise.'
-          : 'You are SHODAN. Focus on health, fatigue, sleep, sustainability, and safety limits. Be severe, concise, and protective.';
+    const state = this.store?.getState?.() as any;
+
+    /* PERSONA-1+2: Deep per-agent system prompt with dynamic context + episodic memory */
+    const agentMemKey: 'cortana' | 'jarvis' | 'shodan' =
+      verdict.agentType === 'strategist' ? 'cortana'
+      : verdict.agentType === 'auditor' ? 'jarvis' : 'shodan';
+    const agentMem = state?.aiMemory?.agentMemory?.[agentMemKey];
+    const memoryLine = agentMem?.recentContext
+      ? `MEMORIA DE SESIONES ANTERIORES:\n${String(agentMem.recentContext).slice(0, 300)}`
+      : 'MEMORIA DE SESIONES ANTERIORES:\nPrimera interacción.'; /* PERSONA-3 */
+
+    let personaPrompt: string;
+
+    if (verdict.agentType === 'strategist') {
+      const workContext = this.buildAgentContext('strategist'); /* PERSONA-2 */
+      personaPrompt = [
+        'Eres Cortana, el agente estratégico de ATHENEA.',
+        'Tu función es maximizar la productividad táctica del usuario.',
+        'PERSONALIDAD: Directa y concisa. Sin palabras de relleno.',
+        'Hablas como un estratega militar — claras prioridades, sin ambigüedad.',
+        'Usas datos concretos. Nunca suposiciones.',
+        'Cuando hay trabajo crítico pendiente, lo dices sin rodeos.',
+        'Tu tono es frío pero no hostil. Eficiente.',
+        'Nunca dices "¡Claro!" ni "¡Por supuesto!". Vas al punto.',
+        'Si hay 3 tareas críticas, dices exactamente cuáles son.',
+        'FORMATO: Máximo 2 oraciones. Acción recomendada al final con → prefijo.',
+        'NUNCA: hacer preguntas innecesarias, usar emojis decorativos, repetir lo que el usuario ya sabe.',
+        `CONTEXTO DEL USUARIO:\n${workContext}`,
+        memoryLine,
+        languageInstruction,
+      ].join('\n');
+    } else if (verdict.agentType === 'auditor') {
+      const financeContext = this.buildAgentContext('auditor'); /* PERSONA-2 */
+      personaPrompt = [
+        'Eres Jarvis, el agente financiero de ATHENEA.',
+        'Tu función es proteger el capital y la salud financiera del usuario.',
+        'PERSONALIDAD: Analítico y preciso. Los números no mienten.',
+        'Tono frío y calculado — como un CFO personal.',
+        'Siempre presentas datos con contexto: no "gastaste mucho" sino "gastaste $X, un Y% más".',
+        'Cuando hay riesgo financiero, lo señalas directamente sin suavizarlo.',
+        'Usas terminología financiera cuando es apropiada (liquidez, flujo de caja, compromiso mensual).',
+        'Nunca das falsas esperanzas sobre el dinero.',
+        'FORMATO: Siempre incluye números exactos. Si es "¿puedo gastar X?": responde Sí/No primero.',
+        'Máximo 2 oraciones.',
+        'NUNCA: redondear cifras hacia arriba, ignorar compromisos futuros, ser impreciso con montos.',
+        `CONTEXTO FINANCIERO:\n${financeContext}`,
+        memoryLine,
+        languageInstruction,
+      ].join('\n');
+    } else {
+      const personalContext = this.buildAgentContext('vitals'); /* PERSONA-2 */
+      personaPrompt = [
+        'Eres SHODAN, el agente de bienestar de ATHENEA.',
+        'Tu función es proteger la energía, salud y hábitos del usuario.',
+        'PERSONALIDAD: Observadora e incisiva. Ves patrones que el usuario ignora.',
+        'Tu tono es inquietante pero sincero — como un médico que dice la verdad aunque no sea cómoda.',
+        'Cuando detectas deterioro (sueño bajo, rutinas abandonadas, energía baja), lo nombras directamente.',
+        'No eres cruel, pero tampoco condescendiente.',
+        'Cuando el usuario está bien, lo reconoces brevemente.',
+        'FORMATO: Observación directa 1-2 oraciones. Si hay patrón: "He notado que..."',
+        'NUNCA: ser vaga ("cuídate más"), ignorar los datos reales del check-in, suavizar problemas.',
+        `CONTEXTO PERSONAL:\n${personalContext}`,
+        memoryLine,
+        languageInstruction,
+      ].join('\n');
+    }
 
     const systemPrompt = [
       personaPrompt,
-      languageInstruction,
-      'You are participating in a War Room session with three agents.',
-      'Reply with exactly one short statement, max 2 sentences.',
-      'Do not mention being an AI model. Do not add bullet points.',
-      'Speak directly to the user from your own viewpoint.',
-    ].join(' ');
+      'Estás en una sesión War Room. Responde con exactamente una declaración, máximo 2 oraciones.',
+      'No menciones que eres un modelo de IA. Sin listas.',
+      'Habla directamente al usuario desde tu perspectiva.',
+    ].join('\n');
 
     const prompt = [
       `User request: ${userPrompt}`,

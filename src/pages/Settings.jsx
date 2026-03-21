@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux'; /* OMNI-FIX-4 */
+import { setAdvancedMode } from '../store/slices/userSettingsSlice'; /* OMNI-FIX-4 */
 import { useDataExport } from '../hooks/useDataExport';
 import { cacheManager } from '../utils/cacheManager';
 import { IdentityPanel } from '../components/settings/IdentityPanel';
@@ -14,6 +16,8 @@ import './Settings.css';
  */
 const Settings = () => {
   const { t, language, setLanguage } = useLanguage();
+  const dispatch = useDispatch(); /* OMNI-FIX-4 */
+  const userSettings = useSelector((state) => state.userSettings); /* OMNI-FIX-4 */
   const { exportToJSON, exportToPDF, importFromJSON } = useDataExport();
   const [importText, setImportText] = useState('');
   const [message, setMessage] = useState(null);
@@ -166,6 +170,26 @@ const Settings = () => {
 
       <div className="settings-section">
         <IdentityPanel />
+      </div>
+
+      {/* ── Advanced Mode ────────────────────────────────────────────────── */}
+      {/* OMNI-FIX-4: toggle para activar War Room View */}
+      <div className="settings-section">
+        <h2 className="settings-section-title">⚙️ {t('Advanced Mode')}</h2>
+        <div className="settings-item">
+          <div className="settings-item-info">
+            <span className="settings-item-label">{t('Advanced Mode')}</span>
+            <span className="settings-item-desc" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #9aa3ad)' }}>{t('Show agent diagnostics in Omnibar')}</span>
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={Boolean(userSettings?.advancedMode)}
+              onChange={(e) => dispatch(setAdvancedMode(e.target.checked))}
+            />
+            <span>{t('Enabled')}</span>
+          </label>
+        </div>
       </div>
 
       {/* ── Idioma ───────────────────────────────────────────────────────── */}

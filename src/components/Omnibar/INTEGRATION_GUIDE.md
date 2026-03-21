@@ -1,5 +1,13 @@
 # Omnibar & Toast Integration Guide
 
+> ⚠️ **AVISO DE DESACTUALIZACIÓN** (OMNI-CLEAN-5 — 2026-03-20)
+>
+> Esta guía está parcialmente desactualizada:
+> - **Ctrl+K NO está implementado** en el código actual
+> - El Omnibar se abre via `FloatingOmnibarFab` (click) o `openOmnibarExternally(prompt, requestVoice)`
+> - El Layout de ejemplo en esta guía no refleja el Layout actual
+> - Ver `Omnibar.tsx` y `useOmnibar.ts` para la implementación actual
+
 ## Overview
 This guide shows you how to integrate the **Omnibar** (global command palette) and **Toast notifications** into your ATHENEA application.
 

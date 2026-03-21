@@ -1,4 +1,9 @@
-﻿/* DEPRECATED — Ver _archive/Omnibar.light-theme.css — OMNI-CLEAN-1 — 2026-03-20 */
+/*
+ * OMNI-CLEAN-1: Tema light alternativo — no activo. Preservado para referencia.
+ * Archivo original: Omnibar.new.css
+ * Archivado: 2026-03-20
+ * Este archivo NO está importado en ningún lugar del proyecto.
+ */
 
 /**
  * ATHENEA Omnibar - Premium Design System
@@ -17,22 +22,22 @@
   --athenea-primary-light: #7c8ff5;
   --athenea-secondary: #8b5cf6;
   --athenea-accent: #ec4899;
-  
+
   --hub-work: var(--color-info);
   --hub-personal: #ec4899;
   --hub-finance: #10b981;
-  
+
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
   --bg-tertiary: #f1f5f9;
-  
+
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-tertiary: #94a3b8;
-  
+
   --border-color: #e2e8f0;
   --border-light: #f1f5f9;
-  
+
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
@@ -80,7 +85,7 @@
   max-width: 700px;
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-radius: 16px;
-  box-shadow: 
+  box-shadow:
     0 25px 50px -12px rgba(102, 126, 234, 0.25),
     0 0 1px 0 rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.8);

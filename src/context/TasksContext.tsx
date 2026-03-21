@@ -178,8 +178,12 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const scopedTasks = useMemo(() => {
-    if (!currentOrgId) return [];
-    return tasks.filter((task) => task.orgId === currentOrgId);
+    // If no org is selected yet (e.g. during Redux Persist rehydration on mobile)
+    // fall back to showing all tasks rather than hiding everything.
+    if (!currentOrgId) return tasks;
+    // Include tasks that belong to the current org OR have no org assigned
+    // (tasks created before org scoping was introduced).
+    return tasks.filter((task) => !task.orgId || task.orgId === currentOrgId);
   }, [currentOrgId, tasks]);
 
   const value = useMemo(

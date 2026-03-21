@@ -662,9 +662,17 @@ export class IntelligenceBridge {
     let facts: Record<string, unknown> = {};
 
     if (hub === 'WorkHub') {
+      /* PERSONA-4: Cortana offline tone — cold, data-driven, military precision */
       const tasks: any[] = state.tasks?.tasks || [];
-      const openTasks = tasks.filter((t) => !t?.completed);
-      const nextTaskIntent = /\b(next task|my next task|siguiente tarea|proxima tarea|pr[oó]xima tarea|what.*task|which.*task)\b/i.test(lower);
+      const openTasks = tasks.filter((t) => !t?.completed && t?.status !== 'Completed');
+      const overdue = openTasks.filter((t) => {
+        const due = new Date(t?.dueDate || '').getTime();
+        return Number.isFinite(due) && due > 0 && due < Date.now();
+      });
+      const critical = openTasks.filter((t) =>
+        t?.level === 'Critical' || t?.level === 'High Velocity'
+      );
+      const nextTaskIntent = /\b(next task|my next task|siguiente tarea|proxima tarea|pr[oó]xima tarea|what.*task|which.*task|primero|first)\b/i.test(lower);
 
       if (nextTaskIntent) {
         const priorityRank: Record<string, number> = { high: 0, medium: 1, low: 2 };
@@ -678,102 +686,98 @@ export class IntelligenceBridge {
           const pB = priorityRank[String(b?.priority || 'medium')] ?? 1;
           return pA - pB;
         });
-
         const nextTask = sorted[0] || null;
         if (!nextTask) {
-          fallbackAnswer = this.tr('You have no pending tasks right now.', 'No tienes tareas pendientes ahora mismo.');
+          fallbackAnswer = this.getLanguage() === 'es'
+            ? 'Sin tareas pendientes. Estado: despejado.'
+            : 'No pending tasks. Status: clear.';
           summary = 'No open tasks.';
           facts = { openTasks: 0 };
         } else {
           const dueDate = nextTask?.dueDate ? new Date(nextTask.dueDate) : null;
           const dueText = dueDate && Number.isFinite(dueDate.getTime())
             ? dueDate.toLocaleString()
-            : this.tr('no due date', 'sin fecha limite');
+            : this.tr('no due date', 'sin fecha límite');
           fallbackAnswer = this.getLanguage() === 'es'
-            ? `Tu siguiente tarea es: ${nextTask.title || nextTask.name || 'Tarea sin titulo'} (${nextTask.priority || 'medium'}), vence ${dueText}.`
-            : `Your next task is: ${nextTask.title || nextTask.name || 'Untitled task'} (${nextTask.priority || 'medium'}), due ${dueText}.`;
-          summary = `Next task: ${nextTask.title || nextTask.name || 'Untitled task'} (${nextTask.priority || 'medium'}) due ${dueText}.`;
-          facts = {
-            openTasks: openTasks.length,
-            nextTask: {
-              title: nextTask.title || nextTask.name || 'Untitled task',
-              priority: nextTask.priority || 'medium',
-              dueDate: nextTask.dueDate || null,
-            },
-          };
+            ? `${nextTask.title || 'Tarea sin título'} (${nextTask.level || nextTask.priority || 'medium'}), vence ${dueText}.${overdue.length > 0 ? ` ${overdue.length} vencidas detrás de ella.` : ''}`
+            : `${nextTask.title || 'Untitled task'} (${nextTask.level || nextTask.priority || 'medium'}), due ${dueText}.${overdue.length > 0 ? ` ${overdue.length} overdue behind it.` : ''}`;
+          summary = `Next task: ${nextTask.title || 'Untitled'} due ${dueText}.`;
+          facts = { openTasks: openTasks.length, nextTask: { title: nextTask.title, priority: nextTask.priority, dueDate: nextTask.dueDate || null } };
         }
       } else {
-        const overdue = openTasks.filter((t) => {
-          const due = new Date(t?.dueDate || '').getTime();
-          return Number.isFinite(due) && due > 0 && due < Date.now();
-        }).length;
         fallbackAnswer = this.getLanguage() === 'es'
-          ? `Tienes ${openTasks.length} tareas abiertas y ${overdue} vencidas.`
-          : `You have ${openTasks.length} open tasks and ${overdue} overdue.`;
-        summary = `Open tasks: ${openTasks.length}. Overdue: ${overdue}.`;
-        facts = { openTasks: openTasks.length, overdueTasks: overdue };
+          ? `${critical.length > 0 ? `${critical.length} tareas críticas pendientes.` : 'Sin tareas críticas.'} ${overdue.length > 0 ? `${overdue.length} vencidas.` : ''} Total abiertas: ${openTasks.length}.${critical.length > 0 ? ` → Prioriza: ${critical.slice(0, 2).map((t) => t.title || 'Sin título').join(', ')}.` : ''}`
+          : `${critical.length > 0 ? `${critical.length} critical tasks pending.` : 'No critical tasks.'} ${overdue.length > 0 ? `${overdue.length} overdue.` : ''} Total open: ${openTasks.length}.${critical.length > 0 ? ` → Priority: ${critical.slice(0, 2).map((t) => t.title || 'Untitled').join(', ')}.` : ''}`;
+        summary = `Open tasks: ${openTasks.length}. Overdue: ${overdue.length}. Critical: ${critical.length}.`;
+        facts = { openTasks: openTasks.length, overdueTasks: overdue.length, criticalTasks: critical.length };
       }
     } else if (hub === 'PersonalHub') {
-      /* P-FIX-4: state.notes.reminders does not exist — compute from actual slices */
+      /* PERSONA-4: SHODAN offline tone — observational, pattern-based, data-grounded */
       const notes: any[] = state.notes?.notes || [];
       const todosAll: any[] = state.todos?.todos || [];
       const routinesAll: any[] = state.routines?.routines || [];
+      const checkins: any[] = state.checkins?.checkins || [];
       const now = new Date();
-      const upcomingReminders = notes.filter(
-        (n) => n.reminderDate && new Date(n.reminderDate) > now
-      ).length;
+      const todayStr = now.toISOString().split('T')[0];
+      const todayIdx = now.getDay();
+      const latestCheckin = [...checkins].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      )[0];
       const pendingTodos = todosAll.filter((t) => t.status !== 'done').length;
       const overdueTodos = todosAll.filter(
         (t) => t.dueDate && new Date(t.dueDate) < now && t.status !== 'done'
       ).length;
-      const todayIdx = now.getDay();
-      const todayStr = now.toISOString().split('T')[0];
-      const todayRoutines = routinesAll.filter((r) =>
-        (r.daysOfWeek || []).includes(todayIdx)
-      ).length;
+      const todayRoutines = routinesAll.filter((r) => (r.daysOfWeek || []).includes(todayIdx)).length;
       const completedTodayRoutines = routinesAll.filter((r) => {
         const dates: string[] = r.completedDates || (r.lastCompleted ? [r.lastCompleted] : []);
         return dates.includes(todayStr);
       }).length;
+      const upcomingReminders = notes.filter(
+        (n) => n.reminderDate && new Date(n.reminderDate) > now
+      ).length;
       const personalContext = {
-        notesCount: notes.length,
-        pinnedNotes: notes.filter((n) => n.pinned).length,
-        upcomingReminders,
-        pendingTodos,
-        overdueTodos,
-        todayRoutines,
-        completedTodayRoutines,
+        notesCount: notes.length, pinnedNotes: notes.filter((n) => n.pinned).length,
+        upcomingReminders, pendingTodos, overdueTodos, todayRoutines, completedTodayRoutines,
       };
-      if (this.getLanguage() === 'es') {
-        fallbackAnswer = `En personal tienes ${personalContext.pendingTodos} todos pendientes`
-          + (personalContext.overdueTodos > 0 ? ` (${personalContext.overdueTodos} vencidos)` : '')
-          + `, ${personalContext.upcomingReminders} recordatorios próximos y ${personalContext.notesCount} notas guardadas.`
-          + (personalContext.todayRoutines > 0
-            ? ` Rutinas de hoy: ${personalContext.completedTodayRoutines}/${personalContext.todayRoutines} completadas.`
-            : '');
+
+      if (latestCheckin) {
+        const energyTag = latestCheckin.energy <= 2
+          ? (this.getLanguage() === 'es' ? ' Energía crítica detectada.' : ' Critical energy detected.')
+          : latestCheckin.energy >= 4
+            ? (this.getLanguage() === 'es' ? ' Niveles aceptables.' : ' Levels acceptable.')
+            : '';
+        fallbackAnswer = this.getLanguage() === 'es'
+          ? `Check-in del ${latestCheckin.date}: ${latestCheckin.energy}/5 energía, ${latestCheckin.sleepHours}h sueño.${energyTag} Rutinas: ${completedTodayRoutines}/${todayRoutines} completadas hoy.`
+          : `Check-in ${latestCheckin.date}: ${latestCheckin.energy}/5 energy, ${latestCheckin.sleepHours}h sleep.${energyTag} Routines: ${completedTodayRoutines}/${todayRoutines} completed today.`;
       } else {
-        fallbackAnswer = `In Personal you have ${personalContext.pendingTodos} pending todos`
-          + (personalContext.overdueTodos > 0 ? ` (${personalContext.overdueTodos} overdue)` : '')
-          + `, ${personalContext.upcomingReminders} upcoming reminders and ${personalContext.notesCount} saved notes.`
-          + (personalContext.todayRoutines > 0
-            ? ` Today's routines: ${personalContext.completedTodayRoutines}/${personalContext.todayRoutines} completed.`
-            : '');
+        fallbackAnswer = this.getLanguage() === 'es'
+          ? `Sin datos de check-in. Registro tu estado para activar monitoreo. ${pendingTodos} todos pendientes${overdueTodos > 0 ? ` (${overdueTodos} vencidos)` : ''}.`
+          : `No check-in data. Log your status to activate monitoring. ${pendingTodos} pending todos${overdueTodos > 0 ? ` (${overdueTodos} overdue)` : ''}.`;
       }
-      summary = `Pending todos: ${personalContext.pendingTodos}. Overdue: ${personalContext.overdueTodos}. `
-        + `Reminders: ${personalContext.upcomingReminders}. Notes: ${personalContext.notesCount}. `
-        + `Routines today: ${personalContext.completedTodayRoutines}/${personalContext.todayRoutines}.`;
+      summary = `Pending todos: ${pendingTodos}. Overdue: ${overdueTodos}. Reminders: ${upcomingReminders}. Routines: ${completedTodayRoutines}/${todayRoutines}.`;
       facts = personalContext;
     } else {
+      /* PERSONA-4: Jarvis offline tone — analytical, number-first, CFO precision */
       const budgets: any[] = state.budget?.categories || [];
       const expenses: any[] = state.budget?.expenses || [];
+      const payments: any[] = state.payments?.payments || [];
       const totalBudget = budgets.reduce((sum, b) => sum + Number(b?.limit || 0), 0);
       const totalSpent = expenses.reduce((sum, e) => sum + Number(e?.amount || 0), 0);
       const available = totalBudget - totalSpent;
+      const committed = payments
+        .filter((p) => (p?.status || 'pending') !== 'paid' && p?.type !== 'income')
+        .reduce((sum, p) => sum + Number(p?.amount || 0), 0);
+      const realAvailable = available - committed;
+      const budgetStatus = available < 0
+        ? (this.getLanguage() === 'es' ? 'Presupuesto excedido.' : 'Budget exceeded.')
+        : available < totalBudget * 0.2
+          ? (this.getLanguage() === 'es' ? 'Presupuesto al límite.' : 'Budget near limit.')
+          : (this.getLanguage() === 'es' ? 'Presupuesto en orden.' : 'Budget on track.');
       fallbackAnswer = this.getLanguage() === 'es'
-        ? `En finanzas tienes ${available.toFixed(2)} disponibles (gastado ${totalSpent.toFixed(2)} de ${totalBudget.toFixed(2)}).`
-        : `In Finance you have ${available.toFixed(2)} available (spent ${totalSpent.toFixed(2)} of ${totalBudget.toFixed(2)}).`;
-      summary = `Budget available: ${available.toFixed(2)}.`;
-      facts = { totalBudget, totalSpent, available };
+        ? `Saldo libre: $${available.toFixed(2)}. ${budgetStatus} Compromisos pendientes: $${committed.toFixed(2)}. Disponible real: $${realAvailable.toFixed(2)}.`
+        : `Available: $${available.toFixed(2)}. ${budgetStatus} Pending commitments: $${committed.toFixed(2)}. Real available: $${realAvailable.toFixed(2)}.`;
+      summary = `Budget available: ${available.toFixed(2)}. Committed: ${committed.toFixed(2)}.`;
+      facts = { totalBudget, totalSpent, available, committed, realAvailable };
     }
 
     let answer = fallbackAnswer;

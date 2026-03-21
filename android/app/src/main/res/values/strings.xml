@@ -5,4 +5,13 @@
     <string name="package_name">com.athenea.app</string>
     <string name="custom_url_scheme">com.athenea.app</string>
     <string name="athenea_widget_description">ATHENEA proactive home widget</string>
+    <string name="widget_daily_focus_desc">Daily focus and pomodoro status</string>
+    <string name="widget_finance_quick_log_desc">Quick finance logging actions</string>
+    <string name="widget_finance_snapshot_desc">Snapshot of balances and cash flow</string>
+    <string name="widget_habit_tracker_desc">Track daily habits progress</string>
+    <string name="widget_intelligence_feed_desc">Latest AI insights and recommendations</string>
+    <string name="widget_pending_tasks_desc">Pending tasks overview</string>
+    <string name="widget_system_health_desc">System health and sync status</string>
+    <string name="widget_task_quick_add_desc">Quick add a new task</string>
+    <string name="widget_today_agenda_desc">Today agenda and events</string>
 </resources>

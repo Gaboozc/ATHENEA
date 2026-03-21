@@ -164,10 +164,12 @@ export const ProjectDetails = () => {
     totalScore: null,
     isLegacy: true
   }));
-  const mergedTasks = [...projectTasks, ...legacyTasks].filter(
-    (task, index, self) =>
-      index === self.findIndex((entry) => entry.title === task.title)
-  );
+  // Only filter legacy tasks that already have a real task with the same title.
+  // Never deduplicate real projectTasks against each other — subtasks can share
+  // a title with the parent and the old title-based dedup was hiding the parent.
+  const realTaskTitles = new Set(projectTasks.map((t) => t.title));
+  const filteredLegacyTasks = legacyTasks.filter((lt) => !realTaskTitles.has(lt.title));
+  const mergedTasks = [...projectTasks, ...filteredLegacyTasks];
   const activeTasks = mergedTasks.filter(
     (task) => !removedLegacyTitles.includes(task.title)
   );

@@ -16,8 +16,9 @@
  * - GitHub's Command Palette
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { updateOmnibarChatHistory } from '../../store/slices/aiMemorySlice'; /* OMNI-FIX-2 */
 import { useLanguage } from '../../context/LanguageContext';
 import { syncExternalEvents } from '../../../store/slices/calendarSlice.js';
 import {
@@ -33,6 +34,7 @@ import { WarRoomView } from './WarRoomView';
 import { isOnboardingCompleted, markOnboardingCompleted } from '../../modules/intelligence/proactive/welcomeOnboarding';
 import { playSuccessSound, playErrorSound } from '../../modules/intelligence/utils/audioFeedback';
 import { getNeuralKey } from '../../modules/intelligence/neuralAccess';
+import { showToast } from '../../components/Toast'; /* OMNI-FIX-8: sistema global de toasts */
 import './Omnibar.css';
 
 interface OmnibarProps {
@@ -52,12 +54,6 @@ interface OmnibarProps {
   }) => void;
 }
 
-interface ToastMessage {
-  id: string;
-  message: string;
-  type: 'success' | 'error' | 'info';
-}
-
 interface ChatMessage {
   id: string;
   role: 'user' | 'agent';
@@ -74,6 +70,18 @@ interface HubShortcut {
   label: string;
   prompt: string;
 }
+
+/* OMNI-FIX-5: render básico de Markdown sin dependencias externas */
+const renderMarkdown = (text: string): string => {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/_(.+?)_/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>');
+};
 
 export const Omnibar: React.FC<OmnibarProps> = ({
   defaultHub = 'WorkHub',
@@ -119,10 +127,14 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   // FIX 6.1: 4-state voice machine
   type VoiceState = 'idle' | 'listening' | 'processing' | 'error';
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
+  const voiceStateRef = useRef<string>('idle');
+  useEffect(() => { voiceStateRef.current = voiceState; }, [voiceState]);
+  /* OMNI-FIX-7 */
   const [voiceError, setVoiceError] = useState('');
   const voiceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finalResultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const capturedTranscriptRef = useRef('');
+  const inputDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null); /* OMNI-PERF-1 */
 
   // FIX 6.2: Locale resolution from Redux or browser
   const resolveLocale = useCallback((): string => {
@@ -139,7 +151,6 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   const [selectedHub, setSelectedHub] = useState<'WorkHub' | 'PersonalHub' | 'FinanceHub'>(defaultHub);
   const [activeInsight, setActiveInsight] = useState<DynamicInsight | null>(null);
   const [activeInsightArtifact, setActiveInsightArtifact] = useState<CanvasArtifact | null>(null);
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -153,23 +164,9 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     currentResponse,
     currentArtifact,
     lastError,
-    confidenceScore,
     confirmAction,
-    cancelAction
+    cancelAction /* OMNI-CLEAN-2: confidenceScore eliminado — no se usa en JSX */
   } = useIntelligence(selectedHub);
-
-  // Toast helper
-  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    const toast: ToastMessage = {
-      id: `toast_${Date.now()}`,
-      message,
-      type
-    };
-    setToasts(prev => [...prev, toast]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== toast.id));
-    }, 4000);
-  };
 
   // FIX 6.3: cleanupAndReset as useCallback — clears all timers, stops plugin, resets state atomically
   const cleanupAndReset = useCallback(async (nextState: VoiceState = 'idle', errorMsg = '') => {
@@ -195,6 +192,9 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     if (errorMsg) setVoiceError(errorMsg);
   }, []);
 
+  // OMNI-FIX-2: acceder al historial guardado en Redux
+  const savedChatHistory = useSelector((s: any) => s.aiMemory?.omnibarChatHistory || []);
+
   // FIX 6: Auto-clear error state after 3 seconds
   useEffect(() => {
     if (voiceState !== 'error') return;
@@ -216,8 +216,16 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     if (isOpen && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-    // Reset chat history when Omnibar re-opens
-    if (isOpen) setChatMessages([]);
+    if (isOpen) {
+      /* OMNI-FIX-2: restaurar historial en lugar de resetear */
+      if (chatMessages.length === 0 && savedChatHistory.length > 0) {
+        setChatMessages(savedChatHistory);
+      }
+    } else if (!isOpen && chatMessages.length > 0) {
+      /* OMNI-FIX-2: guardar historial al cerrar */
+      dispatch(updateOmnibarChatHistory(chatMessages.slice(-20)));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   useEffect(() => {
@@ -235,10 +243,17 @@ export const Omnibar: React.FC<OmnibarProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    dispatch({
-      type: 'aiObserver/omnibarInputChanged',
-      payload: { text: inputValue, at: Date.now(), hub: selectedHub },
-    });
+    /* OMNI-PERF-1: debounce 300ms — no disparar Redux en cada keystroke */
+    if (inputDebounceRef.current) clearTimeout(inputDebounceRef.current);
+    inputDebounceRef.current = setTimeout(() => {
+      dispatch({
+        type: 'aiObserver/omnibarInputChanged',
+        payload: { text: inputValue, at: Date.now(), hub: selectedHub },
+      });
+    }, 300);
+    return () => {
+      if (inputDebounceRef.current) clearTimeout(inputDebounceRef.current);
+    };
   }, [dispatch, inputValue, isOpen, selectedHub]);
 
   useEffect(() => {
@@ -264,6 +279,19 @@ export const Omnibar: React.FC<OmnibarProps> = ({
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
+  }, [isOpen, closeOmnibar]);
+
+  /* OMNI-FIX-6: cerrar con Escape */
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeOmnibar();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, closeOmnibar]);
 
   /**
@@ -752,7 +780,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     };
 
     recognition.onend = () => {
-      if (voiceState === 'listening') setVoiceState('idle');
+      if (voiceStateRef.current === 'listening') setVoiceState('idle'); /* OMNI-FIX-7 */
     };
 
     recognitionRef.current = recognition;
@@ -772,6 +800,15 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     clearPrompt();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, requestVoice]);
+
+  /* OMNI-FIX-9: memoizar para evitar doble cálculo */
+  const agentInfo = useMemo(
+    () => getAgentInfo(selectedHub, inputValue),
+    [selectedHub, inputValue]
+  );
+
+  /* OMNI-PERF-2: evitar acceso a localStorage en cada render */
+  const hasNeuralKey = useMemo(() => !!getNeuralKey(), []);
 
   // Only render if open
   if (!isOpen) return null;
@@ -800,7 +837,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
 
   return (
     <div className="omnibar-overlay">
-      <div className="omnibar-container" ref={modalRef}>
+      <div className="omnibar-container" ref={modalRef} role="dialog" aria-modal="true" aria-label="ATHENEA Assistant"> {/* OMNI-A11Y-1 */}
         <div className="omnibar-top-strip" />
         {/* Header */}
         <div className="omnibar-header">
@@ -808,7 +845,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
             <span className="omnibar-icon">🤖</span>
             <span>ATHENEA Assistant</span>
             <span className="omnibar-version">UI v2</span>
-            {getNeuralKey() ? (
+            {hasNeuralKey /* OMNI-PERF-2 */ ? (
               <span className="omnibar-ai-badge active">IA activa</span>
             ) : (
               <span className="omnibar-ai-badge offline">Modo offline</span>
@@ -866,10 +903,11 @@ export const Omnibar: React.FC<OmnibarProps> = ({
               ref={inputRef}
               type="text"
               className="omnibar-input"
-               placeholder={`${t('What do you want to do?')}`}
+              placeholder={`${t('What do you want to do?')}`}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               disabled={isLoading}
+              aria-label={t('What do you want to do?')} /* OMNI-A11Y-1 */
             />
             {/* FIX 6.6: Voice button with 4 visual states */}
             <button
@@ -898,7 +936,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
           </form>
           {/* FIX 6.6: Voice status bar */}
           {voiceState !== 'idle' && (
-            <div className={`omnibar-voice-status${voiceState === 'error' ? ' omnibar-voice-status--error' : ''}`}>
+            <div className={`omnibar-voice-status${voiceState === 'error' ? ' omnibar-voice-status--error' : ''}`} aria-live="assertive" aria-atomic="true"> {/* OMNI-A11Y-1 */}
               {voiceState === 'listening' && `🎙 ${t('Listening')}…`}
               {voiceState === 'processing' && `⏳ ${t('Processing')}…`}
               {voiceState === 'error' && `⚠️ ${voiceError || t('Voice error')}`}
@@ -909,7 +947,8 @@ export const Omnibar: React.FC<OmnibarProps> = ({
             <div className="omnibar-inline-onboarding-hint">
               <div className="onboarding-hint-title">{t('First command setup')}</div>
               <div className="onboarding-hint-text">
-                Open Omnibar from here and run your first command. This quick tip now lives above Workflow optimal, not inside Dynamic Insights.
+                {t('Type a natural language command. Examples: "add task review tomorrow", "spent 50 on food", "how are my finances?"')}
+                {/* OMNI-FIX-10 */}
               </div>
             </div>
           )}
@@ -929,7 +968,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
 
           {/* ── CHAT AREA ── */}
           {chatMessages.length > 0 ? (
-            <div className="omnibar-chat">
+            <div className="omnibar-chat" role="log" aria-live="polite"> {/* OMNI-A11Y-1 */}
               {chatMessages.map((msg) => (
                 <div key={msg.id} className={`chat-bubble chat-bubble--${msg.role}`}>
                   {msg.role === 'agent' && (
@@ -938,7 +977,11 @@ export const Omnibar: React.FC<OmnibarProps> = ({
                       <span className="chat-agent-name">{msg.agentName}</span>
                     </div>
                   )}
-                  <div className="chat-bubble-text">{msg.text}</div>
+                  <div
+                    className="chat-bubble-text"
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.text || '') }}
+                  />
+                  {/* OMNI-FIX-5 */}
                   {msg.artifact && (
                     <div className="chat-artifact">
                       <IntelligenceCanvas
@@ -953,7 +996,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
               ))}
               {isLoading && (
                 <div className="chat-bubble chat-bubble--agent chat-bubble--typing">
-                  <span className="chat-agent-icon">{getAgentInfo(selectedHub, inputValue).icon}</span>
+                  <span className="chat-agent-icon">{agentInfo.icon /* OMNI-FIX-9 */}</span>
                   <span className="chat-typing-dots"><span/><span/><span/></span>
                 </div>
               )}
@@ -986,7 +1029,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
                       <button
                         key={skill.id}
                         className="skill-suggestion"
-                        onClick={() => setInputValue(`${skill.icon} ${skill.name.toLowerCase()}`)}
+                        onClick={() => setInputValue(skill.name.toLowerCase())} /* OMNI-CLEAN-4 */
                         type="button"
                       >
                         <span className="skill-icon">{skill.icon}</span>
@@ -1012,21 +1055,11 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         {/* Footer */}
         <div className="omnibar-footer">
           <span className="footer-text">
-            {getAgentInfo(selectedHub, inputValue).icon} {getAgentInfo(selectedHub, inputValue).name} — {t('type your query or command')}
+            {agentInfo.icon} {agentInfo.name} — {t('type your query or command')} {/* OMNI-FIX-9 */}
           </span>
         </div>
       </div>
 
-      {/* Toast Notifications */}
-      {toasts.length > 0 && (
-        <div className="omnibar-toasts">
-          {toasts.map(toast => (
-            <div key={toast.id} className={`toast toast-${toast.type}`}>
-              {toast.message}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 };

@@ -254,7 +254,11 @@ const userSettingsSlice = createSlice({
         state.llmApiKey = action.payload.apiKey;
       }
       state.initialized = true;
-    }
+    },
+    setAdvancedMode: (state, action: PayloadAction<boolean>) => {
+      /* OMNI-FIX-4: toggle War Room View */
+      state.advancedMode = Boolean(action.payload);
+    },
   }
 });
 
@@ -279,6 +283,7 @@ export const {
   setLLMProvider,
   setLLMApiKey,
   setLLMConfig,
+  setAdvancedMode, /* OMNI-FIX-4 */
 } = userSettingsSlice.actions;
 
 export default userSettingsSlice.reducer;
