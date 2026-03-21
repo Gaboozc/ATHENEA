@@ -20,11 +20,11 @@ const PRIORITY_BUCKETS = [
 
 export const Dashboard = () => {
   const navigate = useNavigate();
-  const { projects } = useSelector((state) => state.projects);
-  const { workstreams } = useSelector((state) => state.organizations);
-  const { notes } = useSelector((state) => state.notes);
-  const { todos } = useSelector((state) => state.todos);
-  const { payments } = useSelector((state) => state.payments);
+  const projects = useSelector((state) => state.projects?.projects ?? []);
+  const workstreams = useSelector((state) => state.organizations?.workstreams ?? []);
+  const notes = useSelector((state) => state.notes?.notes ?? []);
+  const todos = useSelector((state) => state.todos?.todos ?? []);
+  const payments = useSelector((state) => state.payments?.payments ?? []);
   const budget = useSelector((state) => state.budget);
   const { tasks } = useTasks();
   const { t } = useLanguage();
@@ -45,7 +45,7 @@ export const Dashboard = () => {
   }, []);
 
   // Single-user mode: todas las tareas son visibles
-  const visibleTasks = tasks || [];
+  const visibleTasks = Array.isArray(tasks) ? tasks.filter(Boolean) : [];
 
   const externalTasks = visibleTasks.filter(
     (task) => task.metadata?.source === 'field_report'
@@ -61,7 +61,7 @@ export const Dashboard = () => {
   const orgWorkstreams = (workstreams || []).filter((stream) => stream.enabled);
 
   const recentNotes = useMemo(() => {
-    return [...notes]
+    return [...(notes || [])]
       .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
       .slice(0, 5);
   }, [notes]);
@@ -87,18 +87,21 @@ export const Dashboard = () => {
       };
     };
 
-    const upcomingNotes = notes
+    const upcomingNotes = (notes || [])
+      .filter(Boolean)
       .map((note) => buildReminder(note, 'note', 'reminderDate', '/notes'))
       .filter(Boolean);
 
-    const upcomingTodos = todos
+    const upcomingTodos = (todos || [])
+      .filter(Boolean)
       .map((todo) => buildReminder(todo, 'todo', 'dueDate', '/todos'))
       .filter(Boolean);
 
     const financialSnapshot = selectFinancialSnapshot({ payments: { payments }, budget });
     const financeWindowDays = financialSnapshot.healthScore < 35 || financialSnapshot.saldoLibre < 0 ? 14 : 7;
 
-    const upcomingPayments = payments
+    const upcomingPayments = (payments || [])
+      .filter(Boolean)
       .filter((payment) => (payment?.status || 'pending') !== 'paid')
       .map((payment) => buildReminder(payment, 'payment', 'nextDueDate', '/payments'))
       .filter(Boolean);
@@ -390,7 +393,7 @@ export const Dashboard = () => {
                           <div className="priority-card-desc">{task.description}</div>
                         )}
                         <div className="priority-card-tags">
-                          {task.workstreams.map((stream) => (
+                          {(Array.isArray(task.workstreams) ? task.workstreams : []).map((stream) => (
                             <span key={stream} className="priority-tag">
                               {stream}
                             </span>

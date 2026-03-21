@@ -8,6 +8,7 @@ import './Navbar.css';
 export const Navbar = () => {
 	const { t, toggleLanguage, language } = useLanguage();
 	const location = useLocation();
+	const currentPath = location.pathname.replace(/\/+$/, '') || '/';
 	const { notes } = useSelector((state) => state.notes);
 	const { todos } = useSelector((state) => state.todos);
 	const { payments } = useSelector((state) => state.payments);
@@ -116,7 +117,7 @@ export const Navbar = () => {
 				<div className="navbar-inner">
 					<Link
 						to="/dashboard"
-						className={`navbar-home-button${location.pathname === '/' || location.pathname === '/dashboard' ? ' is-active' : ''}`}
+						className={`navbar-home-button${currentPath === '/' || currentPath.startsWith('/dashboard') ? ' is-active' : ''}`}
 						aria-label="ATHENEA home"
 					>
 						<span>ATHENEA</span>
@@ -150,7 +151,7 @@ export const Navbar = () => {
 										<div className="navbar-dropdown-menu-portal" style={{ top: `${dropdownPosition.top}px`, left: `${dropdownPosition.left}px` }}>
 											<div className="navbar-dropdown-menu">
 												{group.items.map((item) => {
-													const isActive = location.pathname.startsWith(item.path);
+													const isActive = currentPath.startsWith(item.path);
 													return (
 														<Link
 															key={item.path}
@@ -170,7 +171,7 @@ export const Navbar = () => {
 							))}
 							<Link
 								to="/calendar"
-								className={`navbar-button${location.pathname.startsWith('/calendar') ? ' is-active' : ''}`}
+								className={`navbar-button${currentPath.startsWith('/calendar') ? ' is-active' : ''}`}
 							>
 								<span className="navbar-button-glow" />
 								{t('Calendar')}
@@ -190,7 +191,7 @@ export const Navbar = () => {
 							</button>
 							<Link
 								to="/notifications"
-								className={`navbar-icon-button${location.pathname.startsWith('/notifications') ? ' is-active' : ''}`}
+								className={`navbar-icon-button${currentPath.startsWith('/notifications') ? ' is-active' : ''}`}
 								aria-label={t('Notifications')}
 							>
 								{reminderCount > 0 && (
@@ -202,7 +203,7 @@ export const Navbar = () => {
 							</Link>						{/* FIX UI-6: System icons — Settings, Stats, Identity */}
 						<Link
 							to="/settings"
-						className={`navbar-icon-button system-icon${location.pathname.startsWith('/settings') ? ' is-active' : ''}`}
+						className={`navbar-icon-button system-icon${currentPath.startsWith('/settings') ? ' is-active' : ''}`}
 							title={t('Settings')}
 						>
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
@@ -212,7 +213,7 @@ export const Navbar = () => {
 						</Link>
 						<Link
 							to="/stats"
-							className={`navbar-icon-button system-icon${location.pathname.startsWith('/stats') ? ' is-active' : ''}`}
+							className={`navbar-icon-button system-icon${currentPath.startsWith('/stats') ? ' is-active' : ''}`}
 							aria-label={t('Statistics')}
 							title={t('Statistics')}
 						>
@@ -224,7 +225,7 @@ export const Navbar = () => {
 						</Link>
 						<Link
 							to="/identity"
-							className={`navbar-icon-button system-icon${location.pathname.startsWith('/identity') ? ' is-active' : ''}`}
+							className={`navbar-icon-button system-icon${currentPath.startsWith('/identity') ? ' is-active' : ''}`}
 							title={t('Identity')}
 						>
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
@@ -264,7 +265,7 @@ export const Navbar = () => {
 									{isExpanded && (
 										<div className="navbar-mobile-group-items">
 											{group.items.map((item) => {
-												const isActive = location.pathname.startsWith(item.path);
+													const isActive = currentPath.startsWith(item.path);
 												return (
 													<Link
 														key={item.path}
@@ -291,7 +292,7 @@ export const Navbar = () => {
 									closeMobileMenu();
 									setExpandedMobileGroup(null);
 								}}
-								className={`navbar-mobile-link${location.pathname.startsWith('/calendar') ? ' is-active' : ''}`}
+								className={`navbar-mobile-link${currentPath.startsWith('/calendar') ? ' is-active' : ''}`}
 							>
 								{t('Calendar')}
 							</Link>
@@ -301,7 +302,7 @@ export const Navbar = () => {
 									closeMobileMenu();
 									setExpandedMobileGroup(null);
 								}}
-								className={`navbar-mobile-link${location.pathname.startsWith('/settings') ? ' is-active' : ''}`}
+								className={`navbar-mobile-link${currentPath.startsWith('/settings') ? ' is-active' : ''}`}
 							>
 								{t('Settings')}
 							</Link>
@@ -311,7 +312,7 @@ export const Navbar = () => {
 									closeMobileMenu();
 									setExpandedMobileGroup(null);
 								}}
-								className={`navbar-mobile-link${location.pathname.startsWith('/identity') ? ' is-active' : ''}`}
+								className={`navbar-mobile-link${currentPath.startsWith('/identity') ? ' is-active' : ''}`}
 							>
 								{t('Identity')}
 							</Link>
@@ -322,7 +323,7 @@ export const Navbar = () => {
 									closeMobileMenu();
 									setExpandedMobileGroup(null);
 								}}
-								className={`navbar-mobile-link${location.pathname.startsWith('/stats') ? ' is-active' : ''}`}
+								className={`navbar-mobile-link${currentPath.startsWith('/stats') ? ' is-active' : ''}`}
 							>
 								📊 {t('Estadísticas')}
 							</Link>
