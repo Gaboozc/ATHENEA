@@ -21,6 +21,7 @@ export const CreateProject = () => {
     startDate: '',
     endDate: '',
     maintenancePlan: '',
+    currency: 'MXN',
   });
 
   const [errors, setErrors] = useState({});
@@ -145,6 +146,19 @@ export const CreateProject = () => {
                 placeholder={t('e.g., Monthly maintenance cadence')}
               />
             </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="currency">{t('Payment Currency')}</label>
+            <select
+              id="currency"
+              name="currency"
+              value={formData.currency}
+              onChange={handleChange}
+            >
+              <option value="MXN">🇲🇽 MXN — Peso Mexicano</option>
+              <option value="USD">🇺🇸 USD — Dólar Americano</option>
+            </select>
           </div>
 
           <div className="form-group">

@@ -60,17 +60,6 @@ export default defineConfig({
         outDir: 'dist',
         chunkSizeWarningLimit: 600,
         rollupOptions: {
-            // Keep external for Rollup production build as well
-            external: [
-                '@capacitor/preferences',
-                '@capacitor/haptics',
-                '@capacitor/local-notifications',
-                '@capacitor/app',
-                '@capacitor/device',
-                '@capacitor/geolocation',
-                '@capacitor/network',
-                '@capacitor/core',
-            ],
             output: {
                 manualChunks: {
                     // React core

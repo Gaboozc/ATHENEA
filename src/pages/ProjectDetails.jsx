@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useState } from 'react';
 import { useTasks } from '../context/TasksContext';
 import { updateProject, setProjectPhase, addMeetingNote, deleteMeetingNote } from '../../store/slices/projectsSlice';
+import { addIncomeUSD, addIncomeMXN } from '../../store/slices/walletsSlice';
 import { useLanguage } from '../context/LanguageContext';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import './ProjectDetails.css';
@@ -75,7 +76,8 @@ export const ProjectDetails = () => {
     subscriptionAmount: String(project?.economic?.subscriptionAmount || ''),
     subscriptionStartDate: project?.economic?.subscriptionStartDate
       ? String(project.economic.subscriptionStartDate).slice(0, 10)
-      : ''
+      : '',
+    currency: project?.currency || project?.economic?.currency || 'MXN',
   }));
   const isCancelled = project?.status === 'cancelled';
   const projectWorkstream = workstreams.find(
@@ -177,6 +179,8 @@ export const ProjectDetails = () => {
     task.title.toLowerCase().includes(search.toLowerCase())
   );
   const economic = project?.economic || {};
+  const projectCurrency = project?.currency || economic?.currency || 'MXN';
+  const currencySymbol = projectCurrency === 'USD' ? 'USD $' : 'MXN $';
   const totalAmount = Number(economic.totalAmount || 0);
   const advanceAmount = Number(economic.advanceAmount || 0);
   const hasSubscription = Boolean(economic.isSubscription) && Number(economic.subscriptionAmount || 0) > 0;
@@ -216,7 +220,7 @@ export const ProjectDetails = () => {
       title,
       projectId: project.id,
       projectName: project.name,
-      status: 'Pendiente',
+      status: 'Pending',
       level: 'Backlog',
       assigneeId: user?.id,
       createdAt: new Date().toISOString()
@@ -233,7 +237,7 @@ export const ProjectDetails = () => {
       projectId: project.id,
       projectName: project.name,
       parentTaskId: parentId,
-      status: 'pending',
+      status: 'Pending',
       level: 'Backlog',
       assigneeId: user?.id,
       createdAt: new Date().toISOString()
@@ -361,12 +365,18 @@ export const ProjectDetails = () => {
 
   const saveProjectSettings = () => {
     if (!canManageProject) return;
+    const newAdvance = Number(formState.advanceAmount || 0);
+    const prevAdvance = Number(project?.economic?.advanceAmount || 0);
+    const advanceDiff = newAdvance - prevAdvance;
+    const currency = formState.currency || 'MXN';
+
     const nextEconomic = {
       totalAmount: Number(formState.totalAmount || 0),
-      advanceAmount: Number(formState.advanceAmount || 0),
+      advanceAmount: newAdvance,
       isSubscription: Boolean(formState.isSubscription),
       subscriptionAmount: formState.isSubscription ? Number(formState.subscriptionAmount || 0) : 0,
-      subscriptionStartDate: formState.isSubscription ? formState.subscriptionStartDate : ''
+      subscriptionStartDate: formState.isSubscription ? formState.subscriptionStartDate : '',
+      currency,
     };
     dispatch(updateProject({
       id: project.id,
@@ -376,8 +386,26 @@ export const ProjectDetails = () => {
       startDate: formState.startDate,
       endDate: formState.endDate,
       maintenancePlan: formState.isSubscription ? formState.maintenancePlan : '',
+      currency,
       economic: nextEconomic
     }));
+
+    // Registrar diferencia de anticipo en la billetera correcta
+    if (advanceDiff > 0) {
+      const incomePayload = {
+        id: `proj-income-${project.id}-${Date.now()}`,
+        amount: advanceDiff,
+        description: `Anticipo — ${project.name}`,
+        category: 'Proyectos',
+        date: new Date().toISOString().slice(0, 10),
+      };
+      if (currency === 'USD') {
+        dispatch(addIncomeUSD(incomePayload));
+      } else {
+        dispatch(addIncomeMXN(incomePayload));
+      }
+    }
+
     setShowSettings(false);
   };
 
@@ -507,7 +535,14 @@ export const ProjectDetails = () => {
               </label>
             )}
             <label>
-              <span>{t('Total Amount')}</span>
+              <span>{t('Payment Currency')}</span>
+              <select name="currency" value={formState.currency} onChange={handleFormChange}>
+                <option value="MXN">🇲🇽 MXN</option>
+                <option value="USD">🇺🇸 USD</option>
+              </select>
+            </label>
+            <label>
+              <span>{t('Total Amount')} ({formState.currency || 'MXN'})</span>
               <input
                 name="totalAmount"
                 value={formState.totalAmount}
@@ -518,7 +553,7 @@ export const ProjectDetails = () => {
               />
             </label>
             <label>
-              <span>{t('Advance Amount')}</span>
+              <span>{t('Advance Amount')} ({formState.currency || 'MXN'})</span>
               <input
                 name="advanceAmount"
                 value={formState.advanceAmount}
@@ -604,11 +639,11 @@ export const ProjectDetails = () => {
             </div>
             <div>
               <span className="label">{t('Total Amount')}</span>
-              <span className="value">{totalAmount > 0 ? totalAmount.toFixed(2) : t('Not defined')}</span>
+              <span className="value">{totalAmount > 0 ? `${currencySymbol}${totalAmount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : t('Not defined')}</span>
             </div>
             <div>
               <span className="label">{t('Advance')}</span>
-              <span className="value">{advanceAmount > 0 ? advanceAmount.toFixed(2) : t('Not defined')}</span>
+              <span className="value">{advanceAmount > 0 ? `${currencySymbol}${advanceAmount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : t('Not defined')}</span>
             </div>
           </div>
         </section>
