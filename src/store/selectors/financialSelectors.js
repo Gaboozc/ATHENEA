@@ -1,4 +1,6 @@
 /* WALLETS-9 + BUDGET-DUAL-5: Updated for dual-currency wallet + budget system */
+import { createSelector } from '@reduxjs/toolkit';
+
 const MS_IN_DAY = 86400000;
 
 const toNumber = (value) => Number(value || 0);
@@ -20,16 +22,28 @@ const normalizeDate = (value) => {
   return date;
 };
 
-export const selectFinancialSnapshot = (state) => {
-  const payments = Array.isArray(state?.payments?.payments) ? state.payments.payments : [];
-  const categories = Array.isArray(state?.budget?.categories) ? state.budget.categories : [];
-  const expenses = Array.isArray(state?.budget?.expenses) ? state.budget.expenses : [];
-  const goals = Array.isArray(state?.goals?.goals) ? state.goals.goals : [];
+export const selectFinancialSnapshot = createSelector(
+  [
+    (state) => state?.payments,
+    (state) => state?.budget,
+    (state) => state?.wallets,
+    (state) => state?.debts,
+    (state) => state?.goals,
+  ],
+  (payments_slice, budget_slice, wallets_slice, debts_slice, goals_slice) => {
+  const payments = Array.isArray(payments_slice?.payments) ? payments_slice.payments : [];
+  const categories = Array.isArray(budget_slice?.categories) ? budget_slice.categories : [];
+  const expenses = Array.isArray(budget_slice?.expenses) ? budget_slice.expenses : [];
+  const goals = Array.isArray(goals_slice?.goals) ? goals_slice.goals : [];
 
   /* WALLETS-9: wallet balances */
-  const walletUSD = toNumber(state?.wallets?.walletUSD);
-  const walletMXN = toNumber(state?.wallets?.walletMXN);
-  const referenceRate = toNumber(state?.wallets?.referenceRate);
+  const walletUSD = toNumber(wallets_slice?.walletUSD);
+  const walletMXN = toNumber(wallets_slice?.walletMXN);
+  const referenceRate = toNumber(wallets_slice?.referenceRate);
+  /* SAVINGS-4: savings balances — intentionally NOT included in saldoLibre */
+  const savingsUSD = toNumber(wallets_slice?.savingsUSD);
+  const savingsMXN = toNumber(wallets_slice?.savingsMXN);
+  const totalSavingsMXN = savingsMXN + (referenceRate > 0 ? savingsUSD * referenceRate : 0);
 
   const now = new Date();
   now.setHours(0, 0, 0, 0);
@@ -118,7 +132,32 @@ export const selectFinancialSnapshot = (state) => {
   const healthScore = Math.max(0, Math.min(100, Math.round(normalized)));
 
   /* WALLETS-9: saldoLibre in each currency */
-  const saldoLibreMXN = walletMXN - commitedGoalSavings;
+  /* DEBTS-5: include upcoming debt payments in saldo libre calculation */
+  const debts = Array.isArray(debts_slice?.debts) ? debts_slice.debts : [];
+  const activeDebts = debts.filter((d) => d.status !== 'completed');
+  const totalDebtMXN = activeDebts
+    .filter((d) => (d.currency || 'MXN') === 'MXN')
+    .reduce((s, d) => s + toNumber(d.balance), 0);
+  const totalDebtUSD = activeDebts
+    .filter((d) => d.currency === 'USD')
+    .reduce((s, d) => s + toNumber(d.balance), 0);
+  const in30Days = new Date();
+  in30Days.setDate(in30Days.getDate() + 30);
+  const isUpcoming = (d) =>
+    d.nextDueDate && new Date(d.nextDueDate) <= in30Days && d.status === 'active';
+  const upcomingDebtPaymentsMXN = activeDebts
+    .filter((d) => (d.currency || 'MXN') === 'MXN' && isUpcoming(d))
+    .reduce((s, d) => s + toNumber(d.paymentAmount), 0);
+  const upcomingDebtPaymentsUSD = activeDebts
+    .filter((d) => d.currency === 'USD' && isUpcoming(d))
+    .reduce((s, d) => s + toNumber(d.paymentAmount), 0);
+  /* Convert USD payments to MXN for the free-balance calculation */
+  const upcomingDebtPaymentsInMXN =
+    upcomingDebtPaymentsMXN + upcomingDebtPaymentsUSD * (referenceRate || 0);
+  /* Keep legacy name for backward compat (consumers that read upcomingDebtPayments) */
+  const upcomingDebtPayments = upcomingDebtPaymentsInMXN;
+
+  const saldoLibreMXN = walletMXN - commitedGoalSavings - upcomingDebtPaymentsInMXN; /* DEBTS-5 */
   const saldoLibreUSD = walletUSD;
 
   return {
@@ -136,11 +175,27 @@ export const selectFinancialSnapshot = (state) => {
     walletUSD,
     walletMXN,
     referenceRate,
+    savingsUSD,              /* SAVINGS-4 */
+    savingsMXN,              /* SAVINGS-4 */
+    totalSavingsMXN,         /* SAVINGS-4 */
     budgetSummaryUSD,
     budgetSummaryMXN,
     baseCurrency: 'MXN',
+    totalDebtMXN,       /* DEBTS-5 */
+    totalDebtUSD,       /* DEBTS-5 */
+    activeDebtsCount: activeDebts.length,       /* DEBTS-5 */
+    upcomingDebtPayments,                       /* DEBTS-5 — MXN-converted total (backward compat) */
+    upcomingDebtPaymentsMXN,                    /* DEBTS-5 */
+    upcomingDebtPaymentsUSD,                    /* DEBTS-5 */
   };
-};
+  }
+); /* createSelector — OBJETIVO-2 */
 
-export const selectSaldoLibre = (state) => selectFinancialSnapshot(state).saldoLibre;
-export const selectFinancialHealthScore = (state) => selectFinancialSnapshot(state).healthScore;
+export const selectSaldoLibre = createSelector(
+  [selectFinancialSnapshot],
+  (snapshot) => snapshot.saldoLibre
+);
+export const selectFinancialHealthScore = createSelector(
+  [selectFinancialSnapshot],
+  (snapshot) => snapshot.healthScore
+);

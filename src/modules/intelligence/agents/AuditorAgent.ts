@@ -21,6 +21,35 @@ import type {
 } from './types';
 import { isPriorityAtLeast } from './types';
 
+/* I18N-6: bilingual verdict templates for hardcoded fallback strings */
+const getLanguage = (): 'en' | 'es' => {
+  try {
+    return typeof localStorage !== 'undefined' &&
+      localStorage.getItem('athenea.language') === 'es'
+      ? 'es'
+      : 'en';
+  } catch {
+    return 'en';
+  }
+};
+
+const VERDICT_TEMPLATES = {
+  es: {
+    crisisTitle: 'CRISIS FINANCIERA - Modo de emergencia activado',
+    crisisRec: 'CONGELAMIENTO INMEDIATO de gastos discrecionales. Revisar todos los pagos pendientes. Activar plan de contingencia financiera. No realizar compras mayores hasta nueva orden.',
+    conflictTitle: 'CONFLICTO DETECTADO - Austeridad vs Operaciones',
+    budgetFreeze: 'CONGELAMIENTO INMEDIATO: presupuesto agotado.',
+    discretionary: 'Gastos discrecionales exceden el límite.',
+  },
+  en: {
+    crisisTitle: 'FINANCIAL CRISIS - Emergency mode activated',
+    crisisRec: 'IMMEDIATE FREEZE on discretionary spending. Review all pending payments. Activate financial contingency plan. No major purchases until further notice.',
+    conflictTitle: 'CONFLICT DETECTED - Austerity vs Operations',
+    budgetFreeze: 'IMMEDIATE FREEZE: budget exhausted.',
+    discretionary: 'Discretionary spending exceeds limit.',
+  },
+};
+
 export class AuditorAgent implements Agent {
   readonly type: AgentType = 'auditor';
   readonly name = 'The Auditor';
@@ -129,7 +158,8 @@ export class AuditorAgent implements Agent {
 
   private generateVerdict(context: AgentContext): AgentVerdict['verdict'] {
     const dataSource: string[] = ['FinanceHub'];
-    
+    const tmpl = VERDICT_TEMPLATES[getLanguage()] ?? VERDICT_TEMPLATES.es; /* I18N-6 */
+
     if (context.externalData.market) dataSource.push('MarketData');
     if (context.blackBox.isAusterityActive) dataSource.push('AusterityProtocol');
     if (context.blackBox.marketImpact) dataSource.push('BlackBox-MarketCorrelation');
@@ -140,9 +170,9 @@ export class AuditorAgent implements Agent {
       (context.externalData.market?.averageChange ?? 0) < -7
     ) {
       return {
-        summary: 'CRISIS FINANCIERA - Modo de emergencia activado',
+        summary: tmpl.crisisTitle,
         reasoning: `Presupuesto comprometido (${context.financeHub.budgetStatus}) mientras el mercado cae ${context.externalData.market?.averageChange?.toFixed(1)}%. Capital en riesgo crítico.`,
-        recommendation: 'CONGELAMIENTO INMEDIATO de gastos discrecionales. Revisar todos los pagos pendientes. Activar plan de contingencia financiera. No realizar compras mayores hasta nueva orden.',
+        recommendation: tmpl.crisisRec,
         dataSource,
       };
     }
@@ -151,7 +181,7 @@ export class AuditorAgent implements Agent {
     if (context.blackBox.isAusterityActive && context.workHub.criticalTasks > 0) {
       const marketState = context.blackBox.marketImpact?.state || 'bear';
       return {
-        summary: 'CONFLICTO DETECTADO - Austeridad vs Operaciones',
+        summary: tmpl.conflictTitle,
         reasoning: `Protocolo de Austeridad activo (mercado: ${marketState}), pero Strategist reporta ${context.workHub.criticalTasks} tareas críticas que pueden requerir inversión.`,
         recommendation: 'Solicito autorización explícita para cualquier gasto relacionado con misión crítica. Evaluar cada compromiso financiero caso por caso. Priorizar ROI inmediato.',
         dataSource,
@@ -239,6 +269,79 @@ export class AuditorAgent implements Agent {
         dataSource,
       };
     } /* F-FIX-5 */
+
+    /* DEBTS-6: debt-specific verdicts — highest priority after market/austerity checks */
+
+    // Overdue debt
+    if ((context.financeHub.debts?.overdueCount ?? 0) > 0) {
+      const overdue = context.financeHub.debts!.overdueDebts[0];
+      const dueDate = new Date(overdue.dueDate).toLocaleDateString('es-MX');
+      return {
+        summary: `Pago vencido: ${overdue.name} — $${overdue.amount?.toFixed(2)} ${overdue.currency} (venció ${dueDate}). Acción requerida.`,
+        reasoning: `La deuda "${overdue.name}" con ${overdue.creditor} venció el ${dueDate}. Saldo pendiente: $${overdue.balance?.toLocaleString('es-MX', { minimumFractionDigits: 2 })} ${overdue.currency}. Cada día de retraso puede generar intereses moratorios.`,
+        recommendation: `Realiza el pago de $${overdue.amount?.toFixed(2)} ${overdue.currency} lo antes posible. Registra el pago en la sección de Deudas para actualizar el saldo.`,
+        dataSource,
+      };
+    }
+
+    // Upcoming debt payment within 7 days
+    if ((context.financeHub.debts?.dueSoon?.length ?? 0) > 0) {
+      const soon = context.financeHub.debts!.dueSoon[0];
+      const days = Math.max(1, Math.ceil((new Date(soon.dueDate).getTime() - Date.now()) / 86400000));
+      return {
+        summary: `Pago en ${days} día(s): ${soon.name} — $${soon.amount?.toFixed(2)} ${soon.currency}.`,
+        reasoning: `El pago de "${soon.name}" vence en ${days} día(s) (${new Date(soon.dueDate).toLocaleDateString('es-MX')}). Verifica que tengas los fondos disponibles.`,
+        recommendation: `Prepara $${soon.amount?.toFixed(2)} ${soon.currency} para el pago de "${soon.name}". Si tienes saldo suficiente, puedes registrar el pago anticipadamente.`,
+        dataSource,
+      };
+    }
+
+    // High debt load vs free balance
+    const totalDebtMXN = context.financeHub.debts?.totalDebtMXN ?? 0;
+    const saldoLibreForDebt = context.financeHub.saldoLibre ?? 0;
+    if (totalDebtMXN > 0 && saldoLibreForDebt > 0 && totalDebtMXN > saldoLibreForDebt * 3) {
+      return {
+        summary: `Carga de deuda elevada: $${totalDebtMXN.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN vs saldo libre $${saldoLibreForDebt.toFixed(2)} MXN.`,
+        reasoning: `El total de deudas activas ($${totalDebtMXN.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN) supera 3× el saldo libre ($${saldoLibreForDebt.toFixed(2)} MXN). Ratio de apalancamiento elevado.`,
+        recommendation: `Prioriza el pago de deudas con mayor tasa de interés. Evita nuevas deudas hasta reducir el ratio por debajo de 2× el saldo libre.`,
+        dataSource,
+      };
+    }
+
+    // Not-started debts
+    if ((context.financeHub.debts?.notStartedCount ?? 0) > 0) {
+      const count = context.financeHub.debts!.notStartedCount;
+      return {
+        summary: `${count} deuda(s) sin iniciar. Registra un plan de pago para cada una.`,
+        reasoning: `Tienes ${count} deuda(s) en estado "no iniciada". Sin un plan de pago activo, estas deudas no están siendo monitoreadas.`,
+        recommendation: `Accede a la sección de Deudas y actualiza el estado y fecha de inicio estimada para cada deuda pendiente.`,
+        dataSource,
+      };
+    }
+    /* DEBTS-6 */
+
+    // Savings verdicts — SAVINGS-5B
+    const saldoLibreForSavings = context.financeHub.saldoLibre ?? 0;
+    const hasSavings = context.financeHub.savings?.hasSavings ?? false;
+    if (saldoLibreForSavings > 500 && !hasSavings) {
+      return {
+        summary: `Saldo libre de $${saldoLibreForSavings.toFixed(2)} MXN sin ahorrar. Considera transferir una parte a tu fondo de ahorros.`,
+        reasoning: `Tienes $${saldoLibreForSavings.toFixed(2)} MXN disponibles sin compromiso, pero tu fondo de ahorros está en $0. Un colchón financiero reduce el riesgo ante imprevistos.`,
+        recommendation: `Transfiere al menos 10-20% del saldo libre ($${(saldoLibreForSavings * 0.15).toFixed(2)} MXN) a ahorros. Puedes hacerlo desde Billeteras → Ahorrar.`,
+        dataSource,
+      };
+    }
+
+    const totalSavings = context.financeHub.savings?.totalSavingsMXN ?? 0;
+    if (totalSavings > 0 && saldoLibreForSavings > 0 && totalSavings >= saldoLibreForSavings * 2) {
+      return {
+        summary: `Fondo de ahorros sólido: $${totalSavings.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN. Equivale a ${Math.round(totalSavings / Math.max(saldoLibreForSavings, 1))} meses de saldo libre.`,
+        reasoning: `Tu fondo de ahorros supera 2× tu saldo libre mensual, lo que indica una posición financiera robusta y resiliente ante emergencias.`,
+        recommendation: `Mantén el ritmo de ahorro. Con este fondo puedes considerar metas de largo plazo o inversiones de bajo riesgo.`,
+        dataSource,
+      };
+    }
+    /* SAVINGS-5B */
 
     // Budget warning
     if (context.financeHub.budgetStatus === 'approaching-limit') {

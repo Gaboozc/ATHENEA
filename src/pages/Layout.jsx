@@ -16,6 +16,8 @@ import {
 } from "../modules/intelligence"
 import ErrorBoundary from "../components/ErrorBoundary/ErrorBoundary"
 import { useRoutineAlarms } from "../hooks/useRoutineAlarms"
+import { useDeepLink } from "../hooks/useDeepLink"
+import { useAppWidgetSync } from "../hooks/useAppWidgetSync"
 
 // Base component that maintains the navbar and footer throughout the page and the scroll to top functionality.
 export const Layout = () => {
@@ -25,6 +27,8 @@ export const Layout = () => {
     useExternalCalendarObserver(true);
     useWidgetDataBridge(true);
     useRoutineAlarms();  /* ROUTINES-2 */
+    useDeepLink();       /* ANDROID-2 */
+    useAppWidgetSync(); /* WIDGETS: sync Redux state → all 9 Android home-screen widgets */
 
     const highInsightsCount = insights.filter((insight) => insight.severity === 'high').length;
 
@@ -53,9 +57,7 @@ export const Layout = () => {
             <GatekeeperModal />
             <ReminderToasts />
             <NativeReminderNotifications />
-            <ErrorBoundary message="The assistant had an error.">
-                <Omnibar defaultHub="WorkHub" onActionExecuted={handleOmnibarActionExecuted} />
-            </ErrorBoundary>
+            <Omnibar defaultHub="WorkHub" onActionExecuted={handleOmnibarActionExecuted} />
             <ToastContainer />
             <FloatingOmnibarFab highInsightsCount={highInsightsCount} />
             <FABShowToggle />

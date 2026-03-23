@@ -25,9 +25,11 @@ import { actionHistoryMiddleware } from '../src/store/middleware/actionHistoryMi
 import goalsReducer from './slices/goalsSlice';
 import budgetCycleReducer from './slices/budgetCycleSlice';
 import checkinsReducer from '../src/store/slices/checkinsSlice';
+import notificationsReducer from '../src/store/slices/notificationsSlice';
 import journalReducer from './slices/journalSlice';
 import focusReducer from './slices/focusSlice';
 import walletsReducer from './slices/walletsSlice'; /* WALLETS-1 */
+import debtsReducer from './slices/debtsSlice'; /* DEBTS-1 */
 import { budgetGuardMiddleware } from '../src/store/middleware/budgetGuardMiddleware';
 import { financeDeletionAuditMiddleware } from '../src/store/middleware/financeDeletionAuditMiddleware';
 import { feedbackMiddleware } from '../src/store/middleware/feedbackMiddleware'; /* FIX UX-3 */
@@ -52,6 +54,13 @@ const placeholderSlice = createSlice({
   }
 });
 
+// Nested persist for aiMemory — excludes high-churn fields from storage (PERF-3)
+const aiMemoryPersistConfig = {
+  key: 'aiMemory',
+  storage,
+  blacklist: ['agentDialogue', 'sessionLog', 'conflictMemory'],
+};
+
 const rootReducer = combineReducers({
   users: usersReducer,
   auth: authReducer,
@@ -67,7 +76,7 @@ const rootReducer = combineReducers({
   workOrders: workOrdersReducer,
   stats: statsReducer,
   tasks: tasksReducer,
-  aiMemory: aiMemoryReducer,
+  aiMemory: persistReducer(aiMemoryPersistConfig, aiMemoryReducer),
   userSettings: userSettingsReducer,
   userIdentity: userIdentityReducer,
   sensorData: sensorDataReducer,
@@ -78,6 +87,8 @@ const rootReducer = combineReducers({
   journal: journalReducer,
   focus: focusReducer,
   wallets: walletsReducer, /* WALLETS-1 */
+  debts: debtsReducer, /* DEBTS-1 */
+  notifications: notificationsReducer,
 });
 
 const persistConfig = {
@@ -96,18 +107,17 @@ const persistConfig = {
     'budget',
     'collaborators',
     'workOrders',
-    'stats',
     'tasks',
-    'sensorData',
     'userSettings',
     'userIdentity',
-    'aiMemory',
     'goals',
     'budgetCycle',
     'checkins',
     'journal',
     'focus',
     'wallets', /* WALLETS-1 */
+    'debts', /* DEBTS-1 */
+    'notifications',
   ]
 };
 

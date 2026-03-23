@@ -14,4 +14,17 @@
     <string name="widget_system_health_desc">System health and sync status</string>
     <string name="widget_task_quick_add_desc">Quick add a new task</string>
     <string name="widget_today_agenda_desc">Today agenda and events</string>
+
+    <!-- ANDROID-1: App Shortcuts -->
+    <string name="shortcut_work_short">Work</string>
+    <string name="shortcut_work_long">Abrir área de trabajo</string>
+    <string name="shortcut_personal_short">Personal</string>
+    <string name="shortcut_personal_long">Abrir área personal</string>
+    <string name="shortcut_finance_short">Finanzas</string>
+    <string name="shortcut_finance_long">Abrir área de finanzas</string>
+    <string name="shortcut_omnibar_short">Asistente</string>
+    <string name="shortcut_omnibar_long">Abrir asistente ATHENEA</string>
+
+    <!-- ANDROID-3: Nav Widget -->
+    <string name="widget_nav_description">Acceso rápido a ATHENEA</string>
 </resources>

@@ -33,6 +33,7 @@ export const ReminderToasts = () => {
   const { todos } = useSelector((state) => state.todos);
   const { payments } = useSelector((state) => state.payments);
   const tasks = useSelector((state) => state.tasks?.tasks || []); /* CAL-FEAT-6 */
+  const debts = useSelector((state) => state.debts?.debts || []); /* DEBTS-7 */
   const [toasts, setToasts] = useState([]);
   const shownRef = useRef(loadShown());
 
@@ -75,16 +76,37 @@ export const ReminderToasts = () => {
       .map((task) => buildReminder(task, 'task', 'dueDate', '/my-tasks'))
       .filter(Boolean);
 
-    return [...upcomingNotes, ...upcomingTodos, ...upcomingPayments, ...upcomingTasks]
+    /* DEBTS-7: debt payments due within 3 days */
+    const upcomingDebts = debts
+      .filter((d) => d.nextDueDate && d.status === 'active')
+      .map((d) => {
+        const dueDate = new Date(d.nextDueDate);
+        if (Number.isNaN(dueDate.getTime())) return null;
+        dueDate.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((dueDate - today) / 86400000);
+        return {
+          id: d.id,
+          title: `${d.name} — $${d.paymentAmount} ${d.currency}`,
+          type: 'debt',
+          dueDate,
+          diffDays,
+          route: '/finance/debts',
+        };
+      })
+      .filter(Boolean)
+      .filter((r) => r.diffDays >= -1 && r.diffDays <= 3);
+
+    return [...upcomingNotes, ...upcomingTodos, ...upcomingPayments, ...upcomingTasks, ...upcomingDebts]
       .filter((reminder) => TRIGGER_DAYS.includes(reminder.diffDays))
       .sort((a, b) => a.diffDays - b.diffDays);
-  }, [notes, todos, payments, tasks, t]);
+  }, [notes, todos, payments, tasks, debts, t]);
 
   const buildMessage = (reminder) => {
     if (reminder.type === 'payment') return t('Payment due');
     if (reminder.type === 'todo') return t('Todo due');
     if (reminder.type === 'note') return t('Note reminder');
     if (reminder.type === 'task') return t('Task due'); /* CAL-FEAT-6 */
+    if (reminder.type === 'debt') return t('Debt payment due'); /* DEBTS-7 */
     return t('Reminder');
   };
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  getNeuralKey,
+  getNeuralKeySync,
   getNeuralProvider,
   setNeuralKey,
   setNeuralProvider,
@@ -16,7 +16,7 @@ const LLM_PROVIDER_OPTIONS = [
 export const IdentityPanel: React.FC = () => {
   const [formData, setFormData] = useState({
     llmProvider: getNeuralProvider(),
-    llmApiKey: getNeuralKey(),
+    llmApiKey: getNeuralKeySync(),
   });
   const [saved, setSaved] = useState(false);
 
@@ -25,9 +25,9 @@ export const IdentityPanel: React.FC = () => {
     setSaved(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setNeuralProvider(formData.llmProvider as NeuralProvider);
-    setNeuralKey(formData.llmApiKey);
+    await setNeuralKey(formData.llmApiKey);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };

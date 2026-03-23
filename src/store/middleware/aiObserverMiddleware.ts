@@ -13,6 +13,11 @@ import {
 
 const IGNORE_PREFIXES = ['persist/', 'aiMemory/'];
 
+const INPUT_THROTTLE_MS = 500;
+const SESSION_THROTTLE_MS = 2000;
+let lastInputWrite = 0;
+let lastSessionWrite = 0;
+
 function shortPreview(payload: unknown): string {
   try {
     const text = JSON.stringify(payload);
@@ -58,15 +63,20 @@ export const aiObserverMiddleware: Middleware = (store) => {
       store.dispatch(registerCancellation());
     }
 
-    store.dispatch(
-      logSessionAction({
-        type,
-        timestamp: now,
-        result: sessionResult,
-        priority: sessionPriority,
-        payloadPreview: shortPreview(action?.payload),
-      })
-    );
+    // Throttle session log writes for non-critical actions
+    const isHighPriority = sessionPriority === 'HIGH' || sessionResult === 'error' || sessionResult === 'validation_error';
+    if (isHighPriority || now - lastSessionWrite >= SESSION_THROTTLE_MS) {
+      lastSessionWrite = now;
+      store.dispatch(
+        logSessionAction({
+          type,
+          timestamp: now,
+          result: sessionResult,
+          priority: sessionPriority,
+          payloadPreview: shortPreview(action?.payload),
+        })
+      );
+    }
 
     if (type === 'tasks/complete' || type === 'tasks/completeTask') {
       store.dispatch(registerTaskCompletion());
@@ -81,7 +91,10 @@ export const aiObserverMiddleware: Middleware = (store) => {
     }
 
     if (type === 'aiObserver/omnibarInputChanged') {
-      store.dispatch(markOmnibarInput({ at: now, text: String(action?.payload?.text || '') }));
+      if (now - lastInputWrite >= INPUT_THROTTLE_MS) {
+        lastInputWrite = now;
+        store.dispatch(markOmnibarInput({ at: now, text: String(action?.payload?.text || '') }));
+      }
     }
 
     const screen = String(

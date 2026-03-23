@@ -44,8 +44,17 @@ export function usePersona() {
         setCurrentResponse(fallback);
       });
 
+    // Re-generate when API key is set/cleared
+    const onKeyUpdate = () => {
+      const eng = personaRef.current || getPersonaEngine();
+      eng.generateResponseWithLLM()
+        .then(setCurrentResponse)
+        .catch(() => setCurrentResponse(eng.generateResponse()));
+    };
+    window.addEventListener('athenea:neural-key-updated', onKeyUpdate);
+
     return () => {
-      // Cleanup if needed
+      window.removeEventListener('athenea:neural-key-updated', onKeyUpdate);
     };
   }, [dispatch]);
 

@@ -100,6 +100,23 @@ export interface AgentContext {
     daysSinceLastConversion?: number | null;
     budgetUSD?: { totalLimit: number; totalSpent: number; available: number; healthPct: number; status: string } | null;
     budgetMXN?: { totalLimit: number; totalSpent: number; available: number; healthPct: number; status: string } | null;
+    /* DEBTS-6 */
+    debts?: {
+      totalDebtMXN: number;
+      totalDebtUSD: number;
+      activeCount: number;
+      notStartedCount: number;
+      overdueCount: number;
+      overdueDebts: Array<{ name: string; creditor: string; amount: number; currency: string; dueDate: string; balance: number }>;
+      dueSoon: Array<{ name: string; amount: number; currency: string; dueDate: string }>;
+    } | null;
+    /* SAVINGS-5 */
+    savings?: {
+      savingsUSD: number;
+      savingsMXN: number;
+      totalSavingsMXN: number;
+      hasSavings: boolean;
+    };
   };
 
   // From Phase 2.5

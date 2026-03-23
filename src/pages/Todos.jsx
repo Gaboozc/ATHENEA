@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
+import EmptyState from '../components/EmptyState/EmptyState';
 import { addTodo, deleteTodo, setTodoProgress, setTodoStatus, updateTodo } from '../../store/slices/todosSlice'; /* P-FIX-2 */
 import { linkTodoToCalendar, unlinkFromCalendar } from '../../store/slices/calendarSlice';
 import './Todos.css';
@@ -11,6 +12,7 @@ export const Todos = () => {
   const dispatch = useDispatch();
   const { t } = useLanguage();
   const { todos } = useSelector((state) => state.todos);
+  const titleInputRef = useRef(null);
   const [formData, setFormData] = useState({ title: '', notes: '', dueDate: '', priority: 'normal' });
   /* P-FIX-2: inline title editing state */
   const [editingId, setEditingId] = useState(null);
@@ -84,6 +86,7 @@ export const Todos = () => {
 
       <form className="todos-form" onSubmit={handleAddTodo}>
         <input
+          ref={titleInputRef}
           type="text"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -108,7 +111,13 @@ export const Todos = () => {
 
       <section className="todos-list">
         {sortedTodos.length === 0 ? (
-          <div className="todos-empty">{t('No todos yet.')}</div>
+          <EmptyState
+            icon="✅"
+            title={t('No todos yet.')}
+            message={t('Add your first todo using the form above.')}
+            ctaLabel={`+ ${t('Add Todo')}`}
+            onCta={() => titleInputRef.current?.focus()}
+          />
         ) : (
           sortedTodos.map((todo) => (
             <article key={todo.id} className={`todo-card${todo.status === 'done' ? ' done' : ''}`}>

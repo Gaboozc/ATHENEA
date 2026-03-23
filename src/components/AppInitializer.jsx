@@ -24,6 +24,9 @@ import { initializeAgentOrchestrator, getAgentOrchestrator } from '../modules/in
 import { initializeShadowChronos } from '../modules/intelligence/ShadowChronos';
 // FIX 4: ActionBridge listener + proactive agent evaluation
 import { initializeActionBridgeListener } from '../modules/actions/ActionBridge';
+import { initNeuralKey } from '../modules/intelligence/neuralAccess';
+import { initializeNotificationEngine, getNotificationEngine } from '../modules/intelligence/notificationEngine';
+import { addNotification } from '../store/slices/notificationsSlice';
 
 /**
  * AppInitializer - Initialize app features on mount
@@ -54,6 +57,11 @@ const AppInitializer = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    // Populate the in-memory API key cache as early as possible
+    initNeuralKey();
+  }, []);
+
+  useEffect(() => {
     if (isBootstrapped()) return;
     initializeTacticalObserver(store);
     initializeDeviceMonitor(store);
@@ -71,6 +79,11 @@ const AppInitializer = ({ children }) => {
     initializeActionBridgeListener(store);
     // FASE 5: Initialize proactive trend analyzer
     initializeShadowChronos(store);
+
+    // Wire NotificationEngine → Redux so tactical alerts appear in Notifications page
+    const engine = initializeNotificationEngine();
+    engine.setDispatch((entry) => store.dispatch(addNotification(entry)));
+
     markBootstrapped();
   }, [store]);
 
@@ -106,9 +119,25 @@ const AppInitializer = ({ children }) => {
         if (!decision) return;
         const agentName = decision.recommendedAgent ?? 'Cortana';
         const message = decision.reasoning ?? decision.message ?? '';
-        if (message) {
-          showToast(`[${agentName}] ${message}`, 'info', 6000, '🤖');
-        }
+        if (!message) return;
+
+        // Always show in-app toast
+        showToast(`[${agentName}] ${message}`, 'info', 6000, '🤖');
+
+        // Fire native Android notification + push to Notifications page via engine
+        const urgency = decision.priority === 'CRITICAL' ? 'critical'
+          : decision.priority === 'HIGH' ? 'high'
+          : 'medium';
+        getNotificationEngine().sendTacticalNotification({
+          id: `agent-eval-${Date.now()}`,
+          title: agentName,
+          body: message,
+          urgency,
+          agentName,
+          actions: [{ id: 'acknowledge', title: '✓ OK' }],
+          tag: 'agent-alert',
+          timestamp: Date.now(),
+        });
       }).catch(() => { /* silent */ });
     });
 

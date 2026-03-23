@@ -27,7 +27,7 @@ import { StrategistAgent } from './StrategistAgent';
 import { AuditorAgent } from './AuditorAgent';
 import { VitalsAgent } from './VitalsAgent';
 import { getBlackBox } from '../BlackBox';
-import { getNeuralKey, getNeuralProvider } from '../neuralAccess';
+import { getNeuralKeySync, getNeuralProvider } from '../neuralAccess';
 import { selectFinancialSnapshot } from '../../../store/selectors/financialSelectors'; /* F-FIX-1 */
 import {
   recordAgentConflict,
@@ -96,7 +96,7 @@ export class AgentOrchestrator {
 
   private getLLMConfig(): { provider: 'openai' | 'groq'; apiKey: string } | null {
     const provider = String(getNeuralProvider() || 'openai').toLowerCase();
-    const apiKey = String(getNeuralKey() || '').trim();
+    const apiKey = String(getNeuralKeySync() || '').trim();
 
     if (!apiKey) return null;
     if (provider !== 'openai' && provider !== 'groq') return null;
@@ -453,6 +453,13 @@ export class AgentOrchestrator {
               (Date.now() - new Date(state.wallets.lastConversionDate).getTime()) / 86400000
             )
           : null,
+        /* SAVINGS-5 */
+        savings: {
+          savingsUSD: financialSnapshot.savingsUSD || 0,
+          savingsMXN: financialSnapshot.savingsMXN || 0,
+          totalSavingsMXN: financialSnapshot.totalSavingsMXN || 0,
+          hasSavings: (financialSnapshot.savingsUSD || 0) > 0 || (financialSnapshot.savingsMXN || 0) > 0,
+        },
         /* BUDGET-DUAL-6: per-currency budget summaries */
         budgetUSD: financialSnapshot.budgetSummaryUSD
           ? {
@@ -476,6 +483,52 @@ export class AgentOrchestrator {
                   : 'exceeded',
             }
           : null,
+        /* DEBTS-6: debt context for Jarvis */
+        debts: (() => {
+          const allDebts: any[] = state.debts?.debts || [];
+          const activeDebts = allDebts.filter((d: any) => d.status !== 'completed');
+          const today = new Date();
+          const overdueDebts = activeDebts.filter(
+            (d: any) =>
+              d.nextDueDate &&
+              new Date(d.nextDueDate) < today &&
+              d.status === 'active'
+          );
+          const in7Days = new Date();
+          in7Days.setDate(in7Days.getDate() + 7);
+          const dueSoon = activeDebts.filter(
+            (d: any) =>
+              d.nextDueDate &&
+              new Date(d.nextDueDate) <= in7Days &&
+              new Date(d.nextDueDate) >= today &&
+              d.status === 'active'
+          );
+          return {
+            totalDebtMXN: activeDebts
+              .filter((d: any) => (d.currency || 'MXN') === 'MXN')
+              .reduce((s: number, d: any) => s + (d.balance || 0), 0),
+            totalDebtUSD: activeDebts
+              .filter((d: any) => d.currency === 'USD')
+              .reduce((s: number, d: any) => s + (d.balance || 0), 0),
+            activeCount: activeDebts.length,
+            notStartedCount: allDebts.filter((d: any) => d.status === 'not_started').length,
+            overdueCount: overdueDebts.length,
+            overdueDebts: overdueDebts.slice(0, 3).map((d: any) => ({
+              name: d.name,
+              creditor: d.creditor,
+              amount: d.paymentAmount,
+              currency: d.currency,
+              dueDate: d.nextDueDate,
+              balance: d.balance,
+            })),
+            dueSoon: dueSoon.slice(0, 3).map((d: any) => ({
+              name: d.name,
+              amount: d.paymentAmount,
+              currency: d.currency,
+              dueDate: d.nextDueDate,
+            })),
+          };
+        })(),
         /* F-FIX-1 */
       },
       externalData: {
@@ -628,6 +681,15 @@ export class AgentOrchestrator {
   /* PERSONA-2: Build human-readable context string injected into each agent's system prompt */
   private buildAgentContext(agentType: 'strategist' | 'auditor' | 'vitals'): string {
     const state: any = this.store?.getState?.() || {};
+    const identity = state.userSettings || {};
+
+    // IDENTITY-1: Build user context block shared across all agent types
+    const userBlock = [
+      identity.preferredName ? `Usuario: ${identity.preferredName}` : null,
+      identity.occupation     ? `Ocupación: ${identity.occupation}` : null,
+      identity.timezone       ? `Zona horaria: ${identity.timezone}` : null,
+      identity.additionalContext ? `Contexto adicional: ${identity.additionalContext}` : null,
+    ].filter(Boolean).join('\n');
 
     switch (agentType) {
       case 'strategist': {
@@ -646,6 +708,8 @@ export class AgentOrchestrator {
           (p: any) => p.status !== 'cancelled' && p.status !== 'completed'
         );
         return [
+          userBlock || null,
+          identity.mainGoal ? `Objetivo del mes: ${identity.mainGoal}` : null,
           `Tareas críticas activas: ${critical.length}`,
           ...critical.slice(0, 3).map((t: any) => `- ${t.title} (${t.level})`),
           `Tareas vencidas: ${overdue.length}`,
@@ -657,6 +721,8 @@ export class AgentOrchestrator {
         const snapshot = selectFinancialSnapshot(state);
         const wallets = state.wallets;
         return [
+          userBlock || null,
+          identity.financialContext ? `Contexto financiero del usuario: ${identity.financialContext}` : null,
           wallets ? `Saldo USD: $${(wallets.walletUSD ?? 0).toFixed(2)} USD` : null,
           wallets ? `Saldo MXN: $${(wallets.walletMXN ?? 0).toFixed(2)} MXN` : null,
           wallets?.referenceRate ? `Última tasa: $${Number(wallets.referenceRate).toFixed(2)} MXN/USD` : null,
@@ -820,12 +886,22 @@ export class AgentOrchestrator {
       ? `MEMORIA DE SESIONES ANTERIORES:\n${String(agentMem.recentContext).slice(0, 300)}`
       : 'MEMORIA DE SESIONES ANTERIORES:\nPrimera interacción.'; /* PERSONA-3 */
 
+    // IDENTITY-1: Read custom agent name and user alias from settings
+    const identity = state?.userSettings || {};
+    const cortanaName = identity.agentNames?.cortana || 'Cortana';
+    const jarvisName  = identity.agentNames?.jarvis  || 'Jarvis';
+    const shodanName  = identity.agentNames?.shodan  || 'SHODAN';
+    const cortanaAlias = identity.agentAliases?.cortana || identity.preferredName || 'Chief';
+    const jarvisAlias  = identity.agentAliases?.jarvis  || identity.preferredName || 'Sir';
+    const shodanAlias  = identity.agentAliases?.shodan  || identity.preferredName || 'Insect';
+
     let personaPrompt: string;
 
     if (verdict.agentType === 'strategist') {
       const workContext = this.buildAgentContext('strategist'); /* PERSONA-2 */
       personaPrompt = [
-        'Eres Cortana, el agente estratégico de ATHENEA.',
+        `Eres ${cortanaName}, el agente estratégico de ATHENEA.`,
+        `Dirígete al usuario como "${cortanaAlias}".`,
         'Tu función es maximizar la productividad táctica del usuario.',
         'PERSONALIDAD: Directa y concisa. Sin palabras de relleno.',
         'Hablas como un estratega militar — claras prioridades, sin ambigüedad.',
@@ -843,7 +919,8 @@ export class AgentOrchestrator {
     } else if (verdict.agentType === 'auditor') {
       const financeContext = this.buildAgentContext('auditor'); /* PERSONA-2 */
       personaPrompt = [
-        'Eres Jarvis, el agente financiero de ATHENEA.',
+        `Eres ${jarvisName}, el agente financiero de ATHENEA.`,
+        `Dirígete al usuario como "${jarvisAlias}".`,
         'Tu función es proteger el capital y la salud financiera del usuario.',
         'PERSONALIDAD: Analítico y preciso. Los números no mienten.',
         'Tono frío y calculado — como un CFO personal.',
@@ -861,7 +938,8 @@ export class AgentOrchestrator {
     } else {
       const personalContext = this.buildAgentContext('vitals'); /* PERSONA-2 */
       personaPrompt = [
-        'Eres SHODAN, el agente de bienestar de ATHENEA.',
+        `Eres ${shodanName}, el agente de bienestar de ATHENEA.`,
+        `Dirígete al usuario como "${shodanAlias}".`,
         'Tu función es proteger la energía, salud y hábitos del usuario.',
         'PERSONALIDAD: Observadora e incisiva. Ves patrones que el usuario ignora.',
         'Tu tono es inquietante pero sincero — como un médico que dice la verdad aunque no sea cómoda.',

@@ -163,8 +163,11 @@ export const Calendar = () => {
   const getEventsForDate = (date) => {
     const dateStr = date.toISOString().split('T')[0];
     return filteredEvents.filter((event) => {
+      if (!event.startDate) return false; // BUG-11: guard undefined date
       const eventStart = new Date(event.startDate).toISOString().split('T')[0];
-      const eventEnd = new Date(event.endDate).toISOString().split('T')[0];
+      const eventEnd = event.endDate
+        ? new Date(event.endDate).toISOString().split('T')[0]
+        : eventStart;
       return dateStr >= eventStart && dateStr <= eventEnd;
     });
   };

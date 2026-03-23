@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		registerPlugin(WidgetBridgePlugin.class);
+		registerPlugin(AtheneaWidgetPlugin.class);
 		registerPlugin(NotificationListenerPlugin.class);
 	}
 }

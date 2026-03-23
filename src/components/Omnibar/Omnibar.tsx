@@ -18,7 +18,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateOmnibarChatHistory } from '../../store/slices/aiMemorySlice'; /* OMNI-FIX-2 */
+import { updateOmnibarChatHistory, clearLatestActionableIntercept } from '../../store/slices/aiMemorySlice'; /* OMNI-FIX-2 */
 import { useLanguage } from '../../context/LanguageContext';
 import { syncExternalEvents } from '../../../store/slices/calendarSlice.js';
 import {
@@ -29,11 +29,12 @@ import {
 } from '../../modules/intelligence';
 import type { CanvasArtifact, DynamicInsight } from '../../modules/intelligence';
 import { useOmnibar } from './useOmnibar';
+import { InterceptCard } from './InterceptCard'; /* INTERCEPT: conectar feature existente */
 import { ProactiveHUD } from './ProactiveHUD.tsx';
 import { WarRoomView } from './WarRoomView';
 import { isOnboardingCompleted, markOnboardingCompleted } from '../../modules/intelligence/proactive/welcomeOnboarding';
 import { playSuccessSound, playErrorSound } from '../../modules/intelligence/utils/audioFeedback';
-import { getNeuralKey } from '../../modules/intelligence/neuralAccess';
+import { getNeuralKeySync } from '../../modules/intelligence/neuralAccess';
 import { showToast } from '../../components/Toast'; /* OMNI-FIX-8: sistema global de toasts */
 import './Omnibar.css';
 
@@ -74,11 +75,13 @@ interface HubShortcut {
 /* OMNI-FIX-5: render básico de Markdown sin dependencias externas */
 const renderMarkdown = (text: string): string => {
   if (!text) return '';
-  return text
+  const escaped = text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+    .replace(/>/g, '&gt;');
+  return escaped
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>') /* FIX-4: *italic* con asterisco simple */
     .replace(/_(.+?)_/g, '<em>$1</em>')
     .replace(/`(.+?)`/g, '<code>$1</code>');
 };
@@ -147,6 +150,8 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   // Local state
   const [inputValue, setInputValue] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const chatMessagesRef = useRef<ChatMessage[]>([]); /* FIX-6: ref para evitar stale closure en efecto de cierre */
+  useEffect(() => { chatMessagesRef.current = chatMessages; }, [chatMessages]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [selectedHub, setSelectedHub] = useState<'WorkHub' | 'PersonalHub' | 'FinanceHub'>(defaultHub);
   const [activeInsight, setActiveInsight] = useState<DynamicInsight | null>(null);
@@ -194,6 +199,8 @@ export const Omnibar: React.FC<OmnibarProps> = ({
 
   // OMNI-FIX-2: acceder al historial guardado en Redux
   const savedChatHistory = useSelector((s: any) => s.aiMemory?.omnibarChatHistory || []);
+  /* INTERCEPT: intercepción de notificaciones desde Redux */
+  const latestIntercept = useSelector((s: any) => s.aiMemory?.interception?.latestActionable ?? null);
 
   // FIX 6: Auto-clear error state after 3 seconds
   useEffect(() => {
@@ -217,13 +224,20 @@ export const Omnibar: React.FC<OmnibarProps> = ({
       setTimeout(() => inputRef.current?.focus(), 100);
     }
     if (isOpen) {
-      /* OMNI-FIX-2: restaurar historial en lugar de resetear */
-      if (chatMessages.length === 0 && savedChatHistory.length > 0) {
-        setChatMessages(savedChatHistory);
+      /* OMNI-FIX-2: restaurar historial — excluir mensajes con artifact (formularios de una sola vez) */
+      if (chatMessagesRef.current.length === 0 && savedChatHistory.length > 0) {
+        setChatMessages(savedChatHistory.filter((m: any) => !m.artifact));
       }
-    } else if (!isOpen && chatMessages.length > 0) {
-      /* OMNI-FIX-2: guardar historial al cerrar */
-      dispatch(updateOmnibarChatHistory(chatMessages.slice(-20)));
+      /* Limpiar cualquier artifact/insight activo de la sesión anterior */
+      setActiveInsight(null);
+      setActiveInsightArtifact(null);
+    } else {
+      /* OMNI-FIX-2 + FIX-6: guardar historial — excluir artifacts para que no se restauren como formularios */
+      if (chatMessagesRef.current.length > 0) {
+        dispatch(updateOmnibarChatHistory(
+          chatMessagesRef.current.filter((m: any) => !m.artifact).slice(-20)
+        ));
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -801,22 +815,43 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, requestVoice]);
 
+  /* INTERCEPT: ejecutar protocolo — lleva la intención al input para confirmación del usuario */
+  const handleInterceptExecute = useCallback(() => {
+    if (!latestIntercept) return;
+    if (latestIntercept.actionType === 'register-expense') {
+      setSelectedHub('FinanceHub');
+      const amount = latestIntercept.amount ? ` $${latestIntercept.amount}` : '';
+      const merchant = latestIntercept.merchant ? ` at ${latestIntercept.merchant}` : '';
+      setInputValue(`record expense${amount}${merchant}`.trim());
+    } else if (latestIntercept.actionType === 'schedule-event') {
+      setSelectedHub('PersonalHub');
+      setInputValue(`create event ${latestIntercept.summary || ''}`.trim());
+    }
+    dispatch(clearLatestActionableIntercept());
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, [latestIntercept, dispatch]);
+
+  const handleInterceptDiscard = useCallback(() => {
+    dispatch(clearLatestActionableIntercept());
+  }, [dispatch]);
+
   /* OMNI-FIX-9: memoizar para evitar doble cálculo */
   const agentInfo = useMemo(
     () => getAgentInfo(selectedHub, inputValue),
     [selectedHub, inputValue]
   );
 
-  /* OMNI-PERF-2: evitar acceso a localStorage en cada render */
-  const hasNeuralKey = useMemo(() => !!getNeuralKey(), []);
+  /* OMNI-PERF-2: reactive — updates when API key is set */
+  const [hasNeuralKey, setHasNeuralKey] = useState(() => !!getNeuralKeySync());
+  useEffect(() => {
+    const onKeyUpdate = (e: Event) => setHasNeuralKey(!!(e as CustomEvent).detail?.hasKey);
+    window.addEventListener('athenea:neural-key-updated', onKeyUpdate);
+    return () => window.removeEventListener('athenea:neural-key-updated', onKeyUpdate);
+  }, []);
 
-  // Only render if open
-  if (!isOpen) return null;
-
-  const suggestedSkills = getSkillsByHub(selectedHub).slice(0, 4);
-  const artifactToRender = activeInsightArtifact || currentArtifact;
-  const showInlineOnboardingHint = selectedHub === 'WorkHub' && !isOnboardingCompleted();
-  const shortcutsByHub: Record<'WorkHub' | 'PersonalHub' | 'FinanceHub', HubShortcut[]> = {
+  /* FIX-2: useMemo para evitar re-crear el objeto en cada keystroke
+   * MUST be before the early return — hooks cannot come after a conditional return */
+  const shortcutsByHub = useMemo<Record<'WorkHub' | 'PersonalHub' | 'FinanceHub', HubShortcut[]>>(() => ({
     WorkHub: [
       { id: 'work-create-collaborator', label: t('Create collaborator'), prompt: 'create collaborator' },
       { id: 'work-create-project', label: t('Create project'), prompt: 'create project' },
@@ -832,8 +867,20 @@ export const Omnibar: React.FC<OmnibarProps> = ({
       { id: 'finance-add-income', label: t('Record income'), prompt: 'record income' },
       { id: 'finance-view-budget', label: t('View budget'), prompt: 'show budget status' },
     ],
-  };
+  }), [language]); /* FIX-2: solo se re-crea si cambia el idioma */
+
+  // Only render if open — early return MUST come after all hooks
+  if (!isOpen) return null;
+
   const activeShortcuts = shortcutsByHub[selectedHub] || [];
+  const suggestedSkills = getSkillsByHub(selectedHub).slice(0, 4);
+  const artifactToRender = activeInsightArtifact || currentArtifact;
+  const showInlineOnboardingHint =
+    !isOnboardingCompleted() &&
+    chatMessages.length === 0 &&
+    !inputValue &&
+    !currentResponse &&
+    !lastError;
 
   return (
     <div className="omnibar-overlay">
@@ -844,7 +891,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
           <div className="omnibar-title">
             <span className="omnibar-icon">🤖</span>
             <span>ATHENEA Assistant</span>
-            <span className="omnibar-version">UI v2</span>
+            {import.meta.env.DEV && <span className="omnibar-version">UI v2</span>}
             {hasNeuralKey /* OMNI-PERF-2 */ ? (
               <span className="omnibar-ai-badge active">IA activa</span>
             ) : (
@@ -857,7 +904,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
             onClick={closeOmnibar}
             aria-label="Close assistant"
           >
-            ✕ {t('tap here to close')}
+            ✕ {t('omnibar.closeHint')}
           </button>
         </div>
 
@@ -868,6 +915,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
             onClick={() => {
               setSelectedHub('WorkHub');
               setInputValue('');
+              setChatMessages([]); /* FIX-3: limpiar contexto del hub anterior */
             }}
           >
             💼 Work
@@ -877,6 +925,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
             onClick={() => {
               setSelectedHub('PersonalHub');
               setInputValue('');
+              setChatMessages([]); /* FIX-3 */
             }}
           >
             📝 Personal
@@ -886,6 +935,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
             onClick={() => {
               setSelectedHub('FinanceHub');
               setInputValue('');
+              setChatMessages([]); /* FIX-3 */
             }}
           >
             💰 Finance
@@ -943,7 +993,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
             </div>
           )}
 
-          {showInlineOnboardingHint && !inputValue && !currentResponse && !lastError && (
+          {showInlineOnboardingHint && (
             <div className="omnibar-inline-onboarding-hint">
               <div className="onboarding-hint-title">{t('First command setup')}</div>
               <div className="onboarding-hint-text">
@@ -951,6 +1001,21 @@ export const Omnibar: React.FC<OmnibarProps> = ({
                 {/* OMNI-FIX-10 */}
               </div>
             </div>
+          )}
+
+          {/* INTERCEPT: tarjeta de intercepción de notificaciones cuando hay una accionable */}
+          {chatMessages.length === 0 && !inputValue && latestIntercept && latestIntercept.actionType !== 'none' && (
+            <InterceptCard
+              appName={latestIntercept.appName}
+              packageName={latestIntercept.packageName}
+              summary={latestIntercept.summary}
+              urgency={latestIntercept.urgency}
+              actionType={latestIntercept.actionType}
+              merchant={latestIntercept.merchant}
+              temporalHint={latestIntercept.temporalHint}
+              onExecute={handleInterceptExecute}
+              onDiscard={handleInterceptDiscard}
+            />
           )}
 
           {/* Proactive HUD - shown only when chat is empty */}
@@ -1052,10 +1117,14 @@ export const Omnibar: React.FC<OmnibarProps> = ({
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer — FIX-9: shortcuts de teclado */}
         <div className="omnibar-footer">
-          <span className="footer-text">
-            {agentInfo.icon} {agentInfo.name} — {t('type your query or command')} {/* OMNI-FIX-9 */}
+          <span className="footer-agent">
+            {agentInfo.icon} {agentInfo.name}
+          </span>
+          <span className="footer-shortcuts">
+            <kbd>Enter</kbd> {t('send')}
+            <kbd>Esc</kbd> {t('close')}
           </span>
         </div>
       </div>

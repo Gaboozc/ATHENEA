@@ -1,2 +1,5 @@
 /build/*
 !/build/.npmkeep
+# Keystore — NUNCA subir a git
+keystore.jks
+*.keystore

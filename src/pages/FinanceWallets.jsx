@@ -9,6 +9,9 @@ import {
   addExpenseMXN,
   recordConversion,
   deleteTransaction,
+  transferToSavings,
+  withdrawFromSavings,
+  deleteSavingsTransaction,
 } from '../../store/slices/walletsSlice';
 import { registerExpense } from '../store/thunks/financeThunks';
 import './FinanceWallets.css';
@@ -18,18 +21,20 @@ const FILTER_ALL = 'all';
 const FILTER_INCOME = 'income';
 const FILTER_EXPENSE = 'expense';
 const FILTER_CONVERSION = 'conversion';
+const FILTER_SAVINGS = 'savings'; /* SAVINGS-2D */
 
 const fmtUSD = (n) =>
   Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtMXN = (n) =>
   Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const relativeDate = (iso) => {
+const relativeDate = (iso, t) => {
   if (!iso) return '—';
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
-  if (diff === 0) return 'Hoy';
-  if (diff === 1) return 'Ayer';
-  return `Hace ${diff} días`;
+  if (diff === 0) return t('Today');
+  if (diff === 1) return t('Yesterday');
+  // I18N-10: interpolation manual — t() no soporta placeholders
+  return t('Yesterday').startsWith('A') ? `${diff} days ago` : `Hace ${diff} días`;
 };
 
 export const FinanceWallets = () => {
@@ -38,12 +43,15 @@ export const FinanceWallets = () => {
 
   const walletUSD = useSelector((s) => s.wallets?.walletUSD || 0);
   const walletMXN = useSelector((s) => s.wallets?.walletMXN || 0);
+  const savingsUSD = useSelector((s) => s.wallets?.savingsUSD || 0); /* SAVINGS-2A */
+  const savingsMXN = useSelector((s) => s.wallets?.savingsMXN || 0); /* SAVINGS-2A */
   const referenceRate = useSelector((s) => s.wallets?.referenceRate || 0);
   const lastConversionDate = useSelector((s) => s.wallets?.lastConversionDate || null);
   const transactions = useSelector((s) => s.wallets?.transactions || []);
+  const savingsTransactions = useSelector((s) => s.wallets?.savingsTransactions || []); /* SAVINGS-2D */
   const budgetCategories = useSelector((s) => s.budget?.categories || []);
 
-  const [activeForm, setActiveForm] = useState(null); // 'income_usd' | 'income_mxn' | 'conversion' | 'expense'
+  const [activeForm, setActiveForm] = useState(null); // 'income_usd' | 'income_mxn' | 'conversion' | 'expense' | 'save' | 'withdraw_savings'
   const [txFilter, setTxFilter] = useState(FILTER_ALL);
 
   // ── Form state ──────────────────────────────────────────────────────────────
@@ -149,8 +157,44 @@ export const FinanceWallets = () => {
     setActiveForm(null);
   };
 
+  // ── Submit handlers — savings ──────────────────────────────────────────────
+  const handleTransferToSavings = (e) => {
+    e.preventDefault();
+    const amt = parseFloat(form.amount);
+    if (!amt || amt <= 0) return;
+    const available = form.currency === 'USD' ? walletUSD : walletMXN;
+    if (amt > available) return;
+    dispatch(transferToSavings({
+      id: `sav-dep-${Date.now()}`,
+      amount: amt,
+      currency: form.currency,
+      description: form.description || 'Transferencia a ahorros',
+      date: new Date(form.date).toISOString(),
+    }));
+    resetForm();
+    setActiveForm(null);
+  };
+
+  const handleWithdrawFromSavings = (e) => {
+    e.preventDefault();
+    const amt = parseFloat(form.amount);
+    if (!amt || amt <= 0) return;
+    const savingsAvail = form.currency === 'USD' ? savingsUSD : savingsMXN;
+    if (amt > savingsAvail) return;
+    dispatch(withdrawFromSavings({
+      id: `sav-wit-${Date.now()}`,
+      amount: amt,
+      currency: form.currency,
+      description: form.description || 'Retiro de ahorros',
+      date: new Date(form.date).toISOString(),
+    }));
+    resetForm();
+    setActiveForm(null);
+  };
+
   // ── Filtered transactions ───────────────────────────────────────────────────
   const filteredTx = useMemo(() => {
+    if (txFilter === FILTER_SAVINGS) return savingsTransactions;
     if (txFilter === FILTER_INCOME)
       return transactions.filter((t) => t.type === 'income_usd' || t.type === 'income_mxn');
     if (txFilter === FILTER_EXPENSE)
@@ -158,7 +202,7 @@ export const FinanceWallets = () => {
     if (txFilter === FILTER_CONVERSION)
       return transactions.filter((t) => t.type === 'conversion');
     return transactions;
-  }, [transactions, txFilter]);
+  }, [transactions, savingsTransactions, txFilter]);
 
   const txIcon = (type) => {
     if (type === 'income_usd') return '💵';
@@ -199,7 +243,7 @@ export const FinanceWallets = () => {
             <strong className="wallet-card-amount">${fmtUSD(walletUSD)} USD</strong>
             {lastConversionDate && (
               <span className="wallet-card-meta">
-                {t('Última conversión')}: {relativeDate(lastConversionDate)}
+                {t('Última conversión')}: {relativeDate(lastConversionDate, t)}
               </span>
             )}
           </div>
@@ -224,6 +268,36 @@ export const FinanceWallets = () => {
             <small> ({t('usando tasa')} ${referenceRate.toFixed(2)} — {t('solo referencial')})</small>
           </div>
         )}
+      </section>
+
+      {/* SECCIÓN AHORROS — SAVINGS-2A */}
+      <section className="wallets-savings-section">
+        <div className="wallets-section-header">
+          <span>🏦 {t('Ahorros')}</span>
+          <small>{t('Dinero apartado — no disponible para gastos')}</small>
+        </div>
+        <div className="wallets-balances">
+          <div className="wallet-card wallet-savings-usd">
+            <div className="wallet-card-icon">🏦</div>
+            <div className="wallet-card-body">
+              <span className="wallet-card-label">{t('Ahorros USD')}</span>
+              <strong className="wallet-card-amount">${fmtUSD(savingsUSD)} USD</strong>
+            </div>
+          </div>
+          <div className="wallet-card wallet-savings-mxn">
+            <div className="wallet-card-icon">🏦</div>
+            <div className="wallet-card-body">
+              <span className="wallet-card-label">{t('Ahorros MXN')}</span>
+              <strong className="wallet-card-amount">${fmtMXN(savingsMXN)} MXN</strong>
+            </div>
+          </div>
+          {referenceRate > 0 && (savingsUSD > 0 || savingsMXN > 0) && (
+            <div className="wallet-equiv-note">
+              ≈ {t('Total ahorros')}: <strong>${fmtMXN(savingsMXN + savingsUSD * referenceRate)} MXN</strong>
+              <small> ({t('solo referencial')})</small>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* SECCIÓN 2 — Acciones rápidas */}
@@ -251,6 +325,18 @@ export const FinanceWallets = () => {
           onClick={() => openForm('expense')}
         >
           − {t('Gasto')}
+        </button>
+        <button
+          className={`wallets-action-btn wallets-action-btn--savings${activeForm === 'save' ? ' active' : ''}`}
+          onClick={() => openForm('save')}
+        >
+          💰 {t('Ahorrar')}
+        </button>
+        <button
+          className={`wallets-action-btn wallets-action-btn--withdraw${activeForm === 'withdraw_savings' ? ' active' : ''}`}
+          onClick={() => openForm('withdraw_savings')}
+        >
+          ↩ {t('Retirar ahorros')}
         </button>
       </section>
 
@@ -369,12 +455,112 @@ export const FinanceWallets = () => {
         </form>
       )}
 
+      {/* SAVINGS-2B — Formulario transferir a ahorros */}
+      {activeForm === 'save' && (
+        <form className="wallets-form" onSubmit={handleTransferToSavings}>
+          <h3>💰 {t('Transferir a ahorros')}</h3>
+          <label>{t('Monto')} *
+            <input type="number" min="0.01" step="0.01" required value={form.amount}
+              onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))} placeholder="0.00" />
+          </label>
+          <label>{t('Divisa')}
+            <select value={form.currency} onChange={(e) => setForm((p) => ({ ...p, currency: e.target.value }))}>
+              <option value="MXN">💴 MXN</option>
+              <option value="USD">💵 USD</option>
+            </select>
+          </label>
+          <label>{t('Descripción')} ({t('opcional')})
+            <input value={form.description}
+              onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+              placeholder="Ej: Fondo de emergencia" />
+          </label>
+          <label>{t('Fecha')}
+            <input type="date" value={form.date}
+              onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))} />
+          </label>
+          {form.amount && parseFloat(form.amount) > 0 && (() => {
+            const amt = parseFloat(form.amount);
+            const available = form.currency === 'USD' ? walletUSD : walletMXN;
+            const savings = form.currency === 'USD' ? savingsUSD : savingsMXN;
+            const fmt = form.currency === 'USD' ? fmtUSD : fmtMXN;
+            const overLimit = amt > available;
+            return (
+              <div className={`wallets-preview${overLimit ? ' wallets-preview--warn' : ''}`}>
+                {overLimit
+                  ? <span>⚠️ {t('Monto mayor al saldo disponible')}</span>
+                  : <>
+                      <span>{t('Saldo disponible después')}: <strong>${fmt(available - amt)} {form.currency}</strong></span>
+                      <span>{t('Saldo ahorros después')}: <strong>${fmt(savings + amt)} {form.currency}</strong></span>
+                    </>}
+              </div>
+            );
+          })()}
+          <div className="wallets-form-actions">
+            <button type="button" onClick={() => setActiveForm(null)}>{t('Cancelar')}</button>
+            <button type="submit"
+              disabled={!form.amount || parseFloat(form.amount) > (form.currency === 'USD' ? walletUSD : walletMXN)}>
+              {t('Transferir a ahorros')}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* SAVINGS-2C — Formulario retirar de ahorros */}
+      {activeForm === 'withdraw_savings' && (
+        <form className="wallets-form" onSubmit={handleWithdrawFromSavings}>
+          <h3>↩ {t('Retirar de ahorros')}</h3>
+          <label>{t('Monto')} *
+            <input type="number" min="0.01" step="0.01" required value={form.amount}
+              onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))} placeholder="0.00" />
+          </label>
+          <label>{t('Divisa')}
+            <select value={form.currency} onChange={(e) => setForm((p) => ({ ...p, currency: e.target.value }))}>
+              <option value="MXN">💴 MXN</option>
+              <option value="USD">💵 USD</option>
+            </select>
+          </label>
+          <label>{t('Descripción')} ({t('opcional')})
+            <input value={form.description}
+              onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+              placeholder="Ej: Pago urgente" />
+          </label>
+          <label>{t('Fecha')}
+            <input type="date" value={form.date}
+              onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))} />
+          </label>
+          {form.amount && parseFloat(form.amount) > 0 && (() => {
+            const amt = parseFloat(form.amount);
+            const savings = form.currency === 'USD' ? savingsUSD : savingsMXN;
+            const available = form.currency === 'USD' ? walletUSD : walletMXN;
+            const fmt = form.currency === 'USD' ? fmtUSD : fmtMXN;
+            const overLimit = amt > savings;
+            return (
+              <div className={`wallets-preview${overLimit ? ' wallets-preview--warn' : ''}`}>
+                {overLimit
+                  ? <span>⚠️ {t('Monto mayor al saldo en ahorros')}</span>
+                  : <>
+                      <span>{t('Saldo ahorros después')}: <strong>${fmt(savings - amt)} {form.currency}</strong></span>
+                      <span>{t('Saldo disponible después')}: <strong>${fmt(available + amt)} {form.currency}</strong></span>
+                    </>}
+              </div>
+            );
+          })()}
+          <div className="wallets-form-actions">
+            <button type="button" onClick={() => setActiveForm(null)}>{t('Cancelar')}</button>
+            <button type="submit"
+              disabled={!form.amount || parseFloat(form.amount) > (form.currency === 'USD' ? savingsUSD : savingsMXN)}>
+              {t('Retirar a disponible')}
+            </button>
+          </div>
+        </form>
+      )}
+
       {/* SECCIÓN 4 — Historial */}
       <section className="wallets-history">
         <div className="wallets-history-header">
           <h2>{t('Historial de billetera')}</h2>
           <div className="wallets-filter-tabs">
-            {[FILTER_ALL, FILTER_INCOME, FILTER_EXPENSE, FILTER_CONVERSION].map((f) => (
+            {[FILTER_ALL, FILTER_INCOME, FILTER_EXPENSE, FILTER_CONVERSION, FILTER_SAVINGS].map((f) => (
               <button
                 key={f}
                 className={`wallets-filter-tab${txFilter === f ? ' active' : ''}`}
@@ -383,7 +569,8 @@ export const FinanceWallets = () => {
                 {f === FILTER_ALL ? t('Todos')
                   : f === FILTER_INCOME ? t('Ingresos')
                   : f === FILTER_EXPENSE ? t('Gastos')
-                  : t('Conversiones')}
+                  : f === FILTER_CONVERSION ? t('Conversiones')
+                  : '🏦 ' + t('Ahorros')}
               </button>
             ))}
           </div>
@@ -391,6 +578,33 @@ export const FinanceWallets = () => {
 
         {filteredTx.length === 0 ? (
           <div className="wallets-empty">{t('No hay transacciones aún.')}</div>
+        ) : txFilter === FILTER_SAVINGS ? (
+          /* SAVINGS-2D — Historial de ahorros */
+          <ul className="wallets-tx-list">
+            {filteredTx.map((tx) => (
+              <li key={tx.id} className="wallets-tx-item">
+                <span className="wallets-tx-icon">{tx.type === 'deposit' ? '💰' : '↩'}</span>
+                <div className="wallets-tx-body">
+                  <span className="wallets-tx-desc">{tx.description}</span>
+                  <span className="wallets-tx-date">{relativeDate(tx.date, t)}</span>
+                </div>
+                <span className="wallets-tx-amount" style={{ color: tx.type === 'deposit' ? 'var(--accent-cyan,#1ec9ff)' : 'var(--color-warning,#f59e0b)' }}>
+                  {tx.type === 'deposit'
+                    ? `→ Ahorros +$${tx.currency === 'USD' ? fmtUSD(tx.amount) : fmtMXN(tx.amount)} ${tx.currency}`
+                    : `← De Ahorros +$${tx.currency === 'USD' ? fmtUSD(tx.amount) : fmtMXN(tx.amount)} ${tx.currency}`}
+                </span>
+                <button
+                  className="wallets-tx-delete"
+                  onClick={() => {
+                    if (window.confirm(t('¿Eliminar este movimiento? Se revertirán los saldos.'))) {
+                      dispatch(deleteSavingsTransaction(tx.id));
+                    }
+                  }}
+                  title={t('Eliminar')}
+                >×</button>
+              </li>
+            ))}
+          </ul>
         ) : (
           <ul className="wallets-tx-list">
             {filteredTx.map((tx) => (
@@ -401,7 +615,7 @@ export const FinanceWallets = () => {
                   {tx.category && tx.category !== 'conversion' && (
                     <span className="wallets-tx-badge">{tx.category}</span>
                   )}
-                  <span className="wallets-tx-date">{relativeDate(tx.date)}</span>
+                  <span className="wallets-tx-date">{relativeDate(tx.date, t)}</span>
                 </div>
                 <span className="wallets-tx-amount" style={{ color: txColor(tx.type) }}>
                   {txLabel(tx)}

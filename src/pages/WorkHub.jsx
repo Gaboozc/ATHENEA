@@ -4,7 +4,7 @@ import { useTasks } from '../context/TasksContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '../components/Skeleton/Skeleton';
-import { getNeuralKey } from '../modules/intelligence/neuralAccess';
+import { getNeuralKeySync } from '../modules/intelligence/neuralAccess';
 import { DailyStandup } from '../components/DailyStandup/DailyStandup';
 import EmptyState from '../components/EmptyState/EmptyState';
 import './WorkHub.css';
@@ -89,7 +89,7 @@ export const WorkHub = () => {
         </div>
       </header>
 
-      {lastVerdict && getNeuralKey() && (Date.now() - lastVerdict.timestamp < 30 * 60 * 1000) && ( /* W-FEAT-1 */
+      {lastVerdict && getNeuralKeySync() && (Date.now() - lastVerdict.timestamp < 30 * 60 * 1000) && ( /* W-FEAT-1 */
         <div className="cortana-briefing">
           <span className="cortana-icon">🧿</span>
           <div className="cortana-content">

@@ -313,6 +313,9 @@ const translations = {
     'View Details': 'Ver Detalle',
     'Worker': 'Yo',
     'Unassigned': 'Sin asignar',
+    'No collaborators': 'Sin colaboradores',
+    'Assign to collaborator': 'Asignar a colaborador',
+    'Assignee': 'Asignado a',
     'No audit details': 'Sin detalles de auditoria',
     'No pending audits.': 'No hay alertas pendientes.',
     'Incident Report': 'Reporte de Incidencia',
@@ -1222,6 +1225,38 @@ const translations = {
     // ── Navbar ────────────────────────────────────────────────────────
     'Switch to Spanish': 'Cambiar a Español',
     'Switch to English': 'Cambiar a Inglés',
+
+    // ── ReminderToasts (I18N-1) ───────────────────────────────────────────
+    'Debt payment due': '💳 Pago de deuda',
+    'Payment due': 'Pago pendiente',
+    'Todo due': 'Pendiente vence',
+    'Note reminder': 'Recordatorio de nota',
+    'Task due': 'Tarea vence',
+    'Reminder': 'Recordatorio',
+    'Due today': 'Vence hoy',
+    'In 1 day': 'En 1 día',
+    'In 3 days': 'En 3 días',
+    'In 7 days': 'En 7 días',
+    'Overdue': 'Vencido',
+    'Open': 'Abrir',
+    'Dismiss': 'Descartar',
+
+    // ── InterceptCard (I18N-2) ────────────────────────────────────────────
+    'intercept.filter': 'Filtro Táctico',
+    'intercept.execute': 'Ejecutar',
+    'intercept.discard': 'Descartar',
+    'intercept.origin': 'Origen',
+    'intercept.merchant': 'Comercio',
+    'intercept.temporal': 'Temporalidad',
+    'intercept.proto.finance': 'Registrar en Finanzas',
+    'intercept.proto.calendar': 'Registrar en Agenda',
+    'intercept.proto.ai': 'Procesar Inteligencia',
+
+    // ── FloatingOmnibarFab (I18N-4) ───────────────────────────────────────
+    'fab.tooltip': 'Arrastra para mover · Mantén presionado para ocultar',
+
+    // ── Omnibar (I18N-5) ─────────────────────────────────────────────────
+    'omnibar.closeHint': 'Esc para cerrar',
   },
   en: {
     'Seguimiento': 'Tracking',
@@ -1367,7 +1402,106 @@ const translations = {
     'Sin pendientes aún.': 'No todos yet.',
     'Sin pagos aún.': 'No payments yet.',
     'Sin gastos aún.': 'No expenses yet.',
-    'Sin categorías aún.': 'No categories yet.'
+    'Sin categorías aún.': 'No categories yet.',
+
+    // ── InterceptCard dotted keys → English (I18N-2) ──────────────────────
+    'intercept.filter': 'Tactical Filter',
+    'intercept.execute': 'Execute',
+    'intercept.discard': 'Dismiss',
+    'intercept.origin': 'Origin',
+    'intercept.merchant': 'Merchant',
+    'intercept.temporal': 'Temporal hint',
+    'intercept.proto.finance': 'Register in Finance',
+    'intercept.proto.calendar': 'Register in Calendar',
+    'intercept.proto.ai': 'Process Intelligence',
+
+    // ── FloatingOmnibarFab (I18N-4) ───────────────────────────────────────
+    'fab.tooltip': 'Drag to move · Long-press to hide',
+
+    // ── Omnibar (I18N-5) ─────────────────────────────────────────────────
+    'omnibar.closeHint': 'Esc to close',
+
+    // ── ProactiveHUD (I18N-3) ─────────────────────────────────────────────
+    'Comando ejecutado': 'Command executed',
+
+    // ── Task statuses (I18N-6) ────────────────────────────────────────────
+    'Pending':         'Pendiente',
+    'In Progress':     'En Curso',
+    'Near Completion': 'Por Terminar',
+    'In Review':       'En Revisión',
+    'subtask':         'subtarea',
+    'task(s)':         'tarea(s)',
+
+    // ── View labels (I18N-6) ──────────────────────────────────────────────
+    'List':   'Lista',
+    'Kanban': 'Kanban',
+    'Table':  'Tabla',
+    'Gantt':  'Gantt',
+
+    // ── Weekdays (I18N-7) ─────────────────────────────────────────────────
+    'Sun': 'Dom',
+    'Mon': 'Lun',
+    'Tue': 'Mar',
+    'Wed': 'Mié',
+    'Thu': 'Jue',
+    'Fri': 'Vie',
+    'Sat': 'Sáb',
+
+    // ── Routines (I18N-7) ─────────────────────────────────────────────────
+    'My Routines': 'Mis Rutinas',
+    'Manage your routine lists with schedules and automatic alarms.': 'Gestiona tus listas de rutinas con horarios y alarmas automáticas.',
+    'Click to edit': 'Click para editar',
+    'Click to remove this day': 'Click para quitar este día',
+    'Click to add this day': 'Click para añadir este día',
+    'This week:': 'Esta semana:',
+    'Done today': 'Completada hoy',
+    'Mark done today': 'Marcar hecha hoy',
+
+    // ── FocusMode (I18N-8) ────────────────────────────────────────────────
+    'Pomodoro complete!': '¡Pomodoro completado!',
+
+    // ── FinanceDebts (I18N-9) ─────────────────────────────────────────────
+    'Due:':                 'Vence:',
+    'Not started':          'No iniciada',
+    'Est. start:':          'Inicio est:',
+    'Paid:':                'Abonado:',
+    'Debt fully paid':      'Deuda pagada completamente',
+    'Hide history':         'Ocultar historial',
+    'View history':         'Ver historial',
+    'Record payment':       'Registrar abono',
+    'Edit':                 'Editar',
+    'No payments recorded.': 'Sin abonos registrados.',
+
+    // ── Creditor types (I18N-9) ───────────────────────────────────────────
+    'Bank':       'Banco',
+    'Person':     'Persona',
+    'Family':     'Familia',
+    'Friend':     'Amigo',
+    'Collection': 'Collection',
+    'Other':      'Otro',
+
+    // ── Payment frequencies (I18N-9) ──────────────────────────────────────
+    'Daily':     'Diario',
+    'Weekly':    'Semanal',
+    'Biweekly':  'Quincenal',
+    'Monthly':   'Mensual',
+    'Bimonthly': 'Bimestral',
+    'Quarterly': 'Trimestral',
+    'Annual':    'Anual',
+    'Irregular': 'Irregular',
+
+    // ── FinanceWallets relative dates (I18N-10) ───────────────────────────
+    'Today':     'Hoy',
+    'Yesterday': 'Ayer',
+
+    // ── ProactiveHUD agent roles (I18N-11) ────────────────────────────────
+    'Strategy & Work':   'Estrategia & trabajo',
+    'Finance & Control': 'Finanzas & control',
+    'Health & Energy':   'Salud & energía',
+    'System':            'Sistema',
+    'active':            'activa',
+    'standby':           'en espera',
+    'hud.hint': 'Escribe en lenguaje natural · cortana: Trabajo · jarvis: Finanzas · shodan: Salud',
   }
 };
 

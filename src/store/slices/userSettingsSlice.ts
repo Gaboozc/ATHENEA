@@ -38,13 +38,25 @@ export interface UserSettingsState {
   firstName: string;
   lastName: string;
   preferredName: string;
-  title: string; // Ej: "Señor", "Jefe", "Comandante"
+  title: string; // Free text — Ej: "CEO", "Freelancer", "Comandante"
   agentAliases: {
     jarvis: string;
     cortana: string;
     shodan: string;
   };
+  /** Custom names the user gives to each agent (e.g. "Max" for Cortana) */
+  agentNames: {
+    cortana: string;
+    jarvis: string;
+    shodan: string;
+  };
   missionBio: string;
+  /** IDENTITY-1: Structured personal context injected into agent prompts */
+  timezone: string;          // Affects how agents interpret dates/times
+  occupation: string;        // User profession — Cortana & Jarvis use this
+  mainGoal: string;          // Monthly objective — Cortana prioritizes against this
+  financialContext: string;  // Financial situation — Jarvis adjusts recommendations
+  additionalContext: string; // Free-form context for all agents
   workingHours: WorkingHours;
   geofencing: {
     home: GeofencePoint;
@@ -77,7 +89,17 @@ const initialState: UserSettingsState = {
     cortana: 'Chief',
     shodan: 'Insect'
   },
+  agentNames: {
+    cortana: '',
+    jarvis: '',
+    shodan: '',
+  },
   missionBio: '',
+  timezone: 'America/Mexico_City',
+  occupation: '',
+  mainGoal: '',
+  financialContext: '',
+  additionalContext: '',
   workingHours: {
     start: '08:00',
     end: '18:00'
@@ -259,6 +281,34 @@ const userSettingsSlice = createSlice({
       /* OMNI-FIX-4: toggle War Room View */
       state.advancedMode = Boolean(action.payload);
     },
+    /* IDENTITY-1: Structured personal context for agent prompts */
+    setAgentNames: (
+      state,
+      action: PayloadAction<Partial<{ cortana: string; jarvis: string; shodan: string }>>
+    ) => {
+      state.agentNames = { ...state.agentNames, ...action.payload };
+      state.initialized = true;
+    },
+    setTimezone: (state, action: PayloadAction<string>) => {
+      state.timezone = action.payload;
+      state.initialized = true;
+    },
+    setOccupation: (state, action: PayloadAction<string>) => {
+      state.occupation = action.payload;
+      state.initialized = true;
+    },
+    setMainGoal: (state, action: PayloadAction<string>) => {
+      state.mainGoal = action.payload;
+      state.initialized = true;
+    },
+    setFinancialContext: (state, action: PayloadAction<string>) => {
+      state.financialContext = action.payload;
+      state.initialized = true;
+    },
+    setAdditionalContext: (state, action: PayloadAction<string>) => {
+      state.additionalContext = action.payload;
+      state.initialized = true;
+    },
   }
 });
 
@@ -284,6 +334,12 @@ export const {
   setLLMApiKey,
   setLLMConfig,
   setAdvancedMode, /* OMNI-FIX-4 */
+  setAgentNames,
+  setTimezone,
+  setOccupation,
+  setMainGoal,
+  setFinancialContext,
+  setAdditionalContext,
 } = userSettingsSlice.actions;
 
 export default userSettingsSlice.reducer;

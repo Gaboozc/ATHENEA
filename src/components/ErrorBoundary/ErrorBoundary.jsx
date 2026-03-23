@@ -21,26 +21,30 @@ class ErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) {
+      /* Support both old `message` prop and new `title`/`description`/`fallback` props */
+      if (this.props.fallback) return this.props.fallback;
       return (
         <div className="eb-fallback">
           <div className="eb-fallback__card">
             <span className="eb-fallback__icon">⚠️</span>
-            <h2 className="eb-fallback__title">Something went wrong</h2>
+            <h2 className="eb-fallback__title">
+              {this.props.title || 'Something went wrong'}
+            </h2>
             <p className="eb-fallback__msg">
-              {this.props.message || 'This section had an unexpected error.'}
+              {this.props.description || this.props.message || 'This section had an unexpected error.'}
             </p>
             {this.state.error?.message && (
               <code className="eb-fallback__detail">{this.state.error.message}</code>
             )}
             <div className="eb-fallback__actions">
               <button className="eb-fallback__btn primary" onClick={this.handleReset}>
-                Retry
+                Reintentar
               </button>
               <button
                 className="eb-fallback__btn secondary"
                 onClick={() => { window.location.href = '/#/dashboard'; }}
               >
-                Go to Dashboard
+                Ir al Dashboard
               </button>
             </div>
           </div>

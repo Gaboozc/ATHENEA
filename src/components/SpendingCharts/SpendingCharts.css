@@ -11,6 +11,8 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 .spending-charts-header h2 {
   font-size: 1rem;
@@ -18,30 +20,48 @@
   color: var(--text-primary, #e2e8f0);
   margin: 0;
 }
-.spending-view-toggle {
+
+/* Toggle pill */
+.spending-charts-toggle {
   display: flex;
-  gap: 6px;
-}
-.spending-view-btn {
+  gap: 0;
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 8px;
-  color: var(--text-primary, #e2e8f0);
-  font-size: 1rem;
-  padding: 4px 10px;
-  cursor: pointer;
-  transition: background 0.15s;
+  border-radius: 20px;
+  padding: 3px;
 }
-.spending-view-btn.active {
-  background: rgba(30,201,255,0.18);
-  border-color: rgba(30,201,255,0.4);
-}
-.spending-empty {
+.spending-charts-toggle button {
+  background: transparent;
+  border: none;
+  border-radius: 16px;
   color: var(--text-secondary, #9ca3af);
-  font-size: 0.88rem;
+  font-size: 0.78rem;
+  padding: 4px 14px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.spending-charts-toggle button.active {
+  background: rgba(30,201,255,0.22);
+  color: #1ec9ff;
 }
 
-/* Donut */
+/* Empty state */
+.spending-charts-empty {
+  text-align: center;
+  padding: 24px 0;
+}
+.spending-charts-empty p {
+  color: var(--text-secondary, #9ca3af);
+  font-size: 0.9rem;
+  margin: 0 0 4px;
+}
+.spending-charts-empty small {
+  color: rgba(156,163,175,0.7);
+  font-size: 0.78rem;
+}
+
+/* ── Donut ───────────────────────────────────────────────────────────────── */
 .spending-donut-container {
   display: flex;
   align-items: center;
@@ -49,11 +69,12 @@
   flex-wrap: wrap;
 }
 .spending-donut-svg { flex-shrink: 0; }
-.spending-donut-total-label {
+
+.spending-donut-center-label {
   font-size: 11px;
   fill: var(--text-secondary, #9ca3af);
 }
-.spending-donut-total-amount {
+.spending-donut-center-amount {
   font-size: 16px;
   font-weight: 700;
   fill: var(--text-primary, #e2e8f0);
@@ -72,7 +93,7 @@
 .spending-legend-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 .spending-legend-dot {
   width: 10px;
@@ -89,6 +110,14 @@
   text-overflow: ellipsis;
   max-width: 110px;
 }
+.spending-legend-currency {
+  font-size: 0.7rem;
+  color: var(--text-secondary, #9ca3af);
+  background: rgba(255,255,255,0.07);
+  border-radius: 4px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
 .spending-legend-amount {
   font-size: 0.8rem;
   color: var(--text-primary, #e2e8f0);
@@ -101,23 +130,52 @@
   text-align: right;
 }
 
-/* Bars */
+/* ── Bars — dual-currency ───────────────────────────────────────────────── */
 .spending-bars-container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
-.spending-bar-row {
+.spending-bar-group {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
 }
-.spending-bar-label {
-  width: 52px;
+.spending-bar-month-label {
+  width: 48px;
   font-size: 0.78rem;
   color: var(--text-secondary, #9ca3af);
   text-align: right;
+  padding-top: 3px;
   flex-shrink: 0;
+}
+.spending-bar-tracks {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.spending-bar-track-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.spending-bar-currency-tag {
+  width: 30px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-align: center;
+  border-radius: 4px;
+  padding: 1px 0;
+  flex-shrink: 0;
+}
+.spending-bar-currency-tag.mxn {
+  color: #1ec9ff;
+  background: rgba(30,201,255,0.12);
+}
+.spending-bar-currency-tag.usd {
+  color: #f59e0b;
+  background: rgba(245,158,11,0.12);
 }
 .spending-bar-track {
   flex: 1;
@@ -128,14 +186,19 @@
 }
 .spending-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #1ec9ff, #a855f7);
   border-radius: 5px;
-  transition: width 0.4s ease;
+  transition: width 0.35s ease;
   min-width: 2px;
 }
+.spending-bar-fill.mxn {
+  background: linear-gradient(90deg, #1ec9ff, #06b6d4);
+}
+.spending-bar-fill.usd {
+  background: linear-gradient(90deg, #f59e0b, #f97316);
+}
 .spending-bar-amount {
-  width: 52px;
-  font-size: 0.8rem;
+  width: 48px;
+  font-size: 0.78rem;
   color: var(--text-primary, #e2e8f0);
   text-align: left;
 }

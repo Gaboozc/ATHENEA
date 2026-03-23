@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector, useStore } from 'react-redux';
 import { usePersona } from '../../modules/intelligence/hooks/usePersona';
 import { getActionBridge } from '../../modules/actions/ActionBridge';
+import { useLanguage } from '../../context/LanguageContext';
 import ActionChips, { type ActionChipItem } from './ActionChips';
 import './ProactiveHUD.css';
 
@@ -11,6 +12,7 @@ interface ProactiveHUDProps {
 
 export const ProactiveHUD: React.FC<ProactiveHUDProps> = ({ onApplySuggestion }) => {
   const store = useStore();
+  const { t } = useLanguage();
   const { currentResponse, generateResponse, isGenerating } = usePersona();
   const latestIntercept = useSelector((state: any) => state.aiMemory?.interception?.latestActionable);
   const predictiveBuffer = useSelector((state: any) => state.aiMemory?.predictiveBuffer);
@@ -43,7 +45,7 @@ export const ProactiveHUD: React.FC<ProactiveHUDProps> = ({ onApplySuggestion })
       suggestion: currentResponse.suggestion,
       structuredIntent: currentResponse.structuredIntent || null,
     });
-    setLastCommandFeedback(`Comando ejecutado: ${confirmation}`);
+    setLastCommandFeedback(`${t('Comando ejecutado')}: ${confirmation}`);
     setTimeout(() => setLastCommandFeedback(''), 2800);
 
     if (onApplySuggestion && currentResponse?.suggestion) {
@@ -60,10 +62,10 @@ export const ProactiveHUD: React.FC<ProactiveHUDProps> = ({ onApplySuggestion })
 
   /* FIX UX-8 — mapear persona a info visible para el usuario */
   const AGENT_INFO: Record<string, { icon: string; name: string; role: string }> = {
-    cortana: { icon: '🧿', name: 'Cortana', role: 'Estrategia & trabajo' },
-    jarvis:  { icon: '🤖', name: 'Jarvis',  role: 'Finanzas & control'  },
-    shodan:  { icon: '👁️', name: 'SHODAN',  role: 'Salud & energía'     },
-    swarm:   { icon: '🎯', name: 'ATHENEA', role: 'Sistema'              },
+    cortana: { icon: '🧿', name: 'Cortana', role: t('Strategy & Work')   },
+    jarvis:  { icon: '🤖', name: 'Jarvis',  role: t('Finance & Control') },
+    shodan:  { icon: '👁️', name: 'SHODAN',  role: t('Health & Energy')   },
+    swarm:   { icon: '🎯', name: 'ATHENEA', role: t('System')            },
   };
   const agentInfo = AGENT_INFO[responder] ?? AGENT_INFO.cortana;
 
@@ -80,9 +82,9 @@ export const ProactiveHUD: React.FC<ProactiveHUDProps> = ({ onApplySuggestion })
         <div className={`arc-pulse arc-pulse-${currentResponse.emotionalTone}`} />
         {/* FIX UX-8 — tooltips en los puntos del swarm */}
         <div className="swarm-processing-dots" aria-label="Thought Stream">
-          <span className="swarm-dot swarm-dot-blue"  title={`Cortana${responder === 'cortana' ? ' — activa' : ' — en espera'}`} />
-          <span className="swarm-dot swarm-dot-gold"  title={`Jarvis${responder === 'jarvis'   ? ' — activo' : ' — en espera'}`} />
-          <span className="swarm-dot swarm-dot-green" title={`SHODAN${responder === 'shodan'   ? ' — activo' : ' — en espera'}`} />
+          <span className="swarm-dot swarm-dot-blue"  title={`Cortana${responder === 'cortana' ? ` — ${t('active')}` : ` — ${t('standby')}`}`} />
+          <span className="swarm-dot swarm-dot-gold"  title={`Jarvis${responder === 'jarvis'   ? ` — ${t('active')}` : ` — ${t('standby')}`}`} />
+          <span className="swarm-dot swarm-dot-green" title={`SHODAN${responder === 'shodan'   ? ` — ${t('active')}` : ` — ${t('standby')}`}`} />
         </div>
       </div>
 
@@ -100,7 +102,9 @@ export const ProactiveHUD: React.FC<ProactiveHUDProps> = ({ onApplySuggestion })
 
       {/* FIX UX-8 — hint de comandos cuando HUD está activo */}
       <p className="hud-hint">
-        Escribe en lenguaje natural · <code>cortana:</code> Work · <code>jarvis:</code> Finanzas · <code>shodan:</code> Salud
+        {t('hud.hint') !== 'hud.hint'
+          ? t('hud.hint')
+          : 'Type in natural language · cortana: Work · jarvis: Finance · shodan: Health'}
       </p>
     </div>
   );

@@ -13,10 +13,23 @@ export interface WalletTransaction {
   createdAt: string;
 }
 
+export interface SavingsTransaction {
+  id: string;
+  type: 'deposit' | 'withdrawal'; // deposit = mover a ahorros, withdrawal = retirar
+  currency: 'MXN' | 'USD';
+  amount: number;
+  description: string;
+  date: string;
+  createdAt: string;
+}
+
 export interface WalletsState {
   walletUSD: number;
   walletMXN: number;
+  savingsUSD: number;             /* SAVINGS-1 */
+  savingsMXN: number;             /* SAVINGS-1 */
   transactions: WalletTransaction[];
+  savingsTransactions: SavingsTransaction[]; /* SAVINGS-1 */
   referenceRate: number;          // last used rate (informational)
   lastConversionDate: string | null;
 }
@@ -24,7 +37,10 @@ export interface WalletsState {
 const initialState: WalletsState = {
   walletUSD: 0,
   walletMXN: 0,
+  savingsUSD: 0,              /* SAVINGS-1 */
+  savingsMXN: 0,              /* SAVINGS-1 */
   transactions: [],
+  savingsTransactions: [],    /* SAVINGS-1 */
   referenceRate: 0,
   lastConversionDate: null,
 };
@@ -124,6 +140,79 @@ const walletsSlice = createSlice({
       });
     },
 
+    /* SAVINGS-1: Transfer available → savings */
+    transferToSavings: (state, action) => {
+      const { id, amount, currency, description, date } = action.payload;
+      const amt = Number(amount);
+      if (currency === 'USD') {
+        state.walletUSD = Math.max(0, state.walletUSD - amt);
+        state.savingsUSD += amt;
+      } else {
+        state.walletMXN = Math.max(0, state.walletMXN - amt);
+        state.savingsMXN += amt;
+      }
+      state.savingsTransactions.unshift({
+        id: id || `sav-dep-${Date.now()}`,
+        type: 'deposit',
+        currency: currency || 'MXN',
+        amount: amt,
+        description: description || 'Transferencia a ahorros',
+        date: date || new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      });
+    },
+
+    /* SAVINGS-1: Withdraw savings → available */
+    withdrawFromSavings: (state, action) => {
+      const { id, amount, currency, description, date } = action.payload;
+      const amt = Number(amount);
+      if (currency === 'USD') {
+        state.savingsUSD = Math.max(0, state.savingsUSD - amt);
+        state.walletUSD += amt;
+      } else {
+        state.savingsMXN = Math.max(0, state.savingsMXN - amt);
+        state.walletMXN += amt;
+      }
+      state.savingsTransactions.unshift({
+        id: id || `sav-wit-${Date.now()}`,
+        type: 'withdrawal',
+        currency: currency || 'MXN',
+        amount: amt,
+        description: description || 'Retiro de ahorros',
+        date: date || new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      });
+    },
+
+    /* SAVINGS-DEL: Delete savings transaction — always reverts balances */
+    deleteSavingsTransaction: (state, action) => {
+      const tx = state.savingsTransactions.find((t) => t.id === action.payload);
+      if (!tx) return;
+      const amt = Number(tx.amount);
+      if (tx.type === 'deposit') {
+        // Revertir depósito: devolver a disponible, quitar de ahorros
+        if (tx.currency === 'USD') {
+          state.savingsUSD = Math.max(0, state.savingsUSD - amt);
+          state.walletUSD += amt;
+        } else {
+          state.savingsMXN = Math.max(0, state.savingsMXN - amt);
+          state.walletMXN += amt;
+        }
+      } else {
+        // Revertir retiro: devolver a ahorros, quitar de disponible
+        if (tx.currency === 'USD') {
+          state.walletUSD = Math.max(0, state.walletUSD - amt);
+          state.savingsUSD += amt;
+        } else {
+          state.walletMXN = Math.max(0, state.walletMXN - amt);
+          state.savingsMXN += amt;
+        }
+      }
+      state.savingsTransactions = state.savingsTransactions.filter(
+        (t) => t.id !== action.payload
+      );
+    },
+
     /* WALLETS-7: Delete transaction — always reverts the balance impact */
     deleteTransaction: (state, action) => {
       const tx = state.transactions.find((t) => t.id === action.payload);
@@ -160,6 +249,9 @@ export const {
   addExpenseMXN,
   recordConversion,
   deleteTransaction,
+  transferToSavings,      /* SAVINGS-1 */
+  withdrawFromSavings,    /* SAVINGS-1 */
+  deleteSavingsTransaction, /* SAVINGS-DEL */
 } = walletsSlice.actions;
 
 export default walletsSlice.reducer;

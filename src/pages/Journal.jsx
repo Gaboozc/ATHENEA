@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addEntry, updateEntry, deleteEntry } from '../../store/slices/journalSlice';
 import { useLanguage } from '../context/LanguageContext';
+import EmptyState from '../components/EmptyState/EmptyState';
 import './Journal.css';
 
 const MOOD_LABELS = ['', '😞', '😕', '😐', '🙂', '😊'];
@@ -184,13 +185,13 @@ export const Journal = () => {
             </div>
           </>
         ) : (
-          <div className="journal-editor-empty">
-            <p>📔</p>
-            <p>{t('Select an entry or create today\'s entry to start writing.')}</p>
-            <button className="journal-new-btn" onClick={handleNewEntry}>
-              + {t('New Entry')}
-            </button>
-          </div>
+          <EmptyState
+            icon="📔"
+            title={t('No entry selected')}
+            message={t('Select an entry or create today\'s entry to start writing.')}
+            ctaLabel={`+ ${t('New Entry')}`}
+            onCta={handleNewEntry}
+          />
         )}
       </div>
     </div>

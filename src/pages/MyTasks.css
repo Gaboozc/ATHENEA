@@ -243,6 +243,25 @@
 .mytasks-status-select.status-completado    { color: #22c55e; border-color: #22c55e; }
 .mytasks-status-select option { background: #0d1117; color: #e5e7eb; }
 
+/* ── Assignee selector ── */
+.mytasks-assignee-select {
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mytasks-assignee-select:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+.mytasks-assignee-select option { background: #0d1117; color: #e5e7eb; }
+
 /* ── Subtask hierarchy ── */
 .mytasks-task-group { display: flex; flex-direction: column; gap: 0; margin-bottom: 12px; }
 .mytasks-subtask-group { display: flex; flex-direction: column; gap: 0; }
@@ -268,20 +287,64 @@
 /* Subtask form inline */
 .mytasks-subtask-form {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
   margin-top: 10px;
-  flex-wrap: wrap;
 }
 .mytasks-subtask-input {
-  flex: 1;
-  min-width: 160px;
+  width: 100%;
   background: var(--bg-elevated, var(--bg-base));
   border: 1px solid var(--accent-cyan);
   border-radius: 8px;
   padding: 6px 10px;
   color: var(--text-primary);
   font-size: 0.85rem;
+  box-sizing: border-box;
+}
+.mytasks-subtask-desc {
+  width: 100%;
+  background: var(--bg-elevated, var(--bg-base));
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  resize: vertical;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+.mytasks-subtask-desc:focus,
+.mytasks-subtask-input:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+}
+.mytasks-subtask-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.mytasks-subtask-date-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.mytasks-subtask-date {
+  background: var(--bg-elevated, var(--bg-base));
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+}
+.mytasks-subtask-date:focus { outline: none; border-color: var(--accent-cyan); }
+.mytasks-subtask-btns {
+  display: flex;
+  gap: 6px;
 }
 .mytasks-subtask-add {
   padding: 5px 14px;
@@ -538,6 +601,112 @@
   padding: 0 4px;
   white-space: nowrap;
   overflow: hidden;
+}
+
+/* ── Kanban — subtask list inside card ── */
+.kanban-card-desc {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin: 4px 0 6px;
+  line-height: 1.4;
+}
+.kanban-subtasks-toggle {
+  background: none;
+  border: none;
+  color: var(--accent-cyan);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 4px 0;
+  text-align: left;
+  width: 100%;
+}
+.kanban-subtasks-toggle:hover { text-decoration: underline; }
+.kanban-subtask-list {
+  border-top: 1px solid var(--border-default);
+  margin-top: 6px;
+  padding-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.kanban-subtask-item {
+  background: rgba(255,255,255,0.03);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.kanban-subsub-item {
+  background: rgba(255,255,255,0.02);
+  border-radius: 4px;
+  padding: 4px 6px;
+  margin-top: 4px;
+  margin-left: 10px;
+}
+.kanban-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.kanban-sub-bullet {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+.kanban-sub-title {
+  font-size: 0.82rem;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+.kanban-sub-title:hover { color: var(--accent-cyan); }
+.kanban-sub-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: 3px 0 4px 16px;
+  line-height: 1.35;
+}
+.kanban-sub-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.kanban-sub-select { font-size: 0.72rem !important; padding: 2px 4px !important; }
+.kanban-sub-addbtn { font-size: 0.72rem !important; padding: 3px 8px !important; }
+
+/* ── Tabla — subtask / sub-subtask rows ── */
+.tabla-subtask-row { background: rgba(255,255,255,0.02); }
+.tabla-subsub-row  { background: rgba(255,255,255,0.01); }
+.tabla-sub-indent   { padding-left: 20px !important; }
+.tabla-subsub-indent { padding-left: 38px !important; }
+.tabla-sub-bullet {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  margin-right: 6px;
+}
+.tabla-sub-desc {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  font-style: italic;
+}
+.tabla-date-dim { color: var(--text-secondary); text-align: center; }
+
+/* ── Gantt — subtask / sub-subtask rows ── */
+.gantt-row--d1 { background: rgba(255,255,255,0.015); }
+.gantt-row--d2 { background: rgba(255,255,255,0.008); }
+.gantt-sub-bullet {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+.gantt-bar--sub {
+  height: 10px !important;
+  opacity: 0.65;
+  border-radius: 3px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 @media (max-width: 600px) {

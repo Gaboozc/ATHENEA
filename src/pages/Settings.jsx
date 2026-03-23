@@ -6,7 +6,7 @@ import { cacheManager } from '../utils/cacheManager';
 import { IdentityPanel } from '../components/settings/IdentityPanel';
 import { simulateInterceptedNotification } from '../services/notificationListenerBridge';
 import { getActionBridge } from '../modules/actions/ActionBridge';
-import { getNeuralKey, setNeuralKey, getNeuralProvider, setNeuralProvider } from '../modules/intelligence/neuralAccess';
+import { getNeuralKeySync, setNeuralKey, getNeuralProvider, setNeuralProvider } from '../modules/intelligence/neuralAccess';
 import { useLanguage } from '../context/LanguageContext';
 import './Settings.css';
 
@@ -27,13 +27,13 @@ const Settings = () => {
 
   // AI / Neural settings
   const [aiProvider, setAiProvider] = useState(() => getNeuralProvider());
-  const [aiKey, setAiKey] = useState(() => getNeuralKey());
+  const [aiKey, setAiKey] = useState(() => getNeuralKeySync());
   const [aiKeyVisible, setAiKeyVisible] = useState(false);
   const [aiTestStatus, setAiTestStatus] = useState(null); // null | 'testing' | 'ok' | 'error'
 
-  const handleSaveAI = () => {
+  const handleSaveAI = async () => {
     setNeuralProvider(aiProvider);
-    setNeuralKey(aiKey);
+    await setNeuralKey(aiKey);
     showMessage(t('AI configuration saved'));
   };
 

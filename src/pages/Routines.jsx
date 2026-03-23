@@ -13,14 +13,15 @@ import {
 import { useLanguage } from '../context/LanguageContext';
 import './Routines.css';
 
-const WEEK_DAYS = [
-  { value: 0, label: 'Dom' },
-  { value: 1, label: 'Lun' },
-  { value: 2, label: 'Mar' },
-  { value: 3, label: 'Mié' },
-  { value: 4, label: 'Jue' },
-  { value: 5, label: 'Vie' },
-  { value: 6, label: 'Sáb' },
+// I18N-7: English keys — t() maps to Spanish when needed
+const WEEK_DAY_KEYS = [
+  { value: 0, key: 'Sun' },
+  { value: 1, key: 'Mon' },
+  { value: 2, key: 'Tue' },
+  { value: 3, key: 'Wed' },
+  { value: 4, key: 'Thu' },
+  { value: 5, key: 'Fri' },
+  { value: 6, key: 'Sat' },
 ];
 
 const todayIndex = new Date().getDay();
@@ -105,8 +106,8 @@ export const Routines = () => {
     <div className="routines-container">
       <header className="routines-header">
         <div>
-          <h1>{t('Mis Rutinas')}</h1>
-          <p>{t('Gestiona tus listas de rutinas con horarios y alarmas automáticas.')}</p>
+          <h1>{t('My Routines')}</h1>
+          <p>{t('Manage your routine lists with schedules and automatic alarms.')}</p>
         </div>
         <div className="routines-header-actions">
           <button
@@ -142,14 +143,14 @@ export const Routines = () => {
             onKeyDown={(e) => { if (e.key === 'Enter') handleAddRoutine(); if (e.key === 'Escape') setShowNewForm(false); }}
           />
           <div className="routines-days-row">
-            {WEEK_DAYS.map((d) => (
+            {WEEK_DAY_KEYS.map((d) => (
               <button
                 key={d.value}
                 type="button"
                 className={`routines-day-chip${newDays.includes(d.value) ? ' active' : ''}`}
                 onClick={() => toggleDay(d.value, setNewDays, newDays)}
               >
-                {d.label}
+                {t(d.key)}
               </button>
             ))}
           </div>
@@ -207,7 +208,7 @@ export const Routines = () => {
 
                   {/* Días de la semana — clickeables para editar */}
                   <div className="routine-days-chips">
-                    {WEEK_DAYS.map((d) => {
+                    {WEEK_DAY_KEYS.map((d) => {
                       const isActive = (routine.daysOfWeek || []).includes(d.value);
                       return (
                         <button
@@ -223,7 +224,7 @@ export const Routines = () => {
                             dispatch(updateRoutine({ id: routine.id, daysOfWeek: next }));
                           }}
                         >
-                          {d.label}
+                          {t(d.key)}
                         </button>
                       );
                     })}
@@ -240,7 +241,7 @@ export const Routines = () => {
                         <span
                           key={dateStr}
                           className={`routine-week-dot${done ? ' done' : ''}${!applies ? ' skip' : ''}${isToday2 ? ' today' : ''}`}
-                          title={`${WEEK_DAYS.find(w => w.value === dayIndex)?.label} ${dateStr}${done ? ' ✓' : ''}`}
+                          title={`${t(WEEK_DAY_KEYS.find(w => w.value === dayIndex)?.key || '')} ${dateStr}${done ? ' ✓' : ''}`}
                         >
                           {done ? '✓' : applies ? '·' : '—'}
                         </span>
@@ -254,7 +255,7 @@ export const Routines = () => {
                         className={`routine-toggle-btn${doneToday ? ' is-done' : ''}`}
                         onClick={() => dispatch(toggleRoutineToday({ id: routine.id }))}
                       >
-                        {doneToday ? '✓ Completada hoy' : t('Marcar hecha hoy')}
+                        {doneToday ? `✓ ${t('Done today')}` : t('Mark done today')}
                       </button>
                     )}
                     <button

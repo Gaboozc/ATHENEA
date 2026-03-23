@@ -9,6 +9,7 @@
 
 import { LocalNotifications } from '@capacitor/local-notifications';
 import type { PersonaResponse } from './personaEngine';
+import type { NotificationEntry } from '../../store/slices/notificationsSlice';
 
 export interface NotificationAction {
   id: string;
@@ -22,10 +23,12 @@ export interface TacticalNotification {
   body: string;
   urgency: 'low' | 'medium' | 'high' | 'critical';
   actions: NotificationAction[];
-  tag?: string; // Group similar notifications
+  tag?: string;
   autoCancel?: boolean;
   timestamp: number;
-  sourceInsight?: string; // What persona insight triggered this
+  sourceInsight?: string;
+  /** Agent that triggered the notification (e.g. 'Cortana', 'Jarvis', 'SHODAN') */
+  agentName?: string;
 }
 
 class NotificationEngine {
@@ -34,6 +37,12 @@ class NotificationEngine {
   private pendingNotifications: Set<string> = new Set();
   private scheduledToLogicalId: Map<string, string> = new Map();
   private initialized: boolean = false;
+  /** Redux dispatch callback — set via setDispatch() from AppInitializer */
+  private dispatchCallback: ((entry: Omit<NotificationEntry, 'read' | 'dismissed'>) => void) | null = null;
+
+  setDispatch(cb: (entry: Omit<NotificationEntry, 'read' | 'dismissed'>) => void): void {
+    this.dispatchCallback = cb;
+  }
 
   constructor() {
     this.initializeCapacitor();
@@ -222,6 +231,18 @@ class NotificationEngine {
       });
 
       this.scheduledToLogicalId.set(`${numericId}`, notification.id);
+
+      // Push to Redux store so the Notifications page can display it
+      this.dispatchCallback?.({
+        id: notification.id,
+        title: notification.title,
+        body: notification.body,
+        urgency: notification.urgency,
+        source: 'agent',
+        agentName: notification.agentName,
+        tag: notification.tag,
+        timestamp: notification.timestamp,
+      });
 
       // Track pending notification
       this.pendingNotifications.add(notification.id);

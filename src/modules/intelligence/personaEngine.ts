@@ -11,7 +11,7 @@
 
 import type { Store } from '@reduxjs/toolkit';
 import type { OrchestratorDecision } from './agents/types';
-import { getNeuralKey, getNeuralProvider } from './neuralAccess';
+import { getNeuralKeySync, getNeuralProvider } from './neuralAccess';
 
 export type PersonaMode = 'jarvis' | 'cortana';
 
@@ -863,7 +863,7 @@ class PersonaEngine {
 
   private getLLMConfig(): LLMConfig | null {
     const provider = String(getNeuralProvider() || 'openai').toLowerCase();
-    const apiKey = String(getNeuralKey() || '').trim();
+    const apiKey = String(getNeuralKeySync() || '').trim();
 
     if (!apiKey) return null;
     if (provider !== 'openai' && provider !== 'groq') return null;

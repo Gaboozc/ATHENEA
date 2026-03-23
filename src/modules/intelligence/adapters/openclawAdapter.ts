@@ -114,6 +114,9 @@ export class OpenClawAdapter {
       'record_income_mxn': this.mapAddIncomeMXN.bind(this),
       'record_conversion': this.mapRecordConversion.bind(this),
       'record_expense_usd': this.mapRegisterExpenseUSD.bind(this),
+      /* SAVINGS-6 */
+      'transfer_to_savings': this.mapTransferToSavings.bind(this),
+      'withdraw_from_savings': this.mapWithdrawFromSavings.bind(this),
 
       // ========== GLOBAL ==========
       'search': this.mapSearch.bind(this),
@@ -267,10 +270,12 @@ export class OpenClawAdapter {
 
   private mapPayDebt(params: any, ctx: SmartResolverContext): ReduxAction {
     return {
-      type: 'payments/markAsPaid', // CORRECTED: was 'payments/payDebt'
+      type: 'debts/recordPayment', /* FIX-P0-3B: was 'payments/markAsPaid' — must hit debtsSlice */
       payload: {
-        paymentId: params.paymentId,
-        paidAt: new Date().toISOString()
+        debtId: params.debtId ?? params.paymentId,
+        amount: this.transformAmount(params.amount ?? params.paymentAmount ?? 0),
+        date: new Date().toISOString(),
+        note: params.note || '',
       }
     };
   }
@@ -348,6 +353,21 @@ export class OpenClawAdapter {
           }
         }];
       }
+    }
+
+    /* FIX-P0-3B: pay_debt — deduct payment from the correct wallet */
+    if (skillId === 'pay_debt' && primaryPayload?.amount) {
+      const currency = (originalParams?.currency || 'MXN').toUpperCase();
+      return [{
+        type: currency === 'USD' ? 'wallets/addExpenseUSD' : 'wallets/addExpenseMXN',
+        payload: {
+          id: `wallet-debt-${primaryPayload.debtId}-${Date.now()}`,
+          amount: primaryPayload.amount,
+          description: primaryPayload.note || 'Debt payment',
+          category: null,
+          date: primaryPayload.date,
+        },
+      }];
     }
 
     /* WALLETS-11: record_expense_usd — also deduct from wallet after budget entry */
@@ -493,6 +513,34 @@ export class OpenClawAdapter {
     };
   }
 
+  /* SAVINGS-6 */
+  private mapTransferToSavings(params: any, _ctx: SmartResolverContext): ReduxAction {
+    return {
+      type: 'wallets/transferToSavings',
+      payload: {
+        id: `sav-dep-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        amount: this.transformAmount(params.amount),
+        currency: (params.currency || 'MXN').toUpperCase(),
+        description: params.description || 'Ahorro via Omnibar',
+        date: new Date().toISOString(),
+      },
+    };
+  }
+
+  private mapWithdrawFromSavings(params: any, _ctx: SmartResolverContext): ReduxAction {
+    return {
+      type: 'wallets/withdrawFromSavings',
+      payload: {
+        id: `sav-wit-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        amount: this.transformAmount(params.amount),
+        currency: (params.currency || 'MXN').toUpperCase(),
+        description: params.description || 'Retiro de ahorros via Omnibar',
+        date: new Date().toISOString(),
+      },
+    };
+  }
+  /* SAVINGS-6 end */
+
   private mapRegisterExpenseUSD(params: any, ctx: SmartResolverContext): ReduxAction {
     /* WALLETS-11: USD expense — primary action goes to budgetSlice;
      * side-effect (wallets/addExpenseUSD) added via getSideEffectActions */
@@ -565,6 +613,9 @@ export class OpenClawAdapter {
       // Intelligence
       'intelligence/executeSearch',
 
+      // Debts (FIX-P0-3B)
+      'debts/recordPayment',
+
       // Budget (corrected)
       'budget/addExpense',
       'budget/addCategory',
@@ -575,6 +626,9 @@ export class OpenClawAdapter {
       'wallets/addExpenseUSD',
       'wallets/addExpenseMXN',
       'wallets/recordConversion',
+      // Savings (SAVINGS-6)
+      'wallets/transferToSavings',
+      'wallets/withdrawFromSavings',
     ];
 
     return knownActions.includes(actionType);

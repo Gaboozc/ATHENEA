@@ -1,273 +1,164 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useOmnibar } from './useOmnibar';
+import { useLanguage } from '../../context/LanguageContext';
 import athenaLogo from '../../assets/img/Athena-logo.png';
 import './FloatingOmnibarFab.css';
 
-/**
- * Floating Action Button (FAB) for ATHENEA Omnibar
- * Features:
- * - Draggable across viewport (touch + mouse)
- * - Position persisted to localStorage
- * - Long-press (1s) to toggle visibility
- * - Constraint to viewport bounds
- */
+const FAB_SIZE = 82;
+const FAB_MARGIN = 12;
+const FAB_TOP_SAFE = 72;
+const LONG_PRESS_MS = 900;
+const DRAG_THRESHOLD = 8; // px before we consider it a drag
+
+const constrainPosition = (x, y) => ({
+  x: Math.max(FAB_MARGIN, Math.min(x, window.innerWidth - FAB_SIZE - FAB_MARGIN)),
+  y: Math.max(FAB_TOP_SAFE, Math.min(y, window.innerHeight - FAB_SIZE - FAB_MARGIN)),
+});
+
+const getDefaultPosition = () =>
+  constrainPosition(
+    window.innerWidth - FAB_SIZE - FAB_MARGIN,
+    window.innerHeight - FAB_SIZE - 92
+  );
+
 export const FloatingOmnibarFab = ({ highInsightsCount = 0 }) => {
   const { openOmnibar } = useOmnibar();
+  const { t } = useLanguage();
   const buttonRef = useRef(null);
-  const FAB_SIZE = 82;
-  const FAB_MARGIN = 12;
-  const FAB_TOP_SAFE = 72;
-  const FAB_BOTTOM_SAFE = 92;
-
-  const getDefaultPosition = () => {
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    return {
-      x: Math.max(FAB_MARGIN, viewportWidth - FAB_SIZE - FAB_MARGIN),
-      y: Math.max(FAB_TOP_SAFE, viewportHeight - FAB_SIZE - FAB_BOTTOM_SAFE),
-    };
-  };
-
-  const constrainPosition = (x, y) => {
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    return {
-      x: Math.max(FAB_MARGIN, Math.min(x, viewportWidth - FAB_SIZE - FAB_MARGIN)),
-      y: Math.max(FAB_TOP_SAFE, Math.min(y, viewportHeight - FAB_SIZE - FAB_MARGIN)),
-    };
-  };
 
   const [position, setPosition] = useState(getDefaultPosition);
   const [isDragging, setIsDragging] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const longPressTimerRef = useRef(null);
-  const isClickRef = useRef(false);
 
-  // Load position from localStorage on mount
+  // Pointer tracking refs — all synchronous, no React render cycle needed
+  const pointerOrigin = useRef({ x: 0, y: 0 });   // pointer coords on pointerdown
+  const posOrigin = useRef({ x: 0, y: 0 });         // fab position on pointerdown
+  const hasDragged = useRef(false);
+  const longPressTimer = useRef(null);
+  const longPressFired = useRef(false);
+
+  // Load persisted position + hidden state on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem('athenea.fab.position');
       if (saved) {
         const parsed = JSON.parse(saved);
-        const safe = constrainPosition(Number(parsed?.x || 0), Number(parsed?.y || 0));
-        setPosition(safe);
+        setPosition(constrainPosition(Number(parsed?.x ?? 0), Number(parsed?.y ?? 0)));
       } else {
         setPosition(getDefaultPosition());
       }
-      const hidden = localStorage.getItem('athenea.fab.hidden');
-      setIsHidden(hidden === 'true');
-    } catch (e) {
-      console.warn('Failed to load FAB position from localStorage:', e);
-    }
+      setIsHidden(localStorage.getItem('athenea.fab.hidden') === 'true');
+    } catch { /* ignore */ }
 
-    // Listen for visibility changes from FABShowToggle
-    const handleFabToggle = () => {
-      try {
-        const hidden = localStorage.getItem('athenea.fab.hidden');
-        setIsHidden(hidden === 'true');
-      } catch (e) {
-        console.warn('Failed to sync FAB hidden state:', e);
-      }
+    const onFabToggle = () => {
+      setIsHidden(localStorage.getItem('athenea.fab.hidden') === 'true');
     };
+    const onOpenOmnibar = () => openOmnibar();
 
-    window.addEventListener('athenea:fab-toggled', handleFabToggle);
+    window.addEventListener('athenea:fab-toggled', onFabToggle);
+    window.addEventListener('athenea:open-omnibar', onOpenOmnibar);
     return () => {
-      window.removeEventListener('athenea:fab-toggled', handleFabToggle);
+      window.removeEventListener('athenea:fab-toggled', onFabToggle);
+      window.removeEventListener('athenea:open-omnibar', onOpenOmnibar);
     };
+  }, [openOmnibar]);
+
+  // Constrain on resize
+  useEffect(() => {
+    const onResize = () => setPosition(prev => constrainPosition(prev.x, prev.y));
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Keep FAB visible after orientation/viewport changes.
+  // Persist position
   useEffect(() => {
-    const handleResize = () => {
-      setPosition((prev) => constrainPosition(prev.x, prev.y));
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Save position to localStorage whenever it changes
-  useEffect(() => {
-    try {
-      localStorage.setItem('athenea.fab.position', JSON.stringify(position));
-    } catch (e) {
-      console.warn('Failed to save FAB position to localStorage:', e);
-    }
+    try { localStorage.setItem('athenea.fab.position', JSON.stringify(position)); } catch { /* ignore */ }
   }, [position]);
 
-  // Save hidden state to localStorage
+  // Persist hidden state
   useEffect(() => {
     try {
       localStorage.setItem('athenea.fab.hidden', String(isHidden));
-      // Notify other components (FABShowToggle) that fab visibility changed
       window.dispatchEvent(new Event('athenea:fab-toggled'));
-    } catch (e) {
-      console.warn('Failed to save FAB hidden state to localStorage:', e);
-    }
+    } catch { /* ignore */ }
   }, [isHidden]);
 
-  useEffect(() => {
-    return () => {
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
-      }
-    };
-  }, []);
-
-  const handleMouseDown = (e) => {
-    // Prevent text selection during drag
-    e.preventDefault();
-    
-    isClickRef.current = true;
-
-    // Start long-press timer for hide toggle
-    longPressTimerRef.current = setTimeout(() => {
-      setIsHidden(prev => !prev);
-      isClickRef.current = false;
-    }, 1000);
-
-    // Start dragging
-    setIsDragging(true);
-    setDragStart({
-      x: e.clientX - position.x,
-      y: e.clientY - position.y
-    });
-  };
-
-  const handleTouchStart = (e) => {
-    const touch = e.touches[0];
-    
-    isClickRef.current = true;
-
-    // Start long-press timer for hide toggle
-    longPressTimerRef.current = setTimeout(() => {
-      setIsHidden(prev => !prev);
-      isClickRef.current = false;
-    }, 1000);
-
-    // Start dragging
-    setIsDragging(true);
-    setDragStart({
-      x: touch.clientX - position.x,
-      y: touch.clientY - position.y
-    });
-  };
-
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const DEAD_ZONE = 5; // pixels allowed before considering it a drag
-    let hasMoved = false;
-
-    const handleMouseMove = (e) => {
-      const newX = e.clientX - dragStart.x;
-      const newY = e.clientY - dragStart.y;
-      
-      // Check if movement exceeds dead zone
-      const distMoved = Math.sqrt(
-        Math.pow(newX - position.x, 2) + 
-        Math.pow(newY - position.y, 2)
-      );
-      
-      if (distMoved > DEAD_ZONE) {
-        hasMoved = true;
-        isClickRef.current = false;
-      }
-
-      if (hasMoved) {
-        // Constrain to viewport bounds
-        const constrainedPos = constrainPosition(newX, newY);
-        setPosition(constrainedPos);
-      }
-    };
-
-    const handleMouseUp = () => {
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
-      }
-      setIsDragging(false);
-      hasMoved = false;
-    };
-
-    const handleTouchMove = (e) => {
-      const touch = e.touches[0];
-      const newX = touch.clientX - dragStart.x;
-      const newY = touch.clientY - dragStart.y;
-
-      // Check if movement exceeds dead zone
-      const distMoved = Math.sqrt(
-        Math.pow(newX - position.x, 2) + 
-        Math.pow(newY - position.y, 2)
-      );
-      
-      if (distMoved > DEAD_ZONE) {
-        hasMoved = true;
-        isClickRef.current = false;
-      }
-
-      if (hasMoved) {
-        e.preventDefault();
-        // Constrain to viewport bounds
-        const constrainedPos = constrainPosition(newX, newY);
-        setPosition(constrainedPos);
-      }
-    };
-
-    const handleTouchEnd = () => {
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
-      }
-      setIsDragging(false);
-      hasMoved = false;
-    };
-
-    // Attach listeners to window to capture outside movements
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('touchmove', handleTouchMove, { passive: false });
-    window.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [isDragging, dragStart, position]);
-
-  const handleClick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Only open if not dragging and is a click (not long press)
-    if (!isDragging && isClickRef.current) {
-      openOmnibar();
+  const clearLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
     }
   };
 
-  if (isHidden) {
-    return null;
-  }
+  const handlePointerDown = (e) => {
+    // Only handle primary button (left click / first touch)
+    if (e.button !== undefined && e.button !== 0) return;
+
+    e.currentTarget.setPointerCapture(e.pointerId);
+
+    hasDragged.current = false;
+    longPressFired.current = false;
+    pointerOrigin.current = { x: e.clientX, y: e.clientY };
+    posOrigin.current = { ...position };
+
+    setIsDragging(false);
+
+    longPressTimer.current = setTimeout(() => {
+      if (!hasDragged.current) {
+        longPressFired.current = true;
+        setIsHidden(prev => !prev);
+      }
+    }, LONG_PRESS_MS);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+
+    const dx = e.clientX - pointerOrigin.current.x;
+    const dy = e.clientY - pointerOrigin.current.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist > DRAG_THRESHOLD) {
+      hasDragged.current = true;
+      clearLongPress();
+      setIsDragging(true);
+      setPosition(constrainPosition(posOrigin.current.x + dx, posOrigin.current.y + dy));
+    }
+  };
+
+  const handlePointerUp = (e) => {
+    clearLongPress();
+    e.currentTarget.releasePointerCapture(e.pointerId);
+    setIsDragging(false);
+
+    // It was a clean tap/click — open the omnibar
+    if (!hasDragged.current && !longPressFired.current) {
+      openOmnibar();
+    }
+
+    hasDragged.current = false;
+    longPressFired.current = false;
+  };
+
+  // Cleanup long press timer on unmount
+  useEffect(() => () => clearLongPress(), []);
+
+  if (isHidden) return null;
 
   return (
     <button
       ref={buttonRef}
       type="button"
       className={`omnibar-fab ${highInsightsCount > 0 ? 'has-alert' : ''}`}
-      onClick={handleClick}
-      onMouseDown={handleMouseDown}
-      onTouchStart={handleTouchStart}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
       aria-label="Open Athenea Omnibar"
       style={{
         transform: `translate(${position.x}px, ${position.y}px)`,
-        cursor: isDragging ? 'grabbing' : 'grab'
+        cursor: isDragging ? 'grabbing' : 'grab',
       }}
-      title="Drag to move · Long-press to hide"
+      title={t('fab.tooltip')}
     >
       <img className="omnibar-fab-logo" src={athenaLogo} alt="Athenea" />
       {highInsightsCount > 0 && (

@@ -5,117 +5,158 @@ import './CashFlowProjection.css';
 
 const MONTHS_AHEAD = 6;
 
-const addMonths = (date, n) => {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() + n);
-  return d;
-};
-
 export const CashFlowProjection = () => {
   const { t } = useLanguage();
-  const payments = useSelector((s) => s.payments?.payments || []);
-  const snapshot = useSelector((s) => {
-    // Try to get the saldo libre from financial snapshot or income/expenses
-    const income = s.budget?.income?.reduce((sum, i) => sum + Number(i.amount || 0), 0) || 0;
-    const monthlyExpenses =
-      s.budget?.expenses
-        ?.filter((e) => {
-          const d = new Date(e.date);
-          const now = new Date();
-          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-        })
-        ?.reduce((sum, e) => sum + Number(e.amount || 0), 0) || 0;
-    return { income, monthlyExpenses };
-  });
+  const payments   = useSelector((s) => s.payments?.payments || []);
+  const debts      = useSelector((s) => s.debts?.debts || []);
+  const wallets    = useSelector((s) => s.wallets);
 
-  const months = useMemo(() => {
-    const now = new Date();
-    const result = [];
+  const referenceRate = wallets?.referenceRate || 0;
 
-    for (let i = 0; i < MONTHS_AHEAD; i++) {
-      const monthDate = addMonths(now, i);
-      const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
-      const label = monthDate.toLocaleDateString(undefined, { month: 'short', year: '2-digit' });
+  /* Average monthly income from last 3 months of wallet transactions */
+  const { avgMonthlyIncomeMXN, avgMonthlyIncomeUSD } = useMemo(() => {
+    const transactions = wallets?.transactions || [];
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - 3);
 
-      // Scheduled payments that fall in this month
-      const monthPayments = payments.filter((p) => {
-        if (!p.nextDueDate) return false;
-        const pd = new Date(p.nextDueDate);
-        const pk = `${pd.getFullYear()}-${String(pd.getMonth() + 1).padStart(2, '0')}`;
-        return pk === monthKey;
-      });
+    const recent = transactions.filter((t) => {
+      const d = new Date(t.date || t.createdAt || 0);
+      return d >= cutoff;
+    });
 
-      const outflow = monthPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-      const inflow = snapshot.income;
-      const net = inflow - outflow;
+    const totalIncomeMXN = recent
+      .filter((t) => t.type === 'income_mxn')
+      .reduce((s, t) => s + Number(t.amountMXN || 0), 0);
+    const totalIncomeUSD = recent
+      .filter((t) => t.type === 'income_usd')
+      .reduce((s, t) => s + Number(t.amountUSD || 0), 0);
 
-      result.push({ monthKey, label, inflow, outflow, net, payments: monthPayments });
-    }
+    return {
+      avgMonthlyIncomeMXN: totalIncomeMXN / 3,
+      avgMonthlyIncomeUSD: totalIncomeUSD / 3,
+    };
+  }, [wallets]);
 
-    return result;
-  }, [payments, snapshot]);
+  /* Monthly recurring commitments from debts */
+  const { monthlyDebtMXN, monthlyDebtUSD } = useMemo(() => {
+    const active = debts.filter((d) => d.status === 'active');
+    return {
+      monthlyDebtMXN: active
+        .filter((d) => (d.currency || 'MXN') === 'MXN')
+        .reduce((s, d) => s + Number(d.paymentAmount || 0), 0),
+      monthlyDebtUSD: active
+        .filter((d) => d.currency === 'USD')
+        .reduce((s, d) => s + Number(d.paymentAmount || 0), 0),
+    };
+  }, [debts]);
 
-  const maxAbsolute = Math.max(...months.map((m) => Math.max(Math.abs(m.net), m.inflow, m.outflow)), 1);
+  /* Monthly recurring payments from paymentsSlice */
+  const { recurringMXN, recurringUSD } = useMemo(() => {
+    const recurring = payments.filter(
+      (p) =>
+        (p.type || '') !== 'income' &&
+        (p.frequency === 'monthly' || p.frequency === 'recurring') &&
+        p.status !== 'cancelled'
+    );
+    return {
+      recurringMXN: recurring
+        .filter((p) => (p.currency || 'MXN') !== 'USD')
+        .reduce((s, p) => s + Number(p.amount || 0), 0),
+      recurringUSD: recurring
+        .filter((p) => p.currency === 'USD')
+        .reduce((s, p) => s + Number(p.amount || 0), 0),
+    };
+  }, [payments]);
 
-  if (payments.length === 0 && snapshot.income === 0) {
+  /* 6-month forward projection */
+  const projection = useMemo(() => {
+    return Array.from({ length: MONTHS_AHEAD }, (_, i) => {
+      const d = new Date();
+      d.setMonth(d.getMonth() + i + 1);
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const monthName = d.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' });
+
+      const totalCommitmentsMXN =
+        recurringMXN +
+        monthlyDebtMXN +
+        (referenceRate > 0 ? (recurringUSD + monthlyDebtUSD) * referenceRate : 0);
+
+      const totalIncomeMXN =
+        avgMonthlyIncomeMXN +
+        (referenceRate > 0 ? avgMonthlyIncomeUSD * referenceRate : 0);
+
+      const netMXN = totalIncomeMXN - totalCommitmentsMXN;
+
+      return {
+        monthKey,
+        monthName,
+        incomeMXN: totalIncomeMXN,
+        commitmentsMXN: totalCommitmentsMXN,
+        netMXN,
+        isPositive: netMXN >= 0,
+      };
+    });
+  }, [avgMonthlyIncomeMXN, avgMonthlyIncomeUSD, recurringMXN, recurringUSD, monthlyDebtMXN, monthlyDebtUSD, referenceRate]);
+
+  /* Not enough data */
+  const hasHistory = (wallets?.transactions || []).length > 0 || avgMonthlyIncomeMXN > 0;
+  if (!hasHistory && payments.length === 0 && debts.length === 0) {
     return (
       <section className="cashflow-section">
         <h2>💹 {t('Cash Flow Projection')}</h2>
-        <p className="cashflow-empty">{t('Add income and scheduled payments to see your projection.')}</p>
+        <div className="projection-empty">
+          <p>
+            {t('Registra tus ingresos y gastos durante al menos un mes para activar la proyección de flujo de caja.')}
+          </p>
+        </div>
       </section>
     );
   }
 
+  const maxAbsolute = Math.max(
+    ...projection.map((m) => Math.max(m.incomeMXN, m.commitmentsMXN, Math.abs(m.netMXN))),
+    1
+  );
+
   return (
     <section className="cashflow-section">
       <h2>💹 {t('Cash Flow Projection')}</h2>
-      <p className="cashflow-subtitle">{t('Next')} {MONTHS_AHEAD} {t('months')}</p>
+      <p className="cashflow-subtitle">
+        {t('Próximos')} {MONTHS_AHEAD} {t('meses — basado en compromisos actuales')}
+      </p>
 
       <div className="cashflow-chart">
-        {months.map(({ monthKey, label, inflow, outflow, net, payments: mPayments }) => {
-          const isNegative = net < 0;
-          const netHeight = Math.round((Math.abs(net) / maxAbsolute) * 80);
-          const inflowHeight = Math.round((inflow / maxAbsolute) * 80);
-          const outflowHeight = Math.round((outflow / maxAbsolute) * 80);
+        {projection.map(({ monthKey, monthName, incomeMXN, commitmentsMXN, netMXN, isPositive }) => {
+          const inflowH = Math.round((incomeMXN / maxAbsolute) * 80);
+          const outflowH = Math.round((commitmentsMXN / maxAbsolute) * 80);
+          const netH = Math.round((Math.abs(netMXN) / maxAbsolute) * 80);
 
           return (
-            <div key={monthKey} className={`cashflow-month ${isNegative ? 'cashflow-danger' : 'cashflow-ok'}`}>
+            <div
+              key={monthKey}
+              className={`cashflow-month ${isPositive ? 'cashflow-ok' : 'cashflow-danger'}`}
+            >
               <div className="cashflow-bars">
-                {/* Inflow bar */}
                 <div
                   className="cashflow-bar cashflow-inflow"
-                  style={{ height: `${inflowHeight}px` }}
-                  title={`${t('Income')}: ${inflow.toFixed(0)}`}
+                  style={{ height: `${Math.max(inflowH, 2)}px` }}
+                  title={`${t('Ingresos')}: ${incomeMXN.toFixed(0)} MXN`}
                 />
-                {/* Outflow bar */}
                 <div
                   className="cashflow-bar cashflow-outflow"
-                  style={{ height: `${outflowHeight}px` }}
-                  title={`${t('Payments')}: ${outflow.toFixed(0)}`}
+                  style={{ height: `${Math.max(outflowH, 2)}px` }}
+                  title={`${t('Compromisos')}: ${commitmentsMXN.toFixed(0)} MXN`}
                 />
-                {/* Net indicator */}
                 <div
-                  className={`cashflow-bar cashflow-net ${isNegative ? 'neg' : 'pos'}`}
-                  style={{ height: `${netHeight}px` }}
-                  title={`${t('Net')}: ${net.toFixed(0)}`}
+                  className={`cashflow-bar cashflow-net ${isPositive ? 'pos' : 'neg'}`}
+                  style={{ height: `${Math.max(netH, 2)}px` }}
+                  title={`${t('Neto')}: ${netMXN.toFixed(0)} MXN`}
                 />
               </div>
-
-              <div className="cashflow-month-label">{label}</div>
-              <div className={`cashflow-month-net ${isNegative ? 'text-danger' : 'text-ok'}`}>
-                {isNegative ? '▼' : '▲'} {Math.abs(net).toFixed(0)}
+              <div className="cashflow-month-label">{monthName}</div>
+              <div className={`cashflow-month-net ${isPositive ? 'text-ok' : 'text-danger'}`}>
+                {isPositive ? '▲' : '▼'} {Math.abs(netMXN).toFixed(0)}
               </div>
-
-              {mPayments.length > 0 && (
-                <div className="cashflow-payment-dots">
-                  {mPayments.slice(0, 3).map((p) => (
-                    <span key={p.id} className="cashflow-dot" title={`${p.name}: ${p.amount}`} />
-                  ))}
-                  {mPayments.length > 3 && (
-                    <span className="cashflow-dot-more">+{mPayments.length - 3}</span>
-                  )}
-                </div>
-              )}
             </div>
           );
         })}
@@ -123,15 +164,42 @@ export const CashFlowProjection = () => {
 
       <div className="cashflow-legend">
         <span className="cashflow-legend-item">
-          <span className="cashflow-legend-dot inflow" /> {t('Income')}
+          <span className="cashflow-legend-dot inflow" /> {t('Ingresos')}
         </span>
         <span className="cashflow-legend-item">
-          <span className="cashflow-legend-dot outflow" /> {t('Payments')}
+          <span className="cashflow-legend-dot outflow" /> {t('Compromisos')}
         </span>
         <span className="cashflow-legend-item">
-          <span className="cashflow-legend-dot net" /> {t('Net')}
+          <span className="cashflow-legend-dot net" /> {t('Neto')}
         </span>
       </div>
+
+      <table className="cashflow-table">
+        <thead>
+          <tr>
+            <th>{t('Mes')}</th>
+            <th>{t('Ingresos')}</th>
+            <th>{t('Compromisos')}</th>
+            <th>{t('Neto')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {projection.map(({ monthKey, monthName, incomeMXN, commitmentsMXN, netMXN, isPositive }) => (
+            <tr key={monthKey} className={isPositive ? 'row-ok' : 'row-danger'}>
+              <td>{monthName}</td>
+              <td>{incomeMXN.toFixed(0)}</td>
+              <td>{commitmentsMXN.toFixed(0)}</td>
+              <td className={isPositive ? 'text-ok' : 'text-danger'}>
+                {isPositive ? '+' : ''}{netMXN.toFixed(0)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <p className="cashflow-disclaimer">
+        {t('Proyección basada en el promedio de los últimos 3 meses. No incluye ingresos variables ni gastos imprevistos.')}
+      </p>
     </section>
   );
 };

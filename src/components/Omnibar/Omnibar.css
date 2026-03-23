@@ -53,7 +53,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding-top: 60px;
+  padding-top: max(60px, env(safe-area-inset-top, 60px)); /* FIX-8: iOS notch / Dynamic Island */
   z-index: 9999;
   animation: fadeInOverlay 0.3s ease-out;
 }
@@ -498,85 +498,7 @@
 
 
 
-/* OMNI-CLEAN-3: clase sin uso en JSX actual */
-.omnibar-results {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
 
-/* OMNI-CLEAN-3: clase sin uso en JSX actual */
-.omnibar-reasoning {
-  padding: 12px 14px;
-  background: linear-gradient(135deg, #11243a 0%, #1a2d4a 100%);
-  border-radius: 10px;
-  border: 1px solid rgba(141, 183, 255, 0.35);
-  border-left: 4px solid #8db7ff;
-}
-
-/* OMNI-CLEAN-3: clase sin uso en JSX actual */
-.reasoning-flex {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: start;
-  gap: 10px;
-}
-
-/* OMNI-CLEAN-3: clase sin uso en JSX actual */
-.confidence-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-  min-width: 54px;
-  justify-content: center;
-}
-
-.confidence-badge.high {
-  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-  color: #155724;
-  box-shadow: 0 2px 4px rgba(21, 87, 36, 0.1);
-}
-
-.confidence-badge.medium {
-  background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
-  color: #856404;
-  box-shadow: 0 2px 4px rgba(133, 100, 4, 0.1);
-}
-
-.confidence-badge.low {
-  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-  color: #721c24;
-  box-shadow: 0 2px 4px rgba(114, 28, 36, 0.1);
-}
-
-/* OMNI-CLEAN-3: clase sin uso en JSX actual */
-.reasoning-text {
-  font-size: 13px;
-  color: #e8f1ff;
-  -webkit-text-fill-color: #e8f1ff;
-  line-height: 1.55;
-  font-weight: 500;
-  overflow-wrap: anywhere;
-}
-
-/* ============================================================================
-   ARTIFACT
-   ============================================================================ */
-
-.omnibar-artifact {
-  margin-top: 4px;
-  background: var(--bg-secondary);
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
-  overflow: auto;
-  max-height: 62vh;
-}
 
 /* ============================================================================
    EMPTY STATE
@@ -698,139 +620,6 @@
   max-width: 20ch;
 }
 
-/* ============================================================================
-   INSIGHTS LIST
-   ============================================================================ */
-
-/* OMNI-CLEAN-3: clase sin uso en JSX actual */
-.insight-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* OMNI-CLEAN-3: clase sin uso en JSX actual */
-.insight-card {
-  width: 100%;
-  text-align: left;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  background: var(--bg-secondary);
-  padding: 14px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-  border-left: 4px solid transparent;
-}
-
-.insight-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  transition: left 0.5s ease;
-}
-
-.insight-card:hover {
-  transform: translateX(4px) translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-}
-
-.insight-high {
-  border-left-color: var(--color-error);
-}
-
-.insight-high:hover {
-  background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(239, 68, 68, 0.05) 100%);
-}
-
-.insight-medium {
-  border-left-color: #f97316;
-}
-
-.insight-medium:hover {
-  background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(249, 115, 22, 0.05) 100%);
-}
-
-.insight-low {
-  border-left-color: var(--athenea-primary);
-}
-
-.insight-low:hover {
-  background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(102, 126, 234, 0.05) 100%);
-}
-
-.insight-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 8px;
-  gap: 10px;
-}
-
-.insight-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-primary);
-  flex: 1;
-}
-
-/* OMNI-CLEAN-3: clase sin uso en JSX actual */
-.insight-badge {
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: var(--athenea-primary);
-  color: white;
-  white-space: nowrap;
-}
-
-/* OMNI-CLEAN-3: clase sin uso en JSX actual */
-.insight-hub {
-  font-size: 10px;
-  color: var(--text-tertiary);
-  font-weight: 500;
-}
-
-/* OMNI-CLEAN-3: clase sin uso en JSX actual */
-.insight-description {
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  font-weight: 400;
-}
-
-/* OMNI-CLEAN-3: clase sin uso en JSX actual */
-.insight-actions {
-  margin-top: 10px;
-  display: flex;
-  gap: 8px;
-}
-
-/* OMNI-CLEAN-3: clase sin uso en JSX actual */
-.insight-action-btn {
-  border: 1px solid rgba(124, 143, 245, 0.45);
-  background: rgba(20, 28, 58, 0.65);
-  color: #d9e3f7;
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.insight-action-btn-primary {
-  background: linear-gradient(135deg, var(--athenea-primary) 0%, var(--athenea-secondary) 100%);
-  border-color: rgba(255, 255, 255, 0.22);
-  color: #ffffff;
-}
 
 /* Proactive HUD Section */
 .omnibar-proactive-hud-section {
@@ -880,64 +669,42 @@
    ============================================================================ */
 
 .omnibar-footer {
-  padding: 12px 16px;
+  padding: 10px 16px;
   background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
   border-top: 1px solid var(--border-color);
   font-size: 11px;
   color: var(--text-tertiary);
-  text-align: center;
+  display: flex; /* FIX-9: layout para agente + shortcuts */
+  justify-content: space-between;
+  align-items: center;
 }
 
-.footer-text {
-  display: block;
-  font-weight: 500;
+.footer-agent {
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
-/* ============================================================================
-   TOAST NOTIFICATIONS
-   ============================================================================ */
-
-.toast {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: white;
-  border-radius: 12px;
-  padding: 14px 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-  animation: slideInToast 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+/* FIX-9: shortcuts de teclado en el footer */
+.footer-shortcuts {
   display: flex;
   align-items: center;
   gap: 10px;
-  max-width: 300px;
-  z-index: 10000;
+  font-size: 10px;
+  color: var(--text-tertiary);
 }
 
-.toast.success {
-  border-left: 4px solid #10b981;
+.footer-shortcuts kbd {
+  font-family: 'Fira Mono', 'Monaco', monospace;
+  font-size: 9px;
+  padding: 1px 5px;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  margin-right: 3px;
 }
 
-.toast.error {
-  border-left: 4px solid var(--color-error);
-}
-
-.toast.info {
-  border-left: 4px solid var(--athenea-primary);
-}
-
-@keyframes slideInToast {
-  from {
-    transform: translateX(300px) translateY(100px);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0) translateY(0);
-    opacity: 1;
-  }
-}
+/* FIX-1: estilos .toast eliminados — el sistema de toast es global (Toast.jsx / OMNI-FIX-8) */
 
 /* ============================================================================
    RESPONSIVE
@@ -990,12 +757,8 @@
     font-size: 14px;
   }
 
-  .insight-card {
-    padding: 12px;
-  }
-
-  .omnibar-artifact {
-    max-height: 56vh;
+  .chat-artifact {
+    max-height: 56vh; /* FIX: limitar artifact en mobile */
   }
 }
 
@@ -1008,7 +771,7 @@
   flex-direction: column;
   gap: 10px;
   padding: 4px 0 8px;
-  max-height: 340px;
+  max-height: clamp(200px, 40vh, 420px); /* FIX-7: adaptable al viewport en lugar de fijo */
   overflow-y: auto;
   scroll-behavior: smooth;
 }

@@ -1,5 +1,7 @@
 import { useEffect, useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { addNotification } from '../store/slices/notificationsSlice';
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
@@ -40,9 +42,12 @@ const saveScheduledIds = (ids) => {
 };
 
 export const NativeReminderNotifications = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { notes } = useSelector((state) => state.notes);
   const { todos } = useSelector((state) => state.todos);
   const { payments } = useSelector((state) => state.payments);
+  const debts = useSelector((state) => state.debts?.debts || []); /* ANDROID-4 */
 
   const reminders = useMemo(() => {
     const collect = (items, type, dateField) =>
@@ -55,16 +60,23 @@ export const NativeReminderNotifications = () => {
             title: item.title || item.name || 'Untitled',
             type,
             dueDate,
+            extra: type === 'debt'
+              ? { debtId: item.id, route: '/finance/debts' }
+              : { kind: type },
           };
         })
         .filter(Boolean);
+
+    // ANDROID-4: include active debts with a nextDueDate
+    const activeDebts = debts.filter((d) => d.status !== 'completed' && d.nextDueDate);
 
     return [
       ...collect(notes, 'note', 'reminderDate'),
       ...collect(todos, 'todo', 'dueDate'),
       ...collect(payments, 'payment', 'nextDueDate'),
+      ...collect(activeDebts, 'debt', 'nextDueDate'),
     ];
-  }, [notes, todos, payments]);
+  }, [notes, todos, payments, debts]);
 
   useEffect(() => {
     const syncNativeNotifications = async () => {
@@ -99,6 +111,7 @@ export const NativeReminderNotifications = () => {
             if (reminder.type === 'payment') body = `Payment reminder: ${reminder.title}`;
             if (reminder.type === 'todo') body = `Todo reminder: ${reminder.title}`;
             if (reminder.type === 'note') body = `Note reminder: ${reminder.title}`;
+            if (reminder.type === 'debt') body = `💳 Pago próximo — ATHENEA: ${reminder.title}`;
 
             notifications.push({
               id,
@@ -108,9 +121,8 @@ export const NativeReminderNotifications = () => {
                 at: scheduleAt,
                 allowWhileIdle: true,
               },
-              extra: {
-                kind: reminder.type,
-              },
+              actionTypeId: reminder.type === 'debt' ? 'DEBT_REMINDER' : undefined,
+              extra: reminder.extra,
             });
           });
         });
@@ -127,6 +139,23 @@ export const NativeReminderNotifications = () => {
 
         if (notifications.length > 0) {
           await LocalNotifications.schedule({ notifications });
+
+          // Mirror today's & overdue reminders into the in-app Notifications store
+          const todayMidnight = new Date();
+          todayMidnight.setHours(0, 0, 0, 0);
+          notifications.forEach((n) => {
+            const schedAt = n.schedule?.at;
+            // Only include notifications scheduled for today (9AM) or already past
+            if (!schedAt || schedAt > new Date(todayMidnight.getTime() + 86400000)) return;
+            dispatch(addNotification({
+              id: `reminder-native-${n.id}`,
+              title: 'ATHENEA',
+              body: n.body,
+              urgency: 'medium',
+              source: 'reminder',
+              timestamp: schedAt.getTime(),
+            }));
+          });
         }
 
         saveScheduledIds(nextIds);
@@ -136,7 +165,23 @@ export const NativeReminderNotifications = () => {
     };
 
     syncNativeNotifications();
-  }, [reminders]);
+
+    // ANDROID-4: navigate when user taps a notification
+    let actionListener = null;
+    if (Capacitor.isNativePlatform()) {
+      actionListener = LocalNotifications.addListener(
+        'localNotificationActionPerformed',
+        (event) => {
+          const route = event.notification?.extra?.route;
+          if (route) navigate(route);
+        }
+      );
+    }
+
+    return () => {
+      if (actionListener) actionListener.then((l) => l.remove());
+    };
+  }, [reminders, navigate]);
 
   return null;
 };

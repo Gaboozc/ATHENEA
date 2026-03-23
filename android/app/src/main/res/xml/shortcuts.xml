@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <shortcut
+    android:shortcutId="open_work"
+    android:enabled="true"
+    android:icon="@drawable/ic_work"
+    android:shortcutShortLabel="@string/shortcut_work_short"
+    android:shortcutLongLabel="@string/shortcut_work_long">
+    <intent
+      android:action="android.intent.action.VIEW"
+      android:data="athenea://work"
+      android:targetPackage="com.athenea.app"
+      android:targetClass="com.athenea.app.MainActivity" />
+    <categories android:name="android.shortcut.conversation" />
+  </shortcut>
+
+  <shortcut
+    android:shortcutId="open_personal"
+    android:enabled="true"
+    android:icon="@drawable/ic_personal"
+    android:shortcutShortLabel="@string/shortcut_personal_short"
+    android:shortcutLongLabel="@string/shortcut_personal_long">
+    <intent
+      android:action="android.intent.action.VIEW"
+      android:data="athenea://personal"
+      android:targetPackage="com.athenea.app"
+      android:targetClass="com.athenea.app.MainActivity" />
+  </shortcut>
+
+  <shortcut
+    android:shortcutId="open_finance"
+    android:enabled="true"
+    android:icon="@drawable/ic_finance"
+    android:shortcutShortLabel="@string/shortcut_finance_short"
+    android:shortcutLongLabel="@string/shortcut_finance_long">
+    <intent
+      android:action="android.intent.action.VIEW"
+      android:data="athenea://finance"
+      android:targetPackage="com.athenea.app"
+      android:targetClass="com.athenea.app.MainActivity" />
+  </shortcut>
+
+  <shortcut
+    android:shortcutId="open_omnibar"
+    android:enabled="true"
+    android:icon="@drawable/ic_omnibar"
+    android:shortcutShortLabel="@string/shortcut_omnibar_short"
+    android:shortcutLongLabel="@string/shortcut_omnibar_long">
+    <intent
+      android:action="android.intent.action.VIEW"
+      android:data="athenea://omnibar"
+      android:targetPackage="com.athenea.app"
+      android:targetClass="com.athenea.app.MainActivity" />
+  </shortcut>
+
+</shortcuts>

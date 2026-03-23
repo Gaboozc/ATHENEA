@@ -8,6 +8,7 @@ import { registerExpense } from '../store/thunks/financeThunks';
 import { selectFinancialSnapshot, selectFinancialHealthScore } from '../store/selectors/financialSelectors'; /* F-FEAT-3 */
 import { Skeleton } from '../components/Skeleton/Skeleton';
 import { SpendingCharts } from '../components/SpendingCharts/SpendingCharts';
+import { CashFlowProjection } from '../components/CashFlowProjection/CashFlowProjection';
 import EmptyState from '../components/EmptyState/EmptyState';
 import './FinanceHub.css';
 
@@ -23,11 +24,32 @@ export const FinanceHub = () => {
   const walletUSD = store?.wallets?.walletUSD || 0;
   const walletMXN = store?.wallets?.walletMXN || 0;
   const referenceRate = store?.wallets?.referenceRate || 0;
+  /* SAVINGS-3 */
+  const savingsUSD = store?.wallets?.savingsUSD || 0;
+  const savingsMXN = store?.wallets?.savingsMXN || 0;
+  /* DEBTS-4: debt KPI data */
+  const debts = store?.debts?.debts || [];
+  const activeDebts = useMemo(() => debts.filter((d) => d.status !== 'completed'), [debts]);
+  const totalDebtMXN = useMemo(
+    () => activeDebts.filter((d) => d.currency === 'MXN').reduce((s, d) => s + d.balance, 0),
+    [activeDebts]
+  );
+  const totalDebtUSD = useMemo(
+    () => activeDebts.filter((d) => d.currency === 'USD').reduce((s, d) => s + d.balance, 0),
+    [activeDebts]
+  );
+  const nextDebtDue = useMemo(
+    () =>
+      activeDebts
+        .filter((d) => d.nextDueDate && d.status === 'active')
+        .sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate))[0] || null,
+    [activeDebts]
+  );
   const financialSnapshot = useMemo(() => selectFinancialSnapshot(store), [store]); /* F-FEAT-6 */
   const healthScore = useMemo(() => selectFinancialHealthScore(store), [store]); /* F-FEAT-3 */
   /* F-FEAT-7: Jarvis last verdict */
   const lastVerdict = useSelector((state) => state.aiMemory?.lastVerdict);
-  const isJarvisVerdict = lastVerdict?.agent === 'auditor' || lastVerdict?.agent === 'Jarvis';
+  const isJarvisVerdict = !!lastVerdict; /* FIX-P1-BUG9: lastVerdict has no .agent field — show any recent verdict */
   const isJarvisRecent = lastVerdict?.timestamp && (Date.now() - lastVerdict.timestamp) < 30 * 60 * 1000;
   const [isReady, setIsReady] = useState(false);
   useEffect(() => { setIsReady(true); }, []);
@@ -177,11 +199,59 @@ export const FinanceHub = () => {
         </button>
       </section>
 
+      {/* SAVINGS-3: Savings KPI — only shown when savings > 0 */}
+      {(savingsUSD > 0 || savingsMXN > 0) && (
+        <section className="financehub-wallets-row financehub-savings-row">
+          <div className="wallet-kpi kpi-savings">
+            <span>🏦 {t('Ahorros')}</span>
+            {savingsUSD > 0 && (
+              <strong>${Number(savingsUSD).toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</strong>
+            )}
+            {savingsMXN > 0 && (
+              <strong>${Number(savingsMXN).toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN</strong>
+            )}
+            {referenceRate > 0 && savingsUSD > 0 && savingsMXN > 0 && (
+              <small>≈ ${(savingsMXN + savingsUSD * referenceRate).toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN</small>
+            )}
+          </div>
+          <button className="wallet-kpi-link" onClick={() => navigate('/finance/wallets')}>
+            {t('Gestionar ahorros')} →
+          </button>
+        </section>
+      )}
+
+      {/* DEBTS-4: Debt KPI card */}
+      {(activeDebts.length > 0 || true) && (
+        <section className="financehub-wallets-row financehub-debts-row">
+          <div className="wallet-kpi wallet-kpi-debt">
+            <span>💳 {t('Deuda total')}</span>
+            {totalDebtMXN > 0 && (
+              <strong>${totalDebtMXN.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN</strong>
+            )}
+            {totalDebtUSD > 0 && (
+              <strong>${totalDebtUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</strong>
+            )}
+            {totalDebtMXN === 0 && totalDebtUSD === 0 && (
+              <strong style={{ color: 'var(--color-success)' }}>Sin deudas activas</strong>
+            )}
+            {nextDebtDue && (
+              <small>
+                Próximo: {nextDebtDue.name} — {new Date(nextDebtDue.nextDueDate).toLocaleDateString('es-MX')}
+              </small>
+            )}
+          </div>
+          <button className="wallet-kpi-link" onClick={() => navigate('/finance/debts')}>
+            {t('Ver deudas')} →
+          </button>
+        </section>
+      )}
+
       <section className="financehub-actions">
         <button onClick={() => navigate('/payments')}>{t('Go to Payments')}</button>
         <button onClick={() => navigate('/finance/history')}>{t('Historial')}</button>
         <button onClick={() => navigate('/finance/goals')}>{t('Metas')}</button>
         <button onClick={() => navigate('/finance/budgeting')}>{t('Budgeting')}</button>
+        <button onClick={() => navigate('/finance/debts')}>{t('Deudas')}</button>
         <button onClick={() => navigate('/calendar')}>{t('Go to Calendar')}</button>
       </section>
 
@@ -426,6 +496,9 @@ export const FinanceHub = () => {
 
       {/* NEW-FINANCE-1: Spending Charts — pass selectedMonth so chart reflects user selection */}
       <SpendingCharts selectedMonth={selectedMonth} />
+
+      {/* NEW-FINANCE-2: Cash Flow Projection — forward 6-month view */}
+      <CashFlowProjection />
     </div>
   );
 };

@@ -3,12 +3,13 @@ import {
   createRoutesFromElements,
   Route,
   Navigate,
+  Outlet,
   useRouteError,
   Link,
 } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { Layout } from "./pages/Layout";
-import { Skeleton } from "./components/Skeleton/Skeleton";
+import ErrorBoundary from "./components/ErrorBoundary/ErrorBoundary";
 
 // ── Lazy-loaded pages (code splitting) ────────────────────────────────────
 const Dashboard      = lazy(() => import("./pages/Dashboard").then(m => ({ default: m.Dashboard })));
@@ -19,6 +20,7 @@ const FinanceHistory = lazy(() => import("./pages/FinanceHistory").then(m => ({ 
 const FinanceGoals   = lazy(() => import("./pages/FinanceGoals").then(m => ({ default: m.FinanceGoals })));
 const FinanceBudgeting = lazy(() => import("./pages/FinanceBudgeting").then(m => ({ default: m.FinanceBudgeting })));
 const FinanceWallets   = lazy(() => import("./pages/FinanceWallets").then(m => ({ default: m.FinanceWallets }))); /* WALLETS-12 */
+const FinanceDebts     = lazy(() => import("./pages/FinanceDebts").then(m => ({ default: m.FinanceDebts }))); /* DEBTS-9 */
 const Routines         = lazy(() => import("./pages/Routines").then(m => ({ default: m.Routines }))); /* ROUTINES-2 */
 const Calendar       = lazy(() => import("./pages/Calendar").then(m => ({ default: m.Calendar })));
 const Projects       = lazy(() => import("./pages/Projects").then(m => ({ default: m.Projects })));
@@ -53,8 +55,15 @@ if (typeof window !== 'undefined') {
 
 // ── Loading fallback ───────────────────────────────────────────────────────
 const PageLoader = () => (
-  <div style={{ padding: '2rem' }}>
-    <Skeleton lines={4} />
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '60vh',
+    color: 'var(--color-text-tertiary)',
+    fontSize: '13px'
+  }}>
+    <span>Cargando...</span>
   </div>
 );
 
@@ -74,14 +83,18 @@ const AppRouteError = () => {
   );
 };
 
-// ── Wrap element in Suspense ───────────────────────────────────────────────
-const S = (element) => <Suspense fallback={<PageLoader />}>{element}</Suspense>;
+// ── Single Suspense boundary via layout route ──────────────────────────────
+const SuspenseLayout = () => (
+  <Suspense fallback={<PageLoader />}>
+    <Outlet />
+  </Suspense>
+);
 
 export const router = createHashRouter(
     createRoutesFromElements(
       <>
         {/* Standalone routes (no Navbar/Layout) */}
-        <Route path="/login" element={S(<Login />)} errorElement={<AppRouteError />} />
+        <Route path="/login" element={<Suspense fallback={<PageLoader />}><Login /></Suspense>} errorElement={<AppRouteError />} />
         {/* Redirect legacy auth routes → dashboard */}
         <Route path="/register" element={<Navigate to="/dashboard" replace />} />
         <Route path="/awaiting-command" element={<Navigate to="/dashboard" replace />} />
@@ -93,34 +106,39 @@ export const router = createHashRouter(
           errorElement={<AppRouteError />}
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard"          element={S(<Dashboard />)} />
-          <Route path="work"               element={S(<WorkHub />)} />
-          <Route path="personal"           element={S(<PersonalHub />)} />
-          <Route path="finance"            element={S(<FinanceHub />)} />
-          <Route path="finance/history"    element={S(<FinanceHistory />)} />
-          <Route path="finance/goals"      element={S(<FinanceGoals />)} />
-          <Route path="finance/budgeting"  element={S(<FinanceBudgeting />)} />
-          <Route path="finance/wallets"   element={S(<FinanceWallets />)} /> {/* WALLETS-12 */}
-          <Route path="budgeting"          element={<Navigate to="/finance/budgeting" replace />} />
-          <Route path="identity"           element={S(<IdentityHub />)} />
-          <Route path="todos"              element={S(<Todos />)} />
-          <Route path="payments"           element={S(<Payments />)} />
-          <Route path="projects"           element={S(<Projects />)} />
-          <Route path="projects/:id"       element={S(<ProjectDetails />)} />
-          <Route path="settings"           element={S(<Settings />)} />
-          <Route path="intelligence"       element={S(<Intelligence />)} />
-          <Route path="fleet"              element={S(<Fleet />)} />
-          <Route path="my-tasks"           element={S(<MyTasks />)} />
-          <Route path="notifications"      element={S(<Notifications />)} />
-          <Route path="profile"            element={S(<Profile />)} />
-          <Route path="notes"              element={S(<Notes />)} />
-          <Route path="calendar"           element={S(<Calendar />)} />
-          <Route path="inbox"              element={S(<Inbox />)} />
-          <Route path="stats"              element={S(<StatsPage />)} />
-          <Route path="journal"            element={S(<Journal />)} />
-          <Route path="weekly-review"      element={S(<WeeklyReview />)} />
-          <Route path="routines"           element={S(<Routines />)} /> {/* ROUTINES-2 */}
-          <Route path="focus"              element={S(<FocusMode />)} />
+
+          {/* Single Suspense boundary — all lazy pages go here */}
+          <Route element={<SuspenseLayout />}>
+            <Route path="dashboard"          element={<Dashboard />} />
+            <Route path="work"               element={<ErrorBoundary title="Error en Work" description="El área de trabajo encontró un error."><WorkHub /></ErrorBoundary>} />
+            <Route path="personal"           element={<ErrorBoundary title="Error en Personal" description="El área personal encontró un error."><PersonalHub /></ErrorBoundary>} />
+            <Route path="finance"            element={<ErrorBoundary title="Error en Finanzas" description="El área financiera encontró un error."><FinanceHub /></ErrorBoundary>} />
+            <Route path="finance/history"    element={<FinanceHistory />} />
+            <Route path="finance/goals"      element={<FinanceGoals />} />
+            <Route path="finance/budgeting"  element={<FinanceBudgeting />} />
+            <Route path="finance/wallets"    element={<ErrorBoundary title="Error en Billeteras"><FinanceWallets /></ErrorBoundary>} /> {/* WALLETS-12 */}
+            <Route path="finance/debts"      element={<ErrorBoundary title="Error en Deudas"><FinanceDebts /></ErrorBoundary>} /> {/* DEBTS-9 */}
+            <Route path="budgeting"          element={<Navigate to="/finance/budgeting" replace />} />
+            <Route path="identity"           element={<IdentityHub />} />
+            <Route path="todos"              element={<Todos />} />
+            <Route path="payments"           element={<Payments />} />
+            <Route path="projects"           element={<Projects />} />
+            <Route path="projects/:id"       element={<ProjectDetails />} />
+            <Route path="settings"           element={<Settings />} />
+            <Route path="intelligence"       element={<Intelligence />} />
+            <Route path="fleet"              element={<Fleet />} />
+            <Route path="my-tasks"           element={<MyTasks />} />
+            <Route path="notifications"      element={<Notifications />} />
+            <Route path="profile"            element={<Profile />} />
+            <Route path="notes"              element={<Notes />} />
+            <Route path="calendar"           element={<ErrorBoundary title="Error en Calendario"><Calendar /></ErrorBoundary>} />
+            <Route path="inbox"              element={<Inbox />} />
+            <Route path="stats"              element={<StatsPage />} />
+            <Route path="journal"            element={<Journal />} />
+            <Route path="weekly-review"      element={<WeeklyReview />} />
+            <Route path="routines"           element={<Routines />} /> {/* ROUTINES-2 */}
+            <Route path="focus"              element={<FocusMode />} />
+          </Route>
         </Route>
       </>
     )

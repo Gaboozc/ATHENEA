@@ -130,7 +130,7 @@ export const FocusMode = () => {
         completedAt: new Date().toISOString(),
       })
     );
-    showToast(`🍅 ¡Pomodoro completado! ${duration} min de enfoque.`, 'success', 5000);
+    showToast(`🍅 ${t('Pomodoro complete!')} ${duration} min`, 'success', 5000);
     setPhase('break');
     setRemaining(BREAK_DURATION * 60);
     // Auto-start break timer

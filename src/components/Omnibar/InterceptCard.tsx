@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 import './InterceptCard.css';
 
 type ActionType = 'register-expense' | 'schedule-event' | 'none';
@@ -33,12 +34,6 @@ function getAppBadge(packageName: string, appName: string): string {
 	return initials || 'AI';
 }
 
-function getProtocolLabel(actionType: ActionType): string {
-	if (actionType === 'register-expense') return 'Registrar en Finanzas';
-	if (actionType === 'schedule-event') return 'Registrar en Agenda';
-	return 'Procesar Inteligencia';
-}
-
 export const InterceptCard: React.FC<InterceptCardProps> = ({
 	appName,
 	packageName,
@@ -50,6 +45,14 @@ export const InterceptCard: React.FC<InterceptCardProps> = ({
 	onExecute,
 	onDiscard,
 }) => {
+	const { t } = useLanguage();
+
+	const getProtocolLabel = (type: ActionType): string => {
+		if (type === 'register-expense') return t('intercept.proto.finance');
+		if (type === 'schedule-event') return t('intercept.proto.calendar');
+		return t('intercept.proto.ai');
+	};
+
 	return (
 		<section className={`intercept-card-v2 urgency-${urgency}`}>
 			<div className="intercept-card-head">
@@ -57,8 +60,8 @@ export const InterceptCard: React.FC<InterceptCardProps> = ({
 					{getAppBadge(packageName, appName)}
 				</div>
 				<div>
-					<div className="intercept-title">Filtro Tactico</div>
-					<div className="intercept-source">Origen: {appName}</div>
+					<div className="intercept-title">{t('intercept.filter')}</div>
+					<div className="intercept-source">{t('intercept.origin')}: {appName}</div>
 				</div>
 				<div className="intercept-urgency">{urgency.toUpperCase()}</div>
 			</div>
@@ -67,17 +70,17 @@ export const InterceptCard: React.FC<InterceptCardProps> = ({
 
 			{(merchant || temporalHint) && (
 				<div className="intercept-metadata">
-					{merchant && <span>Comercio: {merchant}</span>}
-					{temporalHint && <span>Temporalidad: {temporalHint}</span>}
+					{merchant && <span>{t('intercept.merchant')}: {merchant}</span>}
+					{temporalHint && <span>{t('intercept.temporal')}: {temporalHint}</span>}
 				</div>
 			)}
 
 			<div className="intercept-actions-v2">
 				<button type="button" className="intercept-execute" onClick={onExecute}>
-					EJECUTAR PROTOCOLO
+					{t('intercept.execute')}
 				</button>
 				<button type="button" className="intercept-discard" onClick={onDiscard}>
-					DESCARTAR
+					{t('intercept.discard')}
 				</button>
 			</div>
 

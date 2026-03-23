@@ -20,6 +20,7 @@
     "dependencies": {
         "@capacitor-community/speech-recognition": "^7.0.1",
         "@capacitor/android": "^8.1.0",
+        "@capacitor/app": "^8.0.1",
         "@capacitor/cli": "^8.1.0",
         "@capacitor/core": "^8.1.0",
         "@capacitor/device": "^8.0.1",
@@ -27,6 +28,7 @@
         "@capacitor/haptics": "^8.0.1",
         "@capacitor/local-notifications": "^8.0.2",
         "@capacitor/network": "^8.0.1",
+        "@capacitor/preferences": "^8.0.1",
         "@capgo/capacitor-health": "^8.3.2",
         "@react-oauth/google": "^0.13.4",
         "@reduxjs/toolkit": "^2.9.1",

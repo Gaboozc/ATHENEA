@@ -504,6 +504,48 @@ export const financeHubSkills: SkillManifest[] = [
     }
   },
 
+  /* DEBTS-8 */
+  {
+    id: 'add_debt',
+    name: 'Nueva deuda',
+    description: 'Registrar una nueva deuda',
+    icon: '💳',
+    hub: 'FinanceHub',
+    keywords: [
+      'nueva deuda', 'agregar deuda', 'tengo una deuda',
+      'le debo a', 'debo a', 'registrar deuda',
+      'préstamo nuevo', 'me prestaron', 'new debt', 'add debt', 'i owe'
+    ],
+    action: 'debts/addDebt',
+    paramSchema: {
+      name: { type: 'string', required: true, description: 'Nombre de la deuda' },
+      creditor: { type: 'string', required: true, description: 'A quién se le debe' },
+      totalAmount: { type: 'number', required: true, description: 'Monto total' },
+      currency: { type: 'select', required: false, description: 'Divisa', enum: ['MXN', 'USD'] },
+      frequency: { type: 'string', required: false, description: 'Frecuencia de pago' },
+      paymentAmount: { type: 'number', required: false, description: 'Monto por pago' }
+    }
+  },
+
+  {
+    id: 'pay_debt',
+    name: 'Abonar deuda',
+    description: 'Registrar un abono a una deuda',
+    icon: '💸',
+    hub: 'FinanceHub',
+    keywords: [
+      'aboné a', 'pagué deuda', 'abono a', 'pago a deuda',
+      'pagué a', 'abono deuda', 'pago deuda', 'debt payment', 'pay debt', 'pay off'
+    ],
+    action: 'finance/payDebt',
+    paramSchema: {
+      debtId: { type: 'string', required: true, description: 'ID de la deuda' },
+      amount: { type: 'number', required: true, description: 'Monto del abono' },
+      currency: { type: 'select', required: false, description: 'Divisa', enum: ['MXN', 'USD'] },
+      note: { type: 'string', required: false, description: 'Nota del abono' }
+    }
+  },
+
   {
     id: 'query_budget_status',
     name: 'Consulta Inteligente de Gasto',
@@ -526,7 +568,47 @@ export const financeHubSkills: SkillManifest[] = [
         description: 'Amount to check'
       }
     }
-  }
+  },
+
+  /* SAVINGS-6 */
+  {
+    id: 'transfer_to_savings',
+    name: 'Transferir a ahorros',
+    description: 'Mover dinero del saldo disponible al fondo de ahorros',
+    icon: '💰',
+    hub: 'FinanceHub',
+    keywords: [
+      'ahorrar', 'guardar dinero', 'apartar', 'transferir a ahorros',
+      'mover a ahorros', 'poner en ahorros', 'ahorré', 'guardé',
+      'quiero ahorrar', 'separar para ahorros', 'apartar dinero',
+    ],
+    action: 'wallets/transferToSavings',
+    paramSchema: {
+      amount: { type: 'number', required: true, description: 'Amount to save' },
+      currency: { type: 'string', required: false, description: 'MXN or USD' },
+      description: { type: 'string', required: false, description: 'Note' },
+    }
+  },
+
+  {
+    id: 'withdraw_from_savings',
+    name: 'Retirar de ahorros',
+    description: 'Mover dinero del fondo de ahorros al saldo disponible',
+    icon: '↩',
+    hub: 'FinanceHub',
+    keywords: [
+      'retirar ahorros', 'sacar de ahorros', 'usar ahorros',
+      'tomar de ahorros', 'retiré de ahorros', 'sacar ahorros',
+      'necesito mis ahorros', 'quitar de ahorros',
+    ],
+    action: 'wallets/withdrawFromSavings',
+    paramSchema: {
+      amount: { type: 'number', required: true, description: 'Amount to withdraw' },
+      currency: { type: 'string', required: false, description: 'MXN or USD' },
+      description: { type: 'string', required: false, description: 'Note' },
+    }
+  },
+  /* SAVINGS-6 end */
 ];
 
 // ============================================================================

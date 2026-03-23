@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
+import { addNote } from '../../../store/slices/notesSlice';
 import './DailyStandup.css';
 
 const STORAGE_KEY_PREFIX = 'athenea.standup.';
@@ -29,6 +30,7 @@ const saveTodayStandup = (data) => {
 export const DailyStandup = ({ onDismiss }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const tasks = useSelector((s) => s.tasks?.tasks || []);
 
   const [done, setDone] = useState(false);
@@ -69,7 +71,23 @@ export const DailyStandup = ({ onDismiss }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    saveTodayStandup({ ...form, submittedAt: new Date().toISOString() });
+    const submittedAt = new Date().toISOString();
+    saveTodayStandup({ ...form, submittedAt });
+
+    // BUG-8: persist standup answers as a note
+    const dateLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const noteContent = [
+      `**${t('What did you do yesterday?')}**\n${form.yesterday || '—'}`,
+      `**${t('What will you do today?')}**\n${form.today || '—'}`,
+      `**${t('Any blockers?')}**\n${form.blockers || t('None')}`,
+    ].join('\n\n');
+    dispatch(addNote({
+      title: `${t('Daily Standup')} — ${dateLabel}`,
+      content: noteContent,
+      tags: ['standup', 'work'],
+      color: '#1e90ff',
+    }));
+
     setSubmitted(true);
     setDone(true);
     if (onDismiss) setTimeout(onDismiss, 2500);

@@ -22,6 +22,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- ANDROID-2: Deep Links -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="athenea" />
+            </intent-filter>
+
+            <!-- ANDROID-1: App Shortcuts -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+
         </activity>
 
         <provider
@@ -52,6 +65,72 @@
                 <action android:name="com.athenea.app.WIDGET_OPEN_OMNIBAR" />
                 <action android:name="com.athenea.app.WIDGET_OPEN_VOICE" />
                 <action android:name="com.athenea.app.WIDGET_CHECK_TASK" />
+            </intent-filter>
+        </receiver>
+
+        <!-- ANDROID-3: Nav Widget (4-button deep link navigation) -->
+        <receiver
+            android:name=".AtheneaNavWidget"
+            android:exported="true"
+            android:label="ATHENEA Widget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_nav_info" />
+        </receiver>
+
+        <!-- 9 smart widgets -->
+        <receiver android:name=".widgets.DailyFocusWidget" android:exported="true" android:label="ATHENEA Daily Focus">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info_daily_focus" />
+        </receiver>
+
+        <receiver android:name=".widgets.TaskQuickAddWidget" android:exported="true" android:label="ATHENEA Quick Task">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info_task_quick_add" />
+        </receiver>
+
+        <receiver android:name=".widgets.FinanceSnapshotWidget" android:exported="true" android:label="ATHENEA Finance">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info_finance_snapshot" />
+        </receiver>
+
+        <receiver android:name=".widgets.PendingTasksWidget" android:exported="true" android:label="ATHENEA Tasks">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info_pending_tasks" />
+        </receiver>
+
+        <receiver android:name=".widgets.TodayAgendaWidget" android:exported="true" android:label="ATHENEA Agenda">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info_today_agenda" />
+        </receiver>
+
+        <receiver android:name=".widgets.IntelligenceFeedWidget" android:exported="true" android:label="ATHENEA Intelligence">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info_intelligence_feed" />
+        </receiver>
+
+        <receiver android:name=".widgets.HabitTrackerWidget" android:exported="true" android:label="ATHENEA Habits">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info_habit_tracker" />
+        </receiver>
+
+        <receiver android:name=".widgets.FinanceQuickLogWidget" android:exported="true" android:label="ATHENEA Quick Expense">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info_finance_quick_log" />
+        </receiver>
+
+        <receiver android:name=".widgets.SystemHealthWidget" android:exported="true" android:label="ATHENEA Health">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info_system_health" />
+        </receiver>
+
+        <!-- Widget action broadcast receiver (routine toggles, etc.) -->
+        <receiver android:name=".widgets.WidgetActionReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="com.athenea.app.WIDGET_TOGGLE_ROUTINE" />
             </intent-filter>
         </receiver>
 

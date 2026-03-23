@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:orientation="horizontal"
+  android:background="@drawable/widget_background"
+  android:padding="8dp"
+  android:gravity="center">
+
+  <LinearLayout
+    android:id="@+id/widget_btn_work"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="8dp"
+    android:clickable="true"
+    android:focusable="true">
+    <ImageView
+      android:layout_width="28dp"
+      android:layout_height="28dp"
+      android:src="@drawable/ic_work" />
+    <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="Work"
+      android:textColor="#FFFFFF"
+      android:textSize="10sp"
+      android:layout_marginTop="4dp" />
+  </LinearLayout>
+
+  <LinearLayout
+    android:id="@+id/widget_btn_personal"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="8dp"
+    android:clickable="true"
+    android:focusable="true">
+    <ImageView
+      android:layout_width="28dp"
+      android:layout_height="28dp"
+      android:src="@drawable/ic_personal" />
+    <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="Personal"
+      android:textColor="#FFFFFF"
+      android:textSize="10sp"
+      android:layout_marginTop="4dp" />
+  </LinearLayout>
+
+  <LinearLayout
+    android:id="@+id/widget_btn_finance"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="8dp"
+    android:clickable="true"
+    android:focusable="true">
+    <ImageView
+      android:layout_width="28dp"
+      android:layout_height="28dp"
+      android:src="@drawable/ic_finance" />
+    <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="Finanzas"
+      android:textColor="#FFFFFF"
+      android:textSize="10sp"
+      android:layout_marginTop="4dp" />
+  </LinearLayout>
+
+  <LinearLayout
+    android:id="@+id/widget_btn_omnibar"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="8dp"
+    android:clickable="true"
+    android:focusable="true">
+    <ImageView
+      android:layout_width="28dp"
+      android:layout_height="28dp"
+      android:src="@drawable/ic_omnibar" />
+    <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="AI"
+      android:textColor="#FFFFFF"
+      android:textSize="10sp"
+      android:layout_marginTop="4dp" />
+  </LinearLayout>
+
+</LinearLayout>

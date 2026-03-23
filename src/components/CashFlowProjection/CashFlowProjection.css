@@ -144,3 +144,52 @@
 .cashflow-legend-dot.inflow { background: #22c55e; }
 .cashflow-legend-dot.outflow { background: #ef4444; }
 .cashflow-legend-dot.net { background: #1ec9ff; }
+
+/* Empty state */
+.projection-empty {
+  text-align: center;
+  padding: 2rem 0;
+}
+.projection-empty p {
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.875rem;
+  max-width: 320px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* Summary table */
+.cashflow-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.25rem;
+  font-size: 0.8rem;
+}
+.cashflow-table th {
+  color: var(--text-secondary, #94a3b8);
+  font-weight: 600;
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.cashflow-table td {
+  color: var(--text-primary, #e2e8f0);
+  padding: 5px 8px;
+}
+.cashflow-table .row-ok td {
+  background: rgba(34,197,94,0.04);
+}
+.cashflow-table .row-danger td {
+  background: rgba(239,68,68,0.05);
+}
+.cashflow-table .text-ok { color: #22c55e; font-weight: 600; }
+.cashflow-table .text-danger { color: #ef4444; font-weight: 600; }
+
+/* Disclaimer */
+.cashflow-disclaimer {
+  font-size: 0.72rem;
+  color: rgba(148,163,184,0.6);
+  text-align: center;
+  margin-top: 1rem;
+  line-height: 1.4;
+}

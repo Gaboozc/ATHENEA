@@ -107,6 +107,7 @@ export const Navbar = () => {
 				{ label: t('Historial'), path: '/finance/history' },
 				{ label: t('Metas'), path: '/finance/goals' },
 				{ label: t('Budgeting'), path: '/finance/budgeting' },
+				{ label: t('Deudas'), path: '/finance/debts' }, /* DEBTS-9 */
 			],
 		},
 	];
