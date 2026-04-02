@@ -247,7 +247,9 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         const agent: 'cortana' | 'jarvis' | 'shodan' =
           agentName.includes('jarvis') ? 'jarvis'
           : agentName.includes('shodan') ? 'shodan'
-          : 'cortana';
+          : agentName.includes('athenea') || agentName.includes('swarm')
+            ? (selectedHub === 'FinanceHub' ? 'jarvis' : selectedHub === 'PersonalHub' ? 'shodan' : 'cortana')
+            : 'cortana';
 
         const lastUserMsg = [...sessionMsgs].reverse().find((m) => m.role === 'user');
         const lastAgentMsg = [...sessionMsgs].reverse().find((m) => m.role === 'agent');
@@ -350,7 +352,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     setChatMessages((prev) => [...prev, userMsg]);
     setInputValue('');
 
-    const historyMessages = chatMessages
+    const historyMessages = chatMessagesRef.current
       .filter((m) => !m.artifact)
       .slice(-8)
       .map((m) => ({
