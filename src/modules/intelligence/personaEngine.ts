@@ -949,7 +949,15 @@ class PersonaEngine {
     return `${condition}, ${temperature}`;
   }
 
-  private async callLLM(config: LLMConfig, systemPrompt: string, userPrompt: string): Promise<string> {
+  private async callLLM(
+    config: LLMConfig,
+    systemPrompt: string,
+    userPrompt: string,
+    options?: {
+      conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>;
+      onToken?: (chunk: string) => void;
+    }
+  ): Promise<string> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
 
@@ -959,6 +967,14 @@ class PersonaEngine {
         : 'https://api.openai.com/v1/chat/completions';
 
     const model = config.provider === 'groq' ? 'llama-3.1-8b-instant' : 'gpt-4o-mini';
+
+    const messages = [
+      { role: 'system' as const, content: systemPrompt },
+      ...(options?.conversationHistory ?? []),
+      { role: 'user' as const, content: userPrompt },
+    ];
+
+    const useStreaming = typeof options?.onToken === 'function';
 
     try {
       const response = await fetch(endpoint, {
@@ -971,10 +987,8 @@ class PersonaEngine {
           model,
           temperature: 0.65,
           max_tokens: 380,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt },
-          ],
+          stream: useStreaming,
+          messages,
         }),
         signal: controller.signal,
       });
@@ -983,12 +997,41 @@ class PersonaEngine {
         throw new Error(`LLM request failed: ${response.status}`);
       }
 
-      const json = await response.json();
-      const content = String(json?.choices?.[0]?.message?.content || '').trim();
-      if (!content) {
-        throw new Error('Empty LLM content');
+      if (useStreaming && response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const raw = decoder.decode(value, { stream: true });
+          for (const line of raw.split('\n')) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith('data: ')) continue;
+            const data = trimmed.slice(6);
+            if (data === '[DONE]') break;
+            try {
+              const json = JSON.parse(data);
+              const token: string = json?.choices?.[0]?.delta?.content ?? '';
+              if (token) {
+                fullText += token;
+                options!.onToken!(token);
+              }
+            } catch {
+              // malformed SSE chunk — skip
+            }
+          }
+        }
+
+        if (!fullText) throw new Error('Empty streaming response');
+        return fullText;
       }
 
+      // Non-streaming path (fallback or when onToken not provided)
+      const json = await response.json();
+      const content = String(json?.choices?.[0]?.message?.content ?? '').trim();
+      if (!content) throw new Error('Empty LLM content');
       return content;
     } finally {
       clearTimeout(timeout);
