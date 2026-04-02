@@ -833,7 +833,8 @@ class PersonaEngine {
       const fieldNoteState = this.store?.getState?.() as any;
       const batteryLevel: number = fieldNoteState?.sensorData?.battery?.level ?? 100;
       const sleepHours: number = fieldNoteState?.sensorData?.health?.sleepHours ?? 8;
-      const budgets: any[] = fieldNoteState?.finance?.budgets ?? [];
+      const categories: any[] = fieldNoteState?.budget?.categories ?? [];
+      const expenses: any[] = fieldNoteState?.budget?.expenses ?? [];
       const overdueTasks: number = (() => {
         const tasks: any[] = fieldNoteState?.tasks?.tasks ?? [];
         return tasks.filter((t) => {
@@ -842,19 +843,22 @@ class PersonaEngine {
             Number.isFinite(due) && due > 0 && due < Date.now();
         }).length;
       })();
-      const budgetExceededPct: number = budgets.reduce((acc, b) => {
-        if (!b?.limit || b.limit <= 0) return acc;
-        return Math.max(acc, ((b.spent ?? 0) / b.limit) * 100);
+      const budgetExceededPct: number = categories.reduce((acc, cat) => {
+        if (!cat?.limit || cat.limit <= 0) return acc;
+        const spent = expenses
+          .filter((e: any) => e?.categoryId === cat?.id)
+          .reduce((sum: number, e: any) => sum + (Number(e?.amount) || 0), 0);
+        return Math.max(acc, (spent / cat.limit) * 100);
       }, 0);
 
       const fieldNotes: string[] = [];
-      if (batteryLevel < 5) {
+      if (requestedPersona !== 'jarvis' && batteryLevel < 5) {
         fieldNotes.push(`⚠️ Jarvis: Batería al ${batteryLevel}% — autonomía crítica.`);
       }
-      if (sleepHours < 4) {
+      if (requestedPersona !== 'shodan' && sleepHours < 4) {
         fieldNotes.push(`⚠️ SHODAN: ${sleepHours}h de sueño detectadas — rendimiento cognitivo comprometido.`);
       }
-      if (budgetExceededPct > 150) {
+      if (requestedPersona !== 'jarvis' && budgetExceededPct > 150) {
         fieldNotes.push(`⚠️ Jarvis: Presupuesto al ${Math.round(budgetExceededPct)}% — límite superado.`);
       }
       if (requestedPersona !== 'shodan' && overdueTasks >= 5) {
