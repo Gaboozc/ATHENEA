@@ -12,6 +12,7 @@
 import type { Store } from '@reduxjs/toolkit';
 import type { OrchestratorDecision } from './agents/types';
 import { getNeuralKeySync, getNeuralProvider } from './neuralAccess';
+import { getAgentOrchestrator } from './agents/AgentOrchestrator';
 
 export type PersonaMode = 'jarvis' | 'cortana';
 
@@ -454,8 +455,6 @@ class PersonaEngine {
     let multiAgentBriefing = '';
     let multiAgentSuggestion = '';
     try {
-      // @ts-ignore
-      const { getAgentOrchestrator } = require('./agents/AgentOrchestrator');
       const orchestrator = getAgentOrchestrator();
       if (orchestrator) {
         const decision = orchestrator.getLastDecision();
@@ -542,8 +541,6 @@ class PersonaEngine {
 
     let decision: OrchestratorDecision | null = null;
     try {
-      // @ts-ignore - runtime singleton accessor
-      const { getAgentOrchestrator } = require('./agents/AgentOrchestrator');
       const orchestrator = getAgentOrchestrator();
       if (orchestrator?.orchestrate) {
         decision = await orchestrator.orchestrate();
@@ -973,7 +970,7 @@ class PersonaEngine {
         body: JSON.stringify({
           model,
           temperature: 0.65,
-          max_tokens: 240,
+          max_tokens: 380,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt },
@@ -1449,7 +1446,6 @@ class PersonaEngine {
    */
   async triggerMultiAgentAnalysis(): Promise<any> {
     try {
-      const { getAgentOrchestrator } = require('./agents/AgentOrchestrator');
       const orchestrator = getAgentOrchestrator();
       if (orchestrator) {
         const decision = await orchestrator.orchestrate();

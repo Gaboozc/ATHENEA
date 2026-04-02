@@ -182,7 +182,7 @@ export class IntelligenceBridge {
 
     // FIX 2: Skill-first routing — try skill match BEFORE falling through to conversational.
     // If a skill is matched with sufficient confidence, return it directly.
-    // The useIntelligence hook will auto-execute (threshold 70) or show Canvas.
+    // The useIntelligence hook will auto-execute (threshold 90) or show Canvas.
     try {
       const skillResult = await this.trySkillFirstRoute(request, hub, reduxGetState);
       if (skillResult) return skillResult;
