@@ -24,10 +24,10 @@ import { actionHistoryStore } from './actionHistory';
 interface UseIntelligenceReturn {
   // Prompt handling
   sendPrompt: (
-    prompt: string, 
+    prompt: string,
     hub?: 'WorkHub' | 'PersonalHub' | 'FinanceHub',
-    options?: { autoExecute?: boolean }
-  ) => Promise<{ 
+    options?: { autoExecute?: boolean; onToken?: (chunk: string) => void; conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }> }
+  ) => Promise<{
     executed: boolean; 
     response: IntelligenceResponse | null;
     needsConfirmation: boolean;
@@ -50,10 +50,10 @@ interface UseIntelligenceReturn {
 
 /**
  * Autonomous execution threshold
- * FIX 2: Lowered from 90 to 70 — skills with all required params and >= 70% confidence
- * will auto-execute without user confirmation.
+ * Skills with all required params and >= 90% confidence auto-execute without confirmation.
+ * Finance/destructive actions always require confirmation regardless of confidence.
  */
-const AUTO_EXECUTE_THRESHOLD = 70;
+const AUTO_EXECUTE_THRESHOLD = 90;
 
 /**
  * useIntelligence Hook
@@ -75,13 +75,13 @@ export function useIntelligence(
    * Send a prompt to the Bridge
    * Now supports Autonomous Execution:
    * - If confidence >= 90% and all required params present → auto-execute
-   * - If confidence < 85% or missing params → show Canvas for confirmation
+   * - If confidence < 90% or missing params → show Canvas for confirmation
    */
   const sendPrompt = useCallback(
     async (
-      prompt: string, 
+      prompt: string,
       hub?: 'WorkHub' | 'PersonalHub' | 'FinanceHub',
-      options?: { autoExecute?: boolean }
+      options?: { autoExecute?: boolean; onToken?: (chunk: string) => void; conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }> }
     ) => {
       try {
         setIsLoading(true);
@@ -93,6 +93,7 @@ export function useIntelligence(
           context: {
             currentHub: hub || initialHub || 'WorkHub'
           },
+          conversationHistory: options?.conversationHistory,
           timestamp: Date.now()
         };
 
@@ -100,7 +101,8 @@ export function useIntelligence(
         const response = await intelligenceBridge.processPrompt(
           request,
           () => storeState,
-          dispatch as any
+          dispatch as any,
+          options?.onToken
         );
 
         setCurrentResponse(response);

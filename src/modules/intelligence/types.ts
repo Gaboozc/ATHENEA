@@ -54,6 +54,7 @@ export interface IntelligenceRequest {
     selectedProject?: string;
     selectedNote?: string;
   };
+  conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>;
   timestamp: number;
 }
 

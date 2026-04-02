@@ -18,7 +18,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateOmnibarChatHistory, clearLatestActionableIntercept } from '../../store/slices/aiMemorySlice'; /* OMNI-FIX-2 */
+import { updateOmnibarChatHistory, clearLatestActionableIntercept, updateAgentMemory } from '../../store/slices/aiMemorySlice'; /* OMNI-FIX-2 */
 import { useLanguage } from '../../context/LanguageContext';
 import { syncExternalEvents } from '../../../store/slices/calendarSlice.js';
 import {
@@ -238,6 +238,28 @@ export const Omnibar: React.FC<OmnibarProps> = ({
           chatMessagesRef.current.filter((m: any) => !m.artifact).slice(-20)
         ));
       }
+      // Write session summary to agentMemory if there was a real conversation
+      const sessionMsgs = chatMessagesRef.current.filter((m) => !m.artifact);
+      if (sessionMsgs.length >= 2) {
+        const agentMsgs = sessionMsgs.filter((m) => m.role === 'agent');
+        const lastAgent = agentMsgs[agentMsgs.length - 1];
+        const agentName = lastAgent?.agentName?.toLowerCase() ?? '';
+        const agent: 'cortana' | 'jarvis' | 'shodan' =
+          agentName.includes('jarvis') ? 'jarvis'
+          : agentName.includes('shodan') ? 'shodan'
+          : 'cortana';
+
+        const lastUserMsg = [...sessionMsgs].reverse().find((m) => m.role === 'user');
+        const lastAgentMsg = [...sessionMsgs].reverse().find((m) => m.role === 'agent');
+        if (lastUserMsg && lastAgentMsg) {
+          const summary = `Usuario preguntó: "${lastUserMsg.text.slice(0, 80)}". Respuesta clave: "${lastAgentMsg.text.slice(0, 120)}".`;
+          dispatch(updateAgentMemory({
+            agent,
+            recentContext: summary,
+            lastSeen: new Date().toISOString(),
+          }));
+        }
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -328,7 +350,18 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     setChatMessages((prev) => [...prev, userMsg]);
     setInputValue('');
 
-    const result = await sendPrompt(userText, selectedHub, { autoExecute: true });
+    const historyMessages = chatMessages
+      .filter((m) => !m.artifact)
+      .slice(-8)
+      .map((m) => ({
+        role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+        content: m.text,
+      }));
+
+    const result = await sendPrompt(userText, selectedHub, {
+      autoExecute: true,
+      conversationHistory: historyMessages,
+    });
     const resolvedHub = (result.response?.reasoning.matchedSkill?.hub || selectedHub) as 'WorkHub' | 'PersonalHub' | 'FinanceHub';
     const agent = getAgentInfoFromPersona(
       result.response?.reasoning.responderPersona || null,

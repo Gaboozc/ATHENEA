@@ -173,7 +173,8 @@ export class IntelligenceBridge {
   async processPrompt(
     request: IntelligenceRequest,
     reduxGetState: () => any,
-    reduxDispatch: (action: ReduxAction) => void
+    reduxDispatch: (action: ReduxAction) => void,
+    onToken?: (chunk: string) => void
   ): Promise<IntelligenceResponse> {
     this.conversationHistory.push(request);
     const keywordHub = this.detectHubFromKeywords(request.userPrompt);
@@ -198,7 +199,8 @@ export class IntelligenceBridge {
         null,
         100,
         InferenceLayer.FAST_PATH,
-        reduxGetState
+        reduxGetState,
+        onToken
       );
     } catch (error) {
       console.error('[Bridge] Error:', error);
@@ -644,7 +646,8 @@ export class IntelligenceBridge {
     selectedSkill: SkillManifest | null,
     confidence: number,
     inferenceLayer: InferenceLayer,
-    reduxGetState: () => any
+    reduxGetState: () => any,
+    onToken?: (chunk: string) => void
   ): Promise<IntelligenceResponse> {
     const state = reduxGetState();
     const lower = String(request.userPrompt || '').toLowerCase();
@@ -812,7 +815,11 @@ export class IntelligenceBridge {
               facts,
             },
             persona,
-            { isPersonaLocked: explicitPersona !== null }
+            {
+              isPersonaLocked: explicitPersona !== null,
+              conversationHistory: request.conversationHistory,
+              onToken,
+            }
           );
           if (llmAnswer && llmAnswer.trim()) {
             answer = llmAnswer.trim();
@@ -828,7 +835,11 @@ export class IntelligenceBridge {
               facts,
             },
             persona,
-            { isPersonaLocked: explicitPersona !== null }
+            {
+              isPersonaLocked: explicitPersona !== null,
+              conversationHistory: request.conversationHistory,
+              onToken,
+            }
           );
           if (llmAnswer && llmAnswer.trim()) {
             answer = llmAnswer.trim();
@@ -847,7 +858,11 @@ export class IntelligenceBridge {
             facts,
           },
           persona,
-          { isPersonaLocked: explicitPersona !== null }
+          {
+            isPersonaLocked: explicitPersona !== null,
+            conversationHistory: request.conversationHistory,
+            onToken,
+          }
         );
         if (llmAnswer && llmAnswer.trim()) {
           answer = llmAnswer.trim();
