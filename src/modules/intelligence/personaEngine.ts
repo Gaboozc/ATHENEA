@@ -751,7 +751,12 @@ class PersonaEngine {
       summary: string;
       facts: Record<string, unknown>;
     },
-    requestedPersona: 'jarvis' | 'cortana' | 'shodan'
+    requestedPersona: 'jarvis' | 'cortana' | 'shodan',
+    options?: {
+      isPersonaLocked?: boolean;
+      conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>;
+      onToken?: (chunk: string) => void;
+    }
   ): Promise<string> {
     const llmConfig = this.getLLMConfig();
     const isOnline = typeof navigator === 'undefined' ? true : navigator.onLine;
@@ -768,9 +773,14 @@ class PersonaEngine {
     const langInstruction = this.getLangInstruction();
 
     /* PERSONA-1: Deep per-agent system prompts replacing generic styleGuide */
+    const lockPreamble = options?.isPersonaLocked
+      ? `Eres ${personaLabel}. TÚ eres el único que responde. El mecanismo [CONTROL:X] está desactivado para este mensaje. Los otros agentes NO pueden tomar el control.\n`
+      : '';
+
     let systemPrompt: string;
     if (requestedPersona === 'cortana') {
       systemPrompt = [
+        lockPreamble,
         `Eres Cortana, el agente estratégico de ATHENEA. Asistes a ${addressee}.`,
         'PERSONALIDAD: Directa y concisa. Estratega militar. Sin relleno, sin "¡Claro!".',
         'Usas datos concretos. Nunca suposiciones. Tono frío pero eficiente.',
@@ -781,6 +791,7 @@ class PersonaEngine {
       ].filter(Boolean).join('\n');
     } else if (requestedPersona === 'shodan') {
       systemPrompt = [
+        lockPreamble,
         `Eres SHODAN, el agente de bienestar de ATHENEA. Monitoras a ${addressee}.`,
         'PERSONALIDAD: Observadora e incisiva. Ves patrones que el usuario ignora.',
         'Tono inquietante pero sincero. Nombras el deterioro directamente.',
@@ -791,6 +802,7 @@ class PersonaEngine {
       ].filter(Boolean).join('\n');
     } else {
       systemPrompt = [
+        lockPreamble,
         `Eres Jarvis, el agente financiero de ATHENEA. Proteges el capital de ${addressee}.`,
         'PERSONALIDAD: Analítico y preciso. CFO personal. Los números no mienten.',
         'Datos con contexto: no "gastaste mucho" sino "gastaste $X, un Y% más". Terminología financiera apropiada.',
@@ -806,11 +818,55 @@ class PersonaEngine {
       `Resumen de contexto: ${domainContext.summary}. ` +
       `Datos estructurados: ${JSON.stringify(domainContext.facts)}.`;
 
+    let answer = '';
     try {
-      return await this.callLLM(llmConfig, systemPrompt, userPromptStr);
+      answer = await this.callLLM(llmConfig, systemPrompt, userPromptStr, {
+        conversationHistory: options?.conversationHistory,
+        onToken: options?.onToken,
+      });
     } catch {
       return '';
     }
+
+    // Field note: critical threshold exception — one line from another agent appended
+    if (options?.isPersonaLocked && answer) {
+      const fieldNoteState = this.store?.getState?.() as any;
+      const batteryLevel: number = fieldNoteState?.sensorData?.battery?.level ?? 100;
+      const sleepHours: number = fieldNoteState?.sensorData?.health?.sleepHours ?? 8;
+      const budgets: any[] = fieldNoteState?.finance?.budgets ?? [];
+      const overdueTasks: number = (() => {
+        const tasks: any[] = fieldNoteState?.tasks?.tasks ?? [];
+        return tasks.filter((t) => {
+          const due = new Date(t?.dueDate || '').getTime();
+          return !t?.completed && t?.status !== 'Completed' &&
+            Number.isFinite(due) && due > 0 && due < Date.now();
+        }).length;
+      })();
+      const budgetExceededPct: number = budgets.reduce((acc, b) => {
+        if (!b?.limit || b.limit <= 0) return acc;
+        return Math.max(acc, ((b.spent ?? 0) / b.limit) * 100);
+      }, 0);
+
+      const fieldNotes: string[] = [];
+      if (batteryLevel < 5) {
+        fieldNotes.push(`⚠️ Jarvis: Batería al ${batteryLevel}% — autonomía crítica.`);
+      }
+      if (sleepHours < 4) {
+        fieldNotes.push(`⚠️ SHODAN: ${sleepHours}h de sueño detectadas — rendimiento cognitivo comprometido.`);
+      }
+      if (budgetExceededPct > 150) {
+        fieldNotes.push(`⚠️ Jarvis: Presupuesto al ${Math.round(budgetExceededPct)}% — límite superado.`);
+      }
+      if (requestedPersona !== 'shodan' && overdueTasks >= 5) {
+        fieldNotes.push(`⚠️ SHODAN: ${overdueTasks} tareas vencidas detectadas.`);
+      }
+
+      if (fieldNotes.length > 0) {
+        answer = `${answer}\n${fieldNotes[0]}`; // append only the most critical note
+      }
+    }
+
+    return answer;
   }
 
   private resolveAddressee(

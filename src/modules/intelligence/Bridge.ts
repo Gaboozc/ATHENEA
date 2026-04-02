@@ -811,7 +811,8 @@ export class IntelligenceBridge {
               summary,
               facts,
             },
-            persona
+            persona,
+            { isPersonaLocked: explicitPersona !== null }
           );
           if (llmAnswer && llmAnswer.trim()) {
             answer = llmAnswer.trim();
@@ -826,7 +827,8 @@ export class IntelligenceBridge {
               summary,
               facts,
             },
-            persona
+            persona,
+            { isPersonaLocked: explicitPersona !== null }
           );
           if (llmAnswer && llmAnswer.trim()) {
             answer = llmAnswer.trim();
@@ -844,7 +846,8 @@ export class IntelligenceBridge {
             summary,
             facts,
           },
-          persona
+          persona,
+          { isPersonaLocked: explicitPersona !== null }
         );
         if (llmAnswer && llmAnswer.trim()) {
           answer = llmAnswer.trim();
