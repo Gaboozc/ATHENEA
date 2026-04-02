@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useTasks } from '../context/TasksContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
@@ -13,6 +13,7 @@ const openGatekeeper = () => window.dispatchEvent(new CustomEvent('athenea:gatek
 
 export const WorkHub = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { t } = useLanguage();
   const { projects } = useSelector((state) => state.projects);
   const lastVerdict = useSelector((state) => state.aiMemory?.lastVerdict || null); /* W-FEAT-1 */
@@ -37,15 +38,6 @@ export const WorkHub = () => {
 
   const levelOrder = ['Critical', 'High Velocity', 'Steady Flow', 'Low Friction', 'Backlog'];
 
-  const sortedTasks = useMemo(() => {
-    return (tasks || []).sort((a, b) => {
-      const levelA = levelOrder.indexOf(a?.level);
-      const levelB = levelOrder.indexOf(b?.level);
-      return (levelA === -1 ? 999 : levelA) - (levelB === -1 ? 999 : levelB);
-    });
-  }, [tasks]);
-
-  const todayFocus = useMemo(() => sortedTasks.slice(0, 3), [sortedTasks]);
   const completedTasks = useMemo(
     () => (tasks || []).filter((task) => task?.status === 'Completed'),
     [tasks]
@@ -60,25 +52,110 @@ export const WorkHub = () => {
     ),
     [tasks]
   );
-  const progressTotal = (tasks || []).length || 1;
-  // W-FIX-5: weekly progress calculation
-  const startOfWeek = useMemo(() => {
+
+  /* Step 6.2 — Stat pill computed values */
+  const overdueTasks = useMemo(
+    () => (tasks || []).filter((t) => {
+      const due = new Date(t?.dueDate || '').getTime();
+      return !t?.completed &&
+        t?.status !== 'Completed' &&
+        Number.isFinite(due) && due > 0 && due < Date.now();
+    }),
+    [tasks]
+  );
+
+  const dueTodayTasks = useMemo(
+    () => (tasks || []).filter((t) => {
+      const due = new Date(t?.dueDate || '');
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
+      return !t?.completed &&
+        t?.status !== 'Completed' &&
+        due >= todayStart && due <= todayEnd;
+    }),
+    [tasks]
+  );
+
+  const startOfWeekForDone = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - d.getDay());
     d.setHours(0, 0, 0, 0);
-    return d; /* W-FIX-5 */
+    return d;
   }, []);
-  const tasksThisWeek = useMemo(
-    () => (tasks || []).filter((t) => t.createdAt && new Date(t.createdAt) >= startOfWeek),
-    [tasks, startOfWeek]
+
+  const doneThisWeek = useMemo(
+    () => (tasks || []).filter((t) =>
+      (t?.status === 'Completed' || t?.completed === true) &&
+      t?.updatedAt && new Date(t.updatedAt) >= startOfWeekForDone
+    ),
+    [tasks, startOfWeekForDone]
   );
-  const completedThisWeek = useMemo(
-    () => tasksThisWeek.filter((t) => t.status === 'Completed' || t.completed === true),
-    [tasksThisWeek]
-  );
-  const weeklyProgress = tasksThisWeek.length > 0
-    ? Math.round((completedThisWeek.length / tasksThisWeek.length) * 100)
-    : 0; /* W-FIX-5 */
+
+  /* Step 6.3 — Action List */
+  const actionListTasks = useMemo(() => {
+    const open = (tasks || []).filter(
+      (t) => !t?.completed && t?.status !== 'Completed'
+    );
+    return [...open]
+      .sort((a, b) => {
+        const aDue = new Date(a?.dueDate || '').getTime();
+        const bDue = new Date(b?.dueDate || '').getTime();
+        const aOverdue = Number.isFinite(aDue) && aDue > 0 && aDue < Date.now();
+        const bOverdue = Number.isFinite(bDue) && bDue > 0 && bDue < Date.now();
+        const todayS = new Date(); todayS.setHours(0,0,0,0);
+        const todayE = new Date(); todayE.setHours(23,59,59,999);
+        const aToday = Number.isFinite(aDue) && aDue >= todayS.getTime() && aDue <= todayE.getTime();
+        const bToday = Number.isFinite(bDue) && bDue >= todayS.getTime() && bDue <= todayE.getTime();
+        if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
+        if (aToday !== bToday) return aToday ? -1 : 1;
+        const lvlA = levelOrder.indexOf(a?.level); const lvlB = levelOrder.indexOf(b?.level);
+        if (lvlA !== lvlB) return (lvlA === -1 ? 999 : lvlA) - (lvlB === -1 ? 999 : lvlB);
+        const safeDueA = Number.isFinite(aDue) && aDue > 0 ? aDue : Number.MAX_SAFE_INTEGER;
+        const safeDueB = Number.isFinite(bDue) && bDue > 0 ? bDue : Number.MAX_SAFE_INTEGER;
+        return safeDueA - safeDueB;
+      })
+      .slice(0, 7);
+  }, [tasks]);
+
+  const formatDueText = (dueDate) => {
+    if (!dueDate) return null;
+    const due = new Date(dueDate);
+    if (!Number.isFinite(due.getTime())) return null;
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
+    const tomorrowStart = new Date(todayStart); tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+    const tomorrowEnd = new Date(todayEnd); tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
+    if (due < todayStart) {
+      const daysLate = Math.floor((todayStart.getTime() - due.getTime()) / 86400000);
+      return daysLate === 1 ? t('Due yesterday') : `${t('Overdue')} ${daysLate}d`;
+    }
+    if (due >= todayStart && due <= todayEnd) {
+      return `${t('Due today')} ${due.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    }
+    if (due >= tomorrowStart && due <= tomorrowEnd) return t('Tomorrow');
+    return due.toLocaleDateString([], { day: 'numeric', month: 'short' });
+  };
+
+  /* Step 6.4 — Urgent task preview map for Active Projects */
+  const projectUrgentTask = useMemo(() => {
+    const map = {};
+    (projects || []).forEach((proj) => {
+      const open = (tasks || []).filter(
+        (t) => t?.projectId === proj.id && !t?.completed && t?.status !== 'Completed'
+      );
+      if (open.length === 0) { map[proj.id] = null; return; }
+      open.sort((a, b) => {
+        const aDue = new Date(a?.dueDate || '').getTime();
+        const bDue = new Date(b?.dueDate || '').getTime();
+        const safeDueA = Number.isFinite(aDue) && aDue > 0 ? aDue : Number.MAX_SAFE_INTEGER;
+        const safeDueB = Number.isFinite(bDue) && bDue > 0 ? bDue : Number.MAX_SAFE_INTEGER;
+        if (safeDueA !== safeDueB) return safeDueA - safeDueB;
+        return (levelOrder.indexOf(a?.level) ?? 9) - (levelOrder.indexOf(b?.level) ?? 9);
+      });
+      map[proj.id] = open[0];
+    });
+    return map;
+  }, [projects, tasks]);
 
   return (
     <div className="workhub-container">
@@ -89,7 +166,7 @@ export const WorkHub = () => {
         </div>
       </header>
 
-      {lastVerdict && getNeuralKeySync() && (Date.now() - lastVerdict.timestamp < 30 * 60 * 1000) && ( /* W-FEAT-1 */
+      {lastVerdict && getNeuralKeySync() && (Date.now() - lastVerdict.timestamp < 30 * 60 * 1000) && (
         <div className="cortana-briefing">
           <span className="cortana-icon">🧿</span>
           <div className="cortana-content">
@@ -99,97 +176,128 @@ export const WorkHub = () => {
         </div>
       )}
 
-      {/* NEW-WORK-2: Daily Standup — shown once per day */}
       {showStandup && (
         <DailyStandup onDismiss={() => setShowStandup(false)} />
       )}
 
-      <section className="workhub-stats">
-        <div className="workhub-stat">
-          <span>{t('Critical Tasks')}</span>
-          {isReady ? <strong>{criticalTasks.length > 0 ? criticalTasks.length : '0'}</strong> : <Skeleton type="stat" />}
+      {/* Situation Report — 4 stat pills */}
+      <section className="workhub-sitrep">
+        <div className={`workhub-sitrep-pill ${overdueTasks.length > 0 ? 'sitrep-red' : 'sitrep-gray'}`}>
+          <span className="sitrep-value">{isReady ? overdueTasks.length : '—'}</span>
+          <span className="sitrep-label">{t('Overdue')}</span>
         </div>
-        <div className="workhub-stat">
-          <span>{t('Active Projects')}</span>
-          {isReady ? <strong>{activeProjects.length > 0 ? activeProjects.length : '0'}</strong> : <Skeleton type="stat" />}
+        <div className={`workhub-sitrep-pill ${dueTodayTasks.length > 0 ? 'sitrep-amber' : 'sitrep-gray'}`}>
+          <span className="sitrep-value">{isReady ? dueTodayTasks.length : '—'}</span>
+          <span className="sitrep-label">{t('Due Today')}</span>
         </div>
+        <div className={`workhub-sitrep-pill ${inProgressTasks.length > 0 ? 'sitrep-blue' : 'sitrep-gray'}`}>
+          <span className="sitrep-value">{isReady ? inProgressTasks.length : '—'}</span>
+          <span className="sitrep-label">{t('In Progress')}</span>
+        </div>
+        <div className="workhub-sitrep-pill sitrep-green">
+          <span className="sitrep-value">{isReady ? doneThisWeek.length : '—'}</span>
+          <span className="sitrep-label">{t('Done This Week')}</span>
+        </div>
+      </section>
+
+      {/* Action List */}
+      <section className="workhub-card workhub-action-list">
+        <h2>{t('Action List')}</h2>
+        {actionListTasks.length === 0 ? (
+          <EmptyState icon="📋" message={t('No tasks yet.')} ctaLabel={`+ ${t('New task')}`} onCta={openGatekeeper} />
+        ) : (
+          <>
+            <ul>
+              {actionListTasks.map((task) => {
+                const due = new Date(task?.dueDate || '').getTime();
+                const isOverdue = Number.isFinite(due) && due > 0 && due < Date.now();
+                const todayS = new Date(); todayS.setHours(0,0,0,0);
+                const todayE = new Date(); todayE.setHours(23,59,59,999);
+                const isToday = Number.isFinite(due) && due >= todayS.getTime() && due <= todayE.getTime();
+                const dueText = formatDueText(task?.dueDate);
+                return (
+                  <li key={task.id} className={`workhub-action-item${isOverdue ? ' action-overdue' : isToday ? ' action-today' : ''}`}>
+                    <span className="action-urgency">
+                      {isOverdue ? '⚠️' : isToday ? '🕐' : ''}
+                    </span>
+                    <span
+                      className="action-title"
+                      onClick={() => task.projectId ? navigate(`/projects/${task.projectId}`) : navigate('/my-tasks')}
+                    >
+                      {task.title}
+                    </span>
+                    <span className={`workhub-pill level-${(task.level || 'standard').toLowerCase().replace(/\s+/g, '-')}`}>
+                      {task.level || 'Standard'}
+                    </span>
+                    {dueText && <span className={`action-due${isOverdue ? ' action-due--overdue' : ''}`}>{dueText}</span>}
+                    <div className="action-buttons">
+                      {task.status !== 'In Progress' && (
+                        <button
+                          className="action-btn action-btn--start"
+                          title={t('Start')}
+                          onClick={() => dispatch({ type: 'tasks/updateTask', payload: { id: task.id, status: 'In Progress' } })}
+                        >
+                          ▶
+                        </button>
+                      )}
+                      <button
+                        className="action-btn action-btn--done"
+                        title={t('Complete')}
+                        onClick={() => dispatch({ type: 'tasks/updateTask', payload: { id: task.id, status: 'Completed', completed: true } })}
+                      >
+                        ✓
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            <a className="workhub-see-all" onClick={() => navigate('/my-tasks')}>{t('See all')} →</a>
+          </>
+        )}
+      </section>
+
+      {/* Active Projects with urgent task preview */}
+      <section className="workhub-card">
+        <h2>{t('Active Projects')}</h2>
+        {activeProjects.length === 0 ? (
+          <div className="workhub-empty-block">
+            <div className="workhub-empty">{t('No active projects.')}</div>
+            <button className="workhub-inline-action" onClick={() => navigate('/projects')}>{t('Go to Projects')}</button>
+          </div>
+        ) : (
+          <ul>
+            {activeProjects.slice(0, 3).map((project) => {
+              const urgentTask = projectUrgentTask[project.id];
+              return (
+                <li key={project.id} className="workhub-project-item">
+                  <div className="project-header-row">
+                    <span>📁 {project.name}</span>
+                    <span className="workhub-pill">{t(project.status || 'Active')}</span>
+                  </div>
+                  <div className="project-urgent-task">
+                    {urgentTask
+                      ? <span>└─ {urgentTask.title}{urgentTask.dueDate ? ` — ${formatDueText(urgentTask.dueDate)}` : ''}</span>
+                      : <span className="project-no-tasks">└─ {t('No open tasks')}</span>
+                    }
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
 
       <section className="workhub-actions">
         <button onClick={() => navigate('/my-tasks')}>{t('Go to My Tasks')}</button>
         <button onClick={() => navigate('/projects')}>{t('Go to Projects')}</button>
         <button onClick={() => navigate('/fleet')}>{t('Go to Collaborators')}</button>
-        {/* FIX UX-1 — exponer GatekeeperModal */}
         <button
           className="workhub-btn-gatekeeper"
           onClick={() => window.dispatchEvent(new CustomEvent('athenea:gatekeeper:open'))}
         >
           🎯 {t('Create priority task')}
         </button>
-      </section>
-
-      <section className="workhub-grid">
-        <div className="workhub-card">
-          <h2>{t("Today's Focus")}</h2>
-          {todayFocus.length === 0 ? (
-            <EmptyState icon="📋" message={t('No tasks yet.')} ctaLabel={`+ ${t('New task')}`} onCta={openGatekeeper} />
-          ) : (
-            <ul>
-              {todayFocus.map((task) => (
-                <li /* W-FIX-8 */
-                  key={task.id}
-                  className="workhub-task-item"
-                  onClick={() => task.projectId ? navigate(`/projects/${task.projectId}`) : navigate('/my-tasks')}
-                >
-                  <span>{task.title}</span>
-                  <span className={`workhub-pill workhub-level-badge level-${(task.level || 'standard').toLowerCase().replace(/\s+/g, '-')}`}>
-                    {task.level || 'Standard'}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <div className="workhub-card">
-          <h2>{t('Active Projects')}</h2>
-          {activeProjects.length === 0 ? (
-            <div className="workhub-empty-block">
-              <div className="workhub-empty">{t('No active projects.')}</div>
-              <button
-                className="workhub-inline-action"
-                onClick={() => navigate('/projects')}
-              >
-                {t('Go to Projects')}
-              </button>
-            </div>
-          ) : (
-            <ul>
-              {activeProjects.slice(0, 3).map((project) => (
-                <li key={project.id}>
-                  <span>{project.name}</span>
-                  {project.phase && (
-                    <span className="workhub-pill workhub-pill-phase">{project.phase}</span>
-                  )}
-                  <span className="workhub-pill">{t(project.status || 'Active')}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <div className="workhub-card">
-          <h2>{t('Weekly Progress')}</h2>
-          <div className="workhub-progress">
-            <div className="workhub-progress-bar">
-              <span style={{ width: `${weeklyProgress}%` }} />
-            </div>
-            <div className="workhub-progress-meta">
-              <span>{t('Completed')}: {completedThisWeek.length}</span>
-              <span>{t('In Progress')}: {inProgressTasks.length}</span>
-              <span>{t('Pending')}: {tasksThisWeek.length - completedThisWeek.length}</span>
-              <span>{weeklyProgress}%</span>
-            </div>
-          </div>
-        </div>
       </section>
     </div>
   );

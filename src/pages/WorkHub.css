@@ -295,3 +295,83 @@
   color: var(--accent-cyan);
   font-size: 0.7rem;
 }
+
+/* ── Situation Report pills ─────────────────── */
+.workhub-sitrep {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+.workhub-sitrep-pill {
+  flex: 1 1 0;
+  min-width: 4.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+}
+.sitrep-value { font-size: 1.5rem; font-weight: 700; line-height: 1; }
+.sitrep-label { margin-top: 0.2rem; opacity: 0.8; text-align: center; }
+.sitrep-red    { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+.sitrep-amber  { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.sitrep-blue   { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.sitrep-green  { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+.sitrep-gray   { background: rgba(100, 100, 100, 0.1); color: var(--text-secondary, #888); }
+
+/* ── Action List ────────────────────────────── */
+.workhub-action-list ul { list-style: none; padding: 0; margin: 0; }
+.workhub-action-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.06));
+  flex-wrap: wrap;
+}
+.workhub-action-item:last-child { border-bottom: none; }
+.action-overdue { border-left: 3px solid #ef4444; padding-left: 0.5rem; }
+.action-today   { border-left: 3px solid #f59e0b; padding-left: 0.5rem; }
+.action-urgency { width: 1.4rem; text-align: center; flex-shrink: 0; }
+.action-title {
+  flex: 1 1 8rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.action-title:hover { text-decoration: underline; }
+.action-due { font-size: 0.75rem; opacity: 0.7; white-space: nowrap; }
+.action-due--overdue { color: #ef4444; opacity: 1; font-weight: 600; }
+.action-buttons { display: flex; gap: 0.35rem; flex-shrink: 0; }
+.action-btn {
+  width: 1.75rem; height: 1.75rem;
+  border-radius: 0.35rem;
+  border: 1px solid var(--border, rgba(255,255,255,0.12));
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.action-btn--done:hover  { background: rgba(34,197,94,0.2); }
+.action-btn--start:hover { background: rgba(59,130,246,0.2); }
+.workhub-see-all {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  opacity: 0.7;
+  cursor: pointer;
+  text-align: right;
+}
+.workhub-see-all:hover { opacity: 1; }
+
+/* ── Active Projects with task preview ─────── */
+.workhub-project-item { padding: 0.5rem 0; border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.06)); }
+.workhub-project-item:last-child { border-bottom: none; }
+.project-header-row { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.project-urgent-task { font-size: 0.78rem; opacity: 0.65; margin-top: 0.2rem; padding-left: 0.5rem; }
+.project-no-tasks { font-style: italic; }
