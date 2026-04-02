@@ -997,31 +997,37 @@ class PersonaEngine {
         throw new Error(`LLM request failed: ${response.status}`);
       }
 
-      if (useStreaming && response.body) {
+      if (useStreaming) {
+        if (!response.body) throw new Error('Streaming requested but response body is null');
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let fullText = '';
+        const onToken = options!.onToken!;
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const raw = decoder.decode(value, { stream: true });
-          for (const line of raw.split('\n')) {
-            const trimmed = line.trim();
-            if (!trimmed.startsWith('data: ')) continue;
-            const data = trimmed.slice(6);
-            if (data === '[DONE]') break;
-            try {
-              const json = JSON.parse(data);
-              const token: string = json?.choices?.[0]?.delta?.content ?? '';
-              if (token) {
-                fullText += token;
-                options!.onToken!(token);
+        try {
+          outer: while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const raw = decoder.decode(value, { stream: true });
+            for (const line of raw.split('\n')) {
+              const trimmed = line.trim();
+              if (!trimmed.startsWith('data: ')) continue;
+              const data = trimmed.slice(6);
+              if (data === '[DONE]') break outer;
+              try {
+                const json = JSON.parse(data);
+                const token: string = json?.choices?.[0]?.delta?.content ?? '';
+                if (token) {
+                  fullText += token;
+                  onToken(token);
+                }
+              } catch {
+                // malformed SSE chunk — skip
               }
-            } catch {
-              // malformed SSE chunk — skip
             }
           }
+        } finally {
+          reader.releaseLock();
         }
 
         if (!fullText) throw new Error('Empty streaming response');
