@@ -905,3 +905,12 @@
   border-radius: 3px;
   color: #a5f3fc;
 }
+
+/* ── Streaming cursor ───────────────────────── */
+.omnibar-stream-cursor {
+  display: inline-block;
+  animation: omnibar-blink 0.7s step-start infinite;
+}
+@keyframes omnibar-blink {
+  50% { opacity: 0; }
+}

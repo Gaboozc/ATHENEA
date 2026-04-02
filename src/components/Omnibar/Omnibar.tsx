@@ -152,6 +152,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const chatMessagesRef = useRef<ChatMessage[]>([]); /* FIX-6: ref para evitar stale closure en efecto de cierre */
   useEffect(() => { chatMessagesRef.current = chatMessages; }, [chatMessages]);
+  const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [selectedHub, setSelectedHub] = useState<'WorkHub' | 'PersonalHub' | 'FinanceHub'>(defaultHub);
   const [activeInsight, setActiveInsight] = useState<DynamicInsight | null>(null);
@@ -360,10 +361,37 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         content: m.text,
       }));
 
+    // Create agent placeholder bubble immediately
+    const agentBubbleId = `a_${Date.now()}`;
+    const agentPlaceholder = getAgentInfoFromPersona(null, selectedHub, userText);
+    const placeholderMsg: ChatMessage = {
+      id: agentBubbleId,
+      role: 'agent',
+      agentName: agentPlaceholder.name,
+      agentIcon: agentPlaceholder.icon,
+      text: '',
+      timestamp: Date.now(),
+    };
+    setChatMessages((prev) => [...prev, placeholderMsg]);
+    setStreamingMsgId(agentBubbleId);
+
+    // onToken: append each SSE token to the placeholder bubble
+    const onToken = (chunk: string) => {
+      setChatMessages((prev) =>
+        prev.map((m) =>
+          m.id === agentBubbleId ? { ...m, text: m.text + chunk } : m
+        )
+      );
+    };
+
     const result = await sendPrompt(userText, selectedHub, {
       autoExecute: true,
       conversationHistory: historyMessages,
+      onToken,
     });
+
+    setStreamingMsgId(null);
+
     const resolvedHub = (result.response?.reasoning.matchedSkill?.hub || selectedHub) as 'WorkHub' | 'PersonalHub' | 'FinanceHub';
     const agent = getAgentInfoFromPersona(
       result.response?.reasoning.responderPersona || null,
@@ -372,22 +400,24 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     );
 
     if (result.executed) {
-      // Action auto-executed → show confirmation bubble
+      // Skill auto-executed — replace placeholder with confirmation text
       const skillName = result.response?.reasoning.matchedSkill?.name || t('Action');
       const params = result.response?.reduxAction?.payload;
       const detail = params?.title || params?.text || params?.description || '';
-      const agentMsg: ChatMessage = {
-        id: `a_${Date.now()}`,
-        role: 'agent',
-        agentName: agent.name,
-        agentIcon: agent.icon,
-        text: language === 'es'
-          ? `✅ **${skillName}** ejecutado${detail ? `: _${detail}_` : ''}.`
-          : `✅ **${skillName}** executed${detail ? `: _${detail}_` : ''}.`,
-        timestamp: Date.now(),
-      };
-      setChatMessages((prev) => [...prev, agentMsg]);
-
+      setChatMessages((prev) =>
+        prev.map((m) =>
+          m.id === agentBubbleId
+            ? {
+                ...m,
+                agentName: agent.name,
+                agentIcon: agent.icon,
+                text: language === 'es'
+                  ? `✅ **${skillName}** ejecutado${detail ? `: _${detail}_` : ''}.`
+                  : `✅ **${skillName}** executed${detail ? `: _${detail}_` : ''}.`,
+              }
+            : m
+        )
+      );
       actionHistoryStore.recordAction({
         type: 'user-command',
         hub: selectedHub,
@@ -399,44 +429,47 @@ export const Omnibar: React.FC<OmnibarProps> = ({
       });
     } else if (result.needsConfirmation && result.response?.artifact) {
       const artifact = result.response.artifact;
-
       if (artifact.type === 'text') {
-        // Pure conversational response — show as agent chat bubble
-        const agentMsg: ChatMessage = {
-          id: `a_${Date.now()}`,
-          role: 'agent',
-          agentName: agent.name,
-          agentIcon: agent.icon,
-          text: artifact.props?.description || result.response?.userMessage || '',
-          timestamp: Date.now(),
-        };
-        setChatMessages((prev) => [...prev, agentMsg]);
-        // dismiss pending Canvas so no form shows
+        // Pure conversational response — text was already streamed, dismiss Canvas
+        setChatMessages((prev) =>
+          prev.map((m) =>
+            m.id === agentBubbleId
+              ? { ...m, agentName: agent.name, agentIcon: agent.icon }
+              : m
+          )
+        );
         cancelAction();
       } else {
-        // Action that needs form confirmation — show Canvas bubble
-        const agentMsg: ChatMessage = {
-          id: `a_${Date.now()}`,
-          role: 'agent',
-          agentName: agent.name,
-          agentIcon: agent.icon,
-          text: result.response?.userMessage || `${t('I need some details for')} **${result.response?.reasoning.matchedSkill?.name}**.`,
-          artifact,
-          timestamp: Date.now(),
-        };
-        setChatMessages((prev) => [...prev, agentMsg]);
+        // Action skill needing form — replace placeholder with artifact bubble
+        setChatMessages((prev) =>
+          prev.map((m) =>
+            m.id === agentBubbleId
+              ? {
+                  ...m,
+                  agentName: agent.name,
+                  agentIcon: agent.icon,
+                  text: result.response?.userMessage ||
+                    `${t('I need some details for')} **${result.response?.reasoning.matchedSkill?.name}**.`,
+                  artifact,
+                }
+              : m
+          )
+        );
       }
     } else if (!result.response?.success) {
       playErrorSound();
-      const agentMsg: ChatMessage = {
-        id: `a_${Date.now()}`,
-        role: 'agent',
-        agentName: agent.name,
-        agentIcon: agent.icon,
-        text: `⚠️ ${result.response?.userMessage || t('Did not understand that request.')}`,
-        timestamp: Date.now(),
-      };
-      setChatMessages((prev) => [...prev, agentMsg]);
+      setChatMessages((prev) =>
+        prev.map((m) =>
+          m.id === agentBubbleId
+            ? {
+                ...m,
+                agentName: agent.name,
+                agentIcon: agent.icon,
+                text: result.response?.userMessage || t('Something went wrong.'),
+              }
+            : m
+        )
+      );
     }
   };
 
@@ -1079,7 +1112,13 @@ export const Omnibar: React.FC<OmnibarProps> = ({
                   )}
                   <div
                     className="chat-bubble-text"
-                    dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.text || '') }}
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        renderMarkdown(msg.text || '') +
+                        (streamingMsgId === msg.id
+                          ? '<span class="omnibar-stream-cursor">▌</span>'
+                          : ''),
+                    }}
                   />
                   {/* OMNI-FIX-5 */}
                   {msg.artifact && (
