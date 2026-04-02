@@ -384,13 +384,27 @@ export const Omnibar: React.FC<OmnibarProps> = ({
       );
     };
 
-    const result = await sendPrompt(userText, selectedHub, {
-      autoExecute: true,
-      conversationHistory: historyMessages,
-      onToken,
-    });
-
-    setStreamingMsgId(null);
+    let result;
+    try {
+      result = await sendPrompt(userText, selectedHub, {
+        autoExecute: true,
+        conversationHistory: historyMessages,
+        onToken,
+      });
+    } catch (err) {
+      setStreamingMsgId(null);
+      setChatMessages((prev) =>
+        prev.map((m) =>
+          m.id === agentBubbleId
+            ? { ...m, text: language === 'es' ? 'Error al conectar con el agente.' : 'Failed to reach the agent.' }
+            : m
+        )
+      );
+      playErrorSound();
+      return;
+    } finally {
+      setStreamingMsgId(null);
+    }
 
     const resolvedHub = (result.response?.reasoning.matchedSkill?.hub || selectedHub) as 'WorkHub' | 'PersonalHub' | 'FinanceHub';
     const agent = getAgentInfoFromPersona(
@@ -1133,7 +1147,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
                   )}
                 </div>
               ))}
-              {isLoading && (
+              {isLoading && !streamingMsgId && (
                 <div className="chat-bubble chat-bubble--agent chat-bubble--typing">
                   <span className="chat-agent-icon">{agentInfo.icon /* OMNI-FIX-9 */}</span>
                   <span className="chat-typing-dots"><span/><span/><span/></span>
