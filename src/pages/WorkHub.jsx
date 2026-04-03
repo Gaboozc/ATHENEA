@@ -11,6 +11,8 @@ import './WorkHub.css';
 
 const openGatekeeper = () => window.dispatchEvent(new CustomEvent('athenea:gatekeeper:open'));
 
+const levelOrder = ['Critical', 'High Velocity', 'Steady Flow', 'Low Friction', 'Backlog'];
+
 export const WorkHub = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -34,8 +36,6 @@ export const WorkHub = () => {
     () => (tasks || []).filter((task) => task?.level === 'Critical'),
     [tasks]
   );
-
-  const levelOrder = ['Critical', 'High Velocity', 'Steady Flow', 'Low Friction', 'Backlog'];
 
   const completedTasks = useMemo(
     () => (tasks || []).filter((task) => task?.status === 'Completed'),
@@ -83,10 +83,11 @@ export const WorkHub = () => {
   }, []);
 
   const doneThisWeek = useMemo(
-    () => (tasks || []).filter((t) =>
-      (t?.status === 'Completed' || t?.completed === true) &&
-      t?.updatedAt && new Date(t.updatedAt) >= startOfWeekForDone
-    ),
+    () => (tasks || []).filter((t) => {
+      if (!(t?.status === 'Completed' || t?.completed === true)) return false;
+      const dateToCheck = t?.updatedAt || t?.createdAt;
+      return dateToCheck && new Date(dateToCheck) >= startOfWeekForDone;
+    }),
     [tasks, startOfWeekForDone]
   );
 
@@ -219,12 +220,13 @@ export const WorkHub = () => {
                     <span className="action-urgency">
                       {isOverdue ? '⚠️' : isToday ? '🕐' : ''}
                     </span>
-                    <span
+                    <button
                       className="action-title"
                       onClick={() => task.projectId ? navigate(`/projects/${task.projectId}`) : navigate('/my-tasks')}
+                      type="button"
                     >
                       {task.title}
-                    </span>
+                    </button>
                     <span className={`workhub-pill level-${(task.level || 'standard').toLowerCase().replace(/\s+/g, '-')}`}>
                       {task.level || 'Standard'}
                     </span>
@@ -251,7 +253,7 @@ export const WorkHub = () => {
                 );
               })}
             </ul>
-            <a className="workhub-see-all" onClick={() => navigate('/my-tasks')}>{t('See all')} →</a>
+            <a className="workhub-see-all" href="/my-tasks" onClick={(e) => { e.preventDefault(); navigate('/my-tasks'); }}>{t('See all')} →</a>
           </>
         )}
       </section>
