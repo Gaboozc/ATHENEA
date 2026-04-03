@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useTasks } from '../context/TasksContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
@@ -13,11 +13,10 @@ const openGatekeeper = () => window.dispatchEvent(new CustomEvent('athenea:gatek
 
 export const WorkHub = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const { t } = useLanguage();
   const { projects } = useSelector((state) => state.projects);
   const lastVerdict = useSelector((state) => state.aiMemory?.lastVerdict || null); /* W-FEAT-1 */
-  const { tasks } = useTasks();
+  const { tasks, updateTask: updateTaskCtx } = useTasks();
   const [isReady, setIsReady] = useState(false);
   useEffect(() => { setIsReady(true); }, []);
 
@@ -235,7 +234,7 @@ export const WorkHub = () => {
                         <button
                           className="action-btn action-btn--start"
                           title={t('Start')}
-                          onClick={() => dispatch({ type: 'tasks/updateTask', payload: { id: task.id, status: 'In Progress' } })}
+                          onClick={() => updateTaskCtx(task.id, { status: 'In Progress' })}
                         >
                           ▶
                         </button>
@@ -243,7 +242,7 @@ export const WorkHub = () => {
                       <button
                         className="action-btn action-btn--done"
                         title={t('Complete')}
-                        onClick={() => dispatch({ type: 'tasks/updateTask', payload: { id: task.id, status: 'Completed', completed: true } })}
+                        onClick={() => updateTaskCtx(task.id, { status: 'Completed', completed: true })}
                       >
                         ✓
                       </button>
