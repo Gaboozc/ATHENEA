@@ -10,6 +10,8 @@ interface AppShellProps {
 export function AppShell({ highInsightsCount = 0 }: AppShellProps) {
   // Toggle body class so CSS adds correct bottom padding on mobile
   useEffect(() => {
+    // 768px matches the CSS breakpoint in AppShell.css and index.css (body.has-bottom-tab)
+    // If you change this value, update those CSS files too.
     const update = () => {
       if (window.innerWidth <= 768) document.body.classList.add('has-bottom-tab');
       else document.body.classList.remove('has-bottom-tab');

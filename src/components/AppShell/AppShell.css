@@ -3,6 +3,7 @@
 .app-shell-bottom-nav { display: none; }
 
 /* Mobile: hide top navbar, show bottom tab bar */
+/* 768px — must match the JS breakpoint in AppShell.tsx */
 @media (max-width: 768px) {
   .app-shell-top-nav  { display: none; }
   .app-shell-bottom-nav { display: flex; }
