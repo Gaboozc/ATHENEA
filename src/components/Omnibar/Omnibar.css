@@ -1,41 +1,13 @@
 ﻿/**
- * ATHENEA Omnibar - Premium Design System
- * 
+ * ATHENEA Omnibar - Glass Morphism Design System
+ *
  * Modern, sophisticated command palette with:
  * - Glassmorphism effects
- * - Premium color system (purple/blue gradients)
+ * - Unified cyan/gold design token system
  * - Smooth micro-interactions
  * - Contextual hub indicators
  * - Real-time voice feedback
  */
-
-:root {
-  --athenea-primary: #667eea;
-  --athenea-primary-dark: #5568d3;
-  --athenea-primary-light: #7c8ff5;
-  --athenea-secondary: #8b5cf6;
-  --athenea-accent: #ec4899;
-  
-  --hub-work: var(--color-info);
-  --hub-personal: #ec4899;
-  --hub-finance: #10b981;
-  
-  --bg-primary: #0f0f23;
-  --bg-secondary: #1a1a35;
-  --bg-tertiary: #252547;
-  
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-tertiary: #94a3b8;
-  
-  --border-color: #334155;
-  --border-light: #1e293b;
-  
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-}
 
 /* ============================================================================
    OVERLAY
@@ -76,16 +48,12 @@
 .omnibar-container {
   width: 100%;
   max-width: 700px;
-  background:
-    radial-gradient(circle at top right, rgba(124, 143, 245, 0.25), transparent 42%),
-    radial-gradient(circle at bottom left, rgba(139, 92, 246, 0.2), transparent 38%),
-    linear-gradient(135deg, #0f0f23 0%, #1a1a35 100%);
-  border-radius: 16px;
-  box-shadow: 
-    0 30px 60px -14px rgba(102, 126, 234, 0.5),
-    0 0 0 1px rgba(124, 143, 245, 0.3),
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  box-shadow:
+    0 30px 60px -14px rgba(0, 0, 0, 0.5),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(124, 143, 245, 0.3);
+  border: 1px solid var(--border-subtle);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -105,10 +73,10 @@
 }
 
 .omnibar-top-strip {
-  height: 6px;
+  height: 4px;
   width: 100%;
-  background: linear-gradient(90deg, var(--color-info) 0%, #667eea 35%, #8b5cf6 70%, #ec4899 100%);
-  box-shadow: 0 6px 18px rgba(102, 126, 234, 0.35);
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-gold));
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 }
 
 /* ============================================================================
@@ -120,8 +88,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  background: linear-gradient(135deg, rgba(26, 26, 53, 0.8) 0%, rgba(15, 15, 35, 0.9) 100%);
-  border-bottom: 1px solid rgba(124, 143, 245, 0.2);
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-subtle);
   position: relative;
 }
 
@@ -132,7 +100,7 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+  background: linear-gradient(90deg, transparent, var(--border-default), transparent);
 }
 
 .omnibar-title {
@@ -141,7 +109,7 @@
   gap: 10px;
   font-size: 13px;
   font-weight: 700;
-  color: #f1f5f9;
+  color: var(--text-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -153,9 +121,9 @@
   margin-left: 6px;
   padding: 2px 8px;
   border-radius: 999px;
-  border: 1px solid rgba(124, 143, 245, 0.5);
-  background: rgba(124, 143, 245, 0.15);
-  color: #a5b4fc;
+  border: 1px solid var(--accent-cyan);
+  background: var(--accent-cyan-dim);
+  color: var(--accent-cyan);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.3px;
@@ -178,19 +146,19 @@
 
 .omnibar-shortcut {
   font-size: 10px;
-  color: var(--text-tertiary);
-  background: rgba(37, 37, 71, 0.6);
-  border: 1px solid rgba(124, 143, 245, 0.25);
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
   padding: 4px 10px;
-  border-radius: 6px;
-  font-family: 'Fira Mono', 'Monaco', monospace;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) ease;
 }
 
 .omnibar-shortcut:hover {
-  background: rgba(124, 143, 245, 0.2);
-  color: var(--text-secondary);
+  background: var(--accent-cyan-dim);
+  color: var(--accent-cyan);
 }
 
 .omnibar-close-btn {
@@ -218,67 +186,57 @@
   display: flex;
   gap: 8px;
   padding: 12px 16px;
-  background: linear-gradient(180deg, rgba(26, 26, 53, 0.6) 0%, rgba(15, 15, 35, 0.8) 100%);
-  border-bottom: 1px solid rgba(124, 143, 245, 0.15);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .omnibar-tab {
   flex: 1;
   padding: 10px 12px;
   border: 1px solid transparent;
-  background: rgba(37, 37, 71, 0.3);
-  border-radius: 10px;
+  background: transparent;
+  border-radius: var(--radius-md);
   font-size: 12px;
   font-weight: 600;
-  text-transform: none;
-  color: var(--text-tertiary);
+  color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--duration-fast) ease;
   position: relative;
   overflow: hidden;
 }
 
-.omnibar-tab::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: var(--athenea-primary);
-  opacity: 0;
-  z-index: -1;
-  transition: left 0.3s ease;
-  border-radius: 10px;
-}
 
 .omnibar-tab:hover:not(.active) {
-  color: #a5b4fc;
-  background: rgba(124, 143, 245, 0.15);
-  border: 1px solid rgba(124, 143, 245, 0.3);
+  color: var(--text-secondary);
+  background: var(--accent-cyan-dim);
 }
 
 .omnibar-tab.active {
-  color: white;
-  background: linear-gradient(135deg, var(--athenea-primary) 0%, var(--athenea-primary-light) 100%);
-  box-shadow: 0 8px 18px rgba(102, 126, 234, 0.36);
-  border-color: transparent;
+  color: var(--accent-cyan);
+  background: var(--accent-cyan-dim);
+  border-color: var(--accent-cyan);
 }
 
 /* Tab-specific colors */
+/* Work tab */
 .omnibar-tab:nth-child(1).active {
-  background: linear-gradient(135deg, var(--hub-work) 0%, #60a5fa 100%);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  background: var(--accent-cyan-dim);
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
 }
 
+/* Personal tab */
 .omnibar-tab:nth-child(2).active {
-  background: linear-gradient(135deg, var(--hub-personal) 0%, #f472b6 100%);
-  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+  background: rgba(244, 63, 94, 0.12);
+  color: #f43f5e;
+  border-color: #f43f5e;
 }
 
+/* Finance tab */
 .omnibar-tab:nth-child(3).active {
-  background: linear-gradient(135deg, var(--hub-finance) 0%, #34d399 100%);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  background: var(--accent-gold-dim);
+  color: var(--accent-gold);
+  border-color: var(--accent-gold);
 }
 
 /* ============================================================================
@@ -292,7 +250,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: var(--bg-primary);
+  background: var(--bg-base);
 }
 
 .omnibar-content::-webkit-scrollbar {
@@ -309,7 +267,7 @@
 }
 
 .omnibar-content::-webkit-scrollbar-thumb:hover {
-  background: var(--text-tertiary);
+  background: var(--text-muted);
 }
 
 /* ============================================================================
@@ -322,17 +280,17 @@
   gap: 10px;
   position: relative;
   margin-bottom: 8px;
-  background: rgba(26, 26, 53, 0.6);
+  background: var(--bg-card);
   padding: 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(124, 143, 245, 0.25);
-  transition: all 0.3s ease;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  transition: all var(--duration-normal) ease;
 }
 
 .omnibar-form:focus-within {
-  background: rgba(26, 26, 53, 0.8);
-  border-color: var(--athenea-primary);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25), 0 0 20px rgba(124, 143, 245, 0.15);
+  background: var(--bg-surface);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px var(--accent-cyan-dim);
 }
 
 .omnibar-input {
@@ -346,7 +304,7 @@
   font-family: inherit;
   color: var(--text-primary);
   -webkit-text-fill-color: var(--text-primary);
-  caret-color: var(--athenea-primary-light);
+  caret-color: var(--accent-cyan);
   outline: none;
   transition: all 0.2s ease;
 }
@@ -371,7 +329,7 @@
   height: 44px;
   border: none;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--athenea-primary) 0%, var(--athenea-secondary) 100%);
+  background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-gold) 100%);
   color: white;
   font-size: 20px;
   font-weight: 700;
@@ -382,7 +340,7 @@
   justify-content: center;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.35);
+  box-shadow: 0 6px 16px var(--accent-cyan-dim);
 }
 
 .omnibar-submit-btn::before {
@@ -441,8 +399,8 @@
 }
 
 .omnibar-voice-btn:hover:not(:disabled) {
-  background: rgba(102, 126, 234, 0.15);
-  color: var(--athenea-primary, #667eea);
+  background: var(--accent-cyan-dim);
+  color: var(--accent-cyan);
   transform: scale(1.05);
 }
 
@@ -527,9 +485,9 @@
 }
 
 .omnibar-shortcut-btn {
-  border: 1px solid rgba(124, 143, 245, 0.45);
-  background: linear-gradient(145deg, rgba(34, 45, 92, 0.9), rgba(24, 33, 70, 0.92));
-  color: #e7efff;
+  border: 1px solid var(--accent-cyan);
+  background: var(--accent-cyan-dim);
+  color: var(--text-secondary);
   border-radius: 999px;
   padding: 8px 14px;
   font-size: 12px;
@@ -670,10 +628,10 @@
 
 .omnibar-footer {
   padding: 10px 16px;
-  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  background: var(--bg-surface);
   border-top: 1px solid var(--border-color);
   font-size: 11px;
-  color: var(--text-tertiary);
+  color: var(--text-muted);
   display: flex; /* FIX-9: layout para agente + shortcuts */
   justify-content: space-between;
   align-items: center;
@@ -690,7 +648,7 @@
   align-items: center;
   gap: 10px;
   font-size: 10px;
-  color: var(--text-tertiary);
+  color: var(--text-muted);
 }
 
 .footer-shortcuts kbd {
@@ -780,7 +738,7 @@
   width: 4px;
 }
 .omnibar-chat::-webkit-scrollbar-thumb {
-  background: rgba(124, 143, 245, 0.35);
+  background: var(--accent-cyan-dim);
   border-radius: 4px;
 }
 
@@ -809,9 +767,9 @@
 /* Agent bubble — left aligned */
 .chat-bubble--agent {
   align-self: flex-start;
-  background: linear-gradient(135deg, #1a1f3a 0%, #222644 100%);
-  border: 1px solid rgba(124, 143, 245, 0.3);
-  color: #dce8ff;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
   border-bottom-left-radius: 4px;
 }
 
@@ -913,4 +871,41 @@
 }
 @keyframes omnibar-blink {
   50% { opacity: 0; }
+}
+
+/* ── Mobile: bottom sheet ───────────────────────────────── */
+@media (max-width: 768px) {
+  .omnibar-overlay {
+    align-items: flex-end;
+  }
+
+  .omnibar-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border-bottom: none;
+    animation: omnibar-slide-up var(--duration-normal) var(--ease-spring) forwards;
+  }
+
+  .omnibar-top-strip {
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  }
+
+  @keyframes omnibar-slide-up {
+    from { transform: translateY(100%); opacity: 0.8; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+}
+
+/* ── Desktop: centered modal ────────────────────────────── */
+@media (min-width: 769px) {
+  .omnibar-modal {
+    animation: omnibar-scale-in var(--duration-normal) var(--ease-spring) forwards;
+  }
+
+  @keyframes omnibar-scale-in {
+    from { transform: scale(0.95); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+  }
 }

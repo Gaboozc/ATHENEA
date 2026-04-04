@@ -1126,6 +1126,9 @@ export const Omnibar: React.FC<OmnibarProps> = ({
                   )}
                   <div
                     className="chat-bubble-text"
+                    role="status"
+                    aria-live="polite"
+                    aria-atomic="false"
                     dangerouslySetInnerHTML={{
                       __html:
                         renderMarkdown(msg.text || '') +
