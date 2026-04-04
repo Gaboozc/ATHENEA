@@ -2,37 +2,40 @@ import { Link, useLocation } from "react-router-dom";
 import { useSelector } from 'react-redux';
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useLanguage } from '../context/LanguageContext';
-import './Navbar.css';
+import { useLanguage } from '../../context/LanguageContext';
+import './TopNavbar.css';
 
-export const Navbar = () => {
+export function TopNavbar() {
 	const { t, toggleLanguage, language } = useLanguage();
 	const location = useLocation();
 	const currentPath = location.pathname.replace(/\/+$/, '') || '/';
-	const { notes } = useSelector((state) => state.notes);
-	const { todos } = useSelector((state) => state.todos);
-	const { payments } = useSelector((state) => state.payments);
-	const [openDropdown, setOpenDropdown] = useState(null);
+	const { notes } = useSelector((state: any) => state.notes);
+	const { todos } = useSelector((state: any) => state.todos);
+	const { payments } = useSelector((state: any) => state.payments);
+	const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-	const [expandedMobileGroup, setExpandedMobileGroup] = useState(null);
+	const [expandedMobileGroup, setExpandedMobileGroup] = useState<string | null>(null);
 	const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
-	const dropdownRefs = useRef({});
+	const dropdownRefs = useRef<Record<string, HTMLElement | null>>({});
 
 	useEffect(() => {
 		if (openDropdown && dropdownRefs.current[openDropdown]) {
-			const buttonEl = dropdownRefs.current[openDropdown].querySelector('.navbar-dropdown-summary');
-			const rect = buttonEl.getBoundingClientRect();
-			setDropdownPosition({
-				top: rect.bottom + 8,
-				left: rect.left,
-			});
+			const buttonEl = dropdownRefs.current[openDropdown]!.querySelector('.navbar-dropdown-summary');
+			if (buttonEl) {
+				const rect = buttonEl.getBoundingClientRect();
+				setDropdownPosition({
+					top: rect.bottom + 8,
+					left: rect.left,
+				});
+			}
 		}
 	}, [openDropdown]);
 
 	useEffect(() => {
-		const handleClickOutside = (e) => {
-			const isDropdownButton = e.target.closest('.navbar-dropdown-summary');
-			const isDropdownMenu = e.target.closest('.navbar-dropdown-menu');
+		const handleClickOutside = (e: MouseEvent) => {
+			const target = e.target as Element;
+			const isDropdownButton = target.closest('.navbar-dropdown-summary');
+			const isDropdownMenu = target.closest('.navbar-dropdown-menu');
 			if (!isDropdownButton && !isDropdownMenu) {
 				setOpenDropdown(null);
 			}
@@ -42,17 +45,17 @@ export const Navbar = () => {
 			return () => document.removeEventListener('click', handleClickOutside);
 		}
 	}, [openDropdown]);
-	
+
 	const reminderCount = (() => {
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
-		const gather = (items, dateField) => items.filter((item) => {
+		const gather = (items: any[], dateField: string) => items.filter((item) => {
 			const rawDate = item[dateField];
 			if (!rawDate) return false;
 			const dueDate = new Date(rawDate);
 			if (Number.isNaN(dueDate.getTime())) return false;
 			dueDate.setHours(0, 0, 0, 0);
-			const diffDays = Math.ceil((dueDate - today) / 86400000);
+			const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / 86400000);
 			return diffDays <= 7;
 		});
 		return (
@@ -61,8 +64,8 @@ export const Navbar = () => {
 			gather(payments, 'nextDueDate').length
 		);
 	})();
-	
-	const toggleDropdown = (label) => {
+
+	const toggleDropdown = (label: string) => {
 		setOpenDropdown(openDropdown === label ? null : label);
 	};
 
@@ -139,7 +142,7 @@ export const Navbar = () => {
 					<div className="navbar-main">
 						<div className="navbar-actions">
 							{dropdowns.map((group) => (
-								<div key={group.label} className="navbar-dropdown" ref={(el) => dropdownRefs.current[group.label] = el}>
+								<div key={group.label} className="navbar-dropdown" ref={(el) => { dropdownRefs.current[group.label] = el; }}>
 									<button
 										className="navbar-dropdown-summary"
 										onClick={() => toggleDropdown(group.label)}
@@ -347,5 +350,4 @@ export const Navbar = () => {
 			)}
 		</>
 	);
-};
-
+}

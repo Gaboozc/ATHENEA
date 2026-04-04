@@ -1,0 +1,9 @@
+/* Desktop: show top navbar, hide bottom tab bar */
+.app-shell-top-nav  { display: block; }
+.app-shell-bottom-nav { display: none; }
+
+/* Mobile: hide top navbar, show bottom tab bar */
+@media (max-width: 768px) {
+  .app-shell-top-nav  { display: none; }
+  .app-shell-bottom-nav { display: flex; }
+}
