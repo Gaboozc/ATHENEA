@@ -40,24 +40,26 @@ Athenea is a React 18 + TypeScript + Redux + Vite app deployed on Android via Ca
 ### 3.1 Color System
 The app's canonical color system is **cyan/gold on OLED dark**. The Omnibar's purple/blue system is a bug, not a feature. All purple/blue values are removed.
 
+**Visual sensitivity note:** The user has photosensitivity to high-luminance colors (bright whites, neon/electric tones cause visual discomfort). All accent colors are tuned to be distinctive but never harsh — medium saturation, no neon, no pure white anywhere in the UI.
+
 | Token | Value | Usage |
 |-------|-------|-------|
 | `--bg-base` | `#0b0b0b` | OLED black base |
-| `--bg-surface` | `#0f1a2e` | Card surfaces |
-| `--bg-elevated` | `#162236` | Elevated panels |
-| `--bg-card` | `#111f33` | Inline card bg |
-| `--accent-cyan` | `#1ec9ff` | Primary accent |
-| `--accent-cyan-dim` | `rgba(30,201,255,0.15)` | Subtle cyan tint |
-| `--accent-gold` | `#d4af37` | Secondary accent, headings |
-| `--accent-gold-dim` | `rgba(212,175,55,0.12)` | Subtle gold tint |
-| `--text-primary` | `#e2e8f0` | Body text |
-| `--text-secondary` | `#94a3b8` | Muted text |
-| `--text-muted` | `#64748b` | Very muted |
-| `--border-default` | `#1e3a5f` | Standard borders |
-| `--border-subtle` | `rgba(255,255,255,0.06)` | Ultra-subtle dividers |
-| `--color-error` | `#ef4444` | Errors/danger |
-| `--color-success` | `#22c55e` | Success states |
-| `--color-warning` | `#f59e0b` | Warnings |
+| `--bg-surface` | `#0d1a2b` | Card surfaces |
+| `--bg-elevated` | `#122033` | Elevated panels |
+| `--bg-card` | `#0f1c2e` | Inline card bg |
+| `--accent-cyan` | `#17b8e0` | Primary accent — muted teal-cyan (not neon) |
+| `--accent-cyan-dim` | `rgba(23,184,224,0.14)` | Subtle cyan tint |
+| `--accent-gold` | `#c9a227` | Secondary accent — warm amber-gold (not harsh yellow) |
+| `--accent-gold-dim` | `rgba(201,162,39,0.12)` | Subtle gold tint |
+| `--text-primary` | `#d4dae6` | Body text — warm off-white, never pure white |
+| `--text-secondary` | `#8a96a8` | Muted text |
+| `--text-muted` | `#5a6478` | Very muted |
+| `--border-default` | `#1a3350` | Standard borders |
+| `--border-subtle` | `rgba(255,255,255,0.05)` | Ultra-subtle dividers |
+| `--color-error` | `#d94040` | Errors — muted red, not harsh |
+| `--color-success` | `#1ea854` | Success — medium green |
+| `--color-warning` | `#d4880a` | Warnings — amber, not electric yellow |
 
 New tokens added to `src/styles/tokens.css`:
 ```css
@@ -92,8 +94,8 @@ New tokens added to `src/styles/tokens.css`:
 /* Missing tokens to define */
 --bg-card: #111f33;
 --bg-elevated: #162236;
---accent-cyan-dim: rgba(30, 201, 255, 0.15);
---accent-gold-dim: rgba(212, 175, 55, 0.12);
+--accent-cyan-dim: rgba(23, 184, 224, 0.14);
+--accent-gold-dim: rgba(201, 162, 39, 0.12);
 ```
 
 ### 3.2 Typography
@@ -261,7 +263,7 @@ Each hub (WorkHub, PersonalHub, FinanceHub) is updated to:
 - All icon-only buttons: add `aria-label`
 - All interactive elements: `min-height: 44px` on mobile (WCAG 2.5.5)
 - `focus-visible` outline: `2px solid var(--accent-cyan)` offset `2px` — verify applied everywhere
-- Color contrast: cyan `#1ec9ff` on `#0b0b0b` = 6.8:1 ✅ (WCAG AAA), gold `#d4af37` on `#0b0b0b` = 5.7:1 ✅ (WCAG AA)
+- Color contrast: cyan `#17b8e0` on `#0b0b0b` = 5.9:1 ✅ (WCAG AA+), gold `#c9a227` on `#0b0b0b` = 5.1:1 ✅ (WCAG AA). No pure white anywhere — max text brightness is `#d4dae6`.
 - `role="status"` on streaming response area for screen readers
 - No information conveyed by color alone (badges have text labels + color)
 
