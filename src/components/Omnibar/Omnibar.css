@@ -363,12 +363,12 @@
 
 .omnibar-submit-btn:hover:not(:disabled) {
   transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 10px 24px rgba(102, 126, 234, 0.45);
+  box-shadow: 0 10px 24px var(--accent-cyan-dim);
 }
 
 .omnibar-submit-btn:active:not(:disabled) {
   transform: translateY(-1px) scale(1.02);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px var(--accent-cyan-dim);
 }
 
 .omnibar-submit-btn:disabled {
@@ -521,7 +521,7 @@
   gap: 8px;
   min-height: 138px;
   padding: 14px 12px;
-  background: linear-gradient(160deg, rgba(20, 28, 58, 0.9) 0%, rgba(16, 22, 46, 0.95) 100%);
+  background: var(--bg-elevated);
   border: 1px solid rgba(99, 123, 201, 0.35);
   border-radius: 12px;
   cursor: pointer;
@@ -540,13 +540,13 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, transparent 0%, rgba(102, 126, 234, 0.1) 50%, transparent 100%);
+  background: linear-gradient(135deg, transparent 0%, var(--accent-cyan-dim) 50%, transparent 100%);
   transition: left 0.5s ease;
 }
 
 .skill-suggestion:hover {
   border-color: rgba(130, 154, 235, 0.7);
-  background: linear-gradient(135deg, rgba(24, 36, 72, 0.95) 0%, rgba(31, 46, 86, 0.95) 100%);
+  background: var(--bg-elevated);
   transform: translateY(-4px);
   box-shadow: 0 10px 24px rgba(56, 84, 170, 0.32);
 }
@@ -586,10 +586,10 @@
 }
 
 .omnibar-inline-onboarding-hint {
-  border: 1px solid rgba(102, 126, 234, 0.38);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   padding: 10px 12px;
-  background: linear-gradient(145deg, rgba(22, 30, 62, 0.92), rgba(17, 24, 50, 0.94));
+  background: var(--bg-surface);
 }
 
 .onboarding-hint-title {
@@ -759,7 +759,7 @@
 /* User bubble — right aligned */
 .chat-bubble--user {
   align-self: flex-end;
-  background: linear-gradient(135deg, #3a5bd9 0%, #4c6ef5 100%);
+  background: var(--accent-cyan-dim);
   color: #fff;
   border-bottom-right-radius: 4px;
 }
