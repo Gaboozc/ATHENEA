@@ -1,0 +1,23 @@
+.ui-card {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  background: var(--bg-surface);
+}
+
+.ui-card--elevated {
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-card);
+}
+
+.ui-card--inset {
+  background: var(--bg-card);
+}
+
+.ui-card__title {
+  margin: 0 0 0.75rem;
+  color: var(--accent-gold);
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}

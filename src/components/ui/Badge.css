@@ -1,0 +1,20 @@
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+.ui-badge--cyan    { color: var(--accent-cyan);   border-color: var(--accent-cyan); }
+.ui-badge--gold    { color: var(--accent-gold);   border-color: var(--accent-gold); }
+.ui-badge--red     { color: var(--color-error);   border-color: var(--color-error); }
+.ui-badge--green   { color: var(--color-success); border-color: var(--color-success); }
+.ui-badge--amber   { color: var(--color-warning); border-color: var(--color-warning); }
+.ui-badge--gray    { color: var(--text-muted);    border-color: var(--text-muted); }
+.ui-badge--orange  { color: #e07820;              border-color: #e07820; }
