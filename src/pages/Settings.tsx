@@ -13,6 +13,10 @@ import type { VoiceLanguage } from "../store/slices/userSettingsSlice";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { useTasks } from "../context/TasksContext";
 import { getPlanLimits } from "../utils/planLimits";
+import { useDataExport } from "../hooks/useDataExport";
+import { cacheManager } from "../utils/cacheManager";
+import { IdentityPanel } from "../components/settings/IdentityPanel";
+import { getNeuralKeySync, setNeuralKey, getNeuralProvider, setNeuralProvider } from "../modules/intelligence/neuralAccess";
 
 const INVITES_STORAGE_KEY = "athenea.invites";
 const ACCESS_DENIED_KEY = "athenea.accessDenied";
@@ -90,6 +94,68 @@ export const Settings = () => {
   const markSaved = (key: string) => {
     setSavedField(key);
     setTimeout(() => setSavedField(null), 1500);
+  };
+
+  // AI / Neural settings
+  const [aiProvider, setAiProvider] = useState(() => getNeuralProvider());
+  const [aiKey, setAiKey] = useState(() => getNeuralKeySync());
+  const [aiKeyVisible, setAiKeyVisible] = useState(false);
+  const [aiTestStatus, setAiTestStatus] = useState<null | 'testing' | 'ok' | 'error'>(null);
+  const [aiMessage, setAiMessage] = useState<{ text: string; type: string } | null>(null);
+  const showAiMessage = (text: string, type = 'success') => {
+    setAiMessage({ text, type });
+    setTimeout(() => setAiMessage(null), 4000);
+  };
+  const handleSaveAI = async () => {
+    setNeuralProvider(aiProvider);
+    await setNeuralKey(aiKey);
+    showAiMessage(t('AI configuration saved'));
+  };
+  const handleTestAI = async () => {
+    const key = aiKey.trim();
+    if (!key) { showAiMessage(t('Enter your API key first'), 'error'); return; }
+    setAiTestStatus('testing');
+    try {
+      const url = aiProvider === 'groq'
+        ? 'https://api.groq.com/openai/v1/models'
+        : 'https://api.openai.com/v1/models';
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${key}` } });
+      setAiTestStatus(res.ok ? 'ok' : 'error');
+      showAiMessage(res.ok ? t('Connection successful — AI active') : `✗ Error ${res.status}`, res.ok ? 'success' : 'error');
+    } catch {
+      setAiTestStatus('error');
+      showAiMessage(t('Could not connect to AI provider'), 'error');
+    }
+  };
+
+  // Data export/import
+  const { exportToJSON, exportToPDF, importFromJSON } = useDataExport();
+  const [importText, setImportText] = useState('');
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const handleExportJSON = () => exportToJSON();
+  const handleExportPDF = () => exportToPDF();
+  const handleImport = () => {
+    if (!importText.trim()) return;
+    const result = importFromJSON(importText);
+    if (result.success) {
+      const SLICES = ['auth', 'projects', 'organizations', 'notes', 'calendar',
+        'todos', 'payments', 'routines', 'budget', 'collaborators', 'workOrders',
+        'stats', 'tasks', 'goals'];
+      const existing = JSON.parse(localStorage.getItem('persist:athenea-root') || '{}');
+      SLICES.forEach((key) => {
+        if ((result.data as any)[key] !== undefined) existing[key] = JSON.stringify((result.data as any)[key]);
+      });
+      localStorage.setItem('persist:athenea-root', JSON.stringify(existing));
+      setTimeout(() => window.location.reload(), 1200);
+    }
+  };
+  const handleClearAll = () => {
+    if (window.confirm('⚠️ This will DELETE ALL data permanently. Are you sure?')) {
+      if (window.confirm('Last chance — this CANNOT be undone. Continue?')) {
+        cacheManager.clearAllData();
+        setTimeout(() => window.location.reload(), 1500);
+      }
+    }
   };
 
   useEffect(() => {
@@ -414,6 +480,98 @@ export const Settings = () => {
           </div>
         </section>
       )}
+
+      {/* ── Identity ─────────────────────────────────────────────────────── */}
+      <section className="settings-card">
+        <IdentityPanel />
+      </section>
+
+      {/* ── AI / Neural ──────────────────────────────────────────────────── */}
+      <section className="settings-card">
+        <h2>🤖 {t("Artificial Intelligence")}</h2>
+        <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary, #9aa3ad)', marginBottom: '1rem' }}>
+          {t("Configure your API key to activate Cortana, Jarvis and SHODAN with real AI.")}
+        </p>
+        {aiMessage && (
+          <div className={`settings-message ${aiMessage.type}`} style={{ marginBottom: 12 }}>
+            {aiMessage.text}
+          </div>
+        )}
+        <div style={{ display: 'grid', gap: '0.75rem', maxWidth: 480 }}>
+          <label style={{ display: 'grid', gap: 4 }}>
+            <span>{t("Provider")}</span>
+            <select className="settings-action" value={aiProvider} onChange={(e) => setAiProvider(e.target.value)}>
+              <option value="openai">OpenAI (GPT-4o-mini)</option>
+              <option value="groq">Groq (Llama 3.1 — free)</option>
+            </select>
+          </label>
+          <label style={{ display: 'grid', gap: 4 }}>
+            <span>API Key</span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type={aiKeyVisible ? 'text' : 'password'}
+                className="settings-action"
+                value={aiKey}
+                onChange={(e) => setAiKey(e.target.value)}
+                placeholder={aiProvider === 'groq' ? 'gsk_...' : 'sk-...'}
+                style={{ flex: 1 }}
+              />
+              <button type="button" className="settings-action" onClick={() => setAiKeyVisible((v) => !v)}>
+                {aiKeyVisible ? '🙈' : '👁'}
+              </button>
+            </div>
+          </label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button type="button" className="settings-action" onClick={handleSaveAI}>{t("Save")}</button>
+            <button type="button" className="settings-action" onClick={handleTestAI} disabled={aiTestStatus === 'testing'}>
+              {aiTestStatus === 'testing' ? `⏳ ${t("Testing…")}` :
+               aiTestStatus === 'ok'      ? `✓ ${t("Connected")}` :
+               aiTestStatus === 'error'   ? `✗ ${t("Retry")}` :
+               t("Test connection")}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Data Backup & Restore ─────────────────────────────────────────── */}
+      <section className="settings-card">
+        <h2 style={{ marginBottom: '0.5rem' }}>
+          <button
+            type="button"
+            className="settings-action"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: 0 }}
+            onClick={() => setAdvancedOpen((v) => !v)}
+          >
+            💾 {t("Backup & Restore")} {advancedOpen ? '−' : '+'}
+          </button>
+        </h2>
+        {advancedOpen && (
+          <>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+              <button type="button" className="settings-action" onClick={handleExportPDF}>📄 {t("Export PDF")}</button>
+              <button type="button" className="settings-action" onClick={handleExportJSON}>💾 {t("Export JSON")}</button>
+            </div>
+            <textarea
+              style={{ width: '100%', minHeight: 80, fontFamily: 'monospace', fontSize: 12 }}
+              value={importText}
+              onChange={(e) => setImportText(e.target.value)}
+              placeholder={t("Paste your backup JSON here…")}
+            />
+            <button type="button" className="settings-action" onClick={handleImport} disabled={!importText.trim()}
+              style={{ marginTop: 8 }}>
+              {t("Import & Restore")}
+            </button>
+            <div style={{ marginTop: 16, borderTop: '1px solid var(--color-border, #2a2f3a)', paddingTop: 12 }}>
+              <button type="button" className="settings-action" style={{ background: '#7f1d1d', color: '#fca5a5' }}
+                onClick={handleClearAll}>
+                🔥 {t("Clear All Data")}
+              </button>
+            </div>
+          </>
+        )}
+      </section>
     </div>
   );
 };
+
+export default Settings;

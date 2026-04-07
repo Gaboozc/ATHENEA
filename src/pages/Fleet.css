@@ -1,4 +1,4 @@
-﻿.fleet-container {
+.fleet-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 32px 20px 48px;
@@ -28,7 +28,7 @@
 .fleet-kpi-card {
   background: linear-gradient(180deg, var(--bg-surface) 0%, #0b1827 100%);
   border: 1px solid var(--border-default);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
@@ -85,18 +85,18 @@
 .fleet-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 20px;
 }
 
 .fleet-card.fleet-team {
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
 }
 
 .fleet-card.fleet-team:hover {
-  border-color: rgba(30, 201, 255, 0.6);
+  border-color: rgba(23, 184, 224, 0.6);
   transform: translateY(-2px);
 }
 
@@ -106,8 +106,8 @@
 }
 
 .fleet-card.is-available {
-  border-color: rgba(30, 201, 255, 0.6);
-  box-shadow: inset 0 0 0 1px rgba(30, 201, 255, 0.2);
+  border-color: rgba(23, 184, 224, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(23, 184, 224, 0.2);
 }
 
 .fleet-card.is-overloaded {
@@ -133,7 +133,7 @@
   color: var(--text-secondary);
   border: 1px solid var(--border-default);
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .fleet-role {
@@ -148,7 +148,7 @@
   align-items: center;
   background: var(--bg-base);
   border: 1px solid var(--border-default);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 8px 12px;
 }
 
@@ -199,7 +199,7 @@
 .fleet-task-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 16px;
 }
 
@@ -226,8 +226,8 @@
   display: inline-flex;
   margin-top: 8px;
   padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid rgba(30, 201, 255, 0.4);
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(23, 184, 224, 0.4);
   color: var(--accent-cyan);
   font-size: 11px;
   text-transform: uppercase;
@@ -251,7 +251,7 @@
   background: var(--bg-base);
   color: var(--text-primary);
   border: 1px solid var(--border-default);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 6px 10px;
   font-size: 12px;
   font-family: inherit;
@@ -262,7 +262,7 @@
   border: 1px solid var(--border-default);
   color: var(--text-primary);
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   cursor: pointer;
   text-align: left;
@@ -280,7 +280,7 @@
 
 .fleet-empty-card {
   padding: 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
   color: var(--text-secondary);
@@ -288,7 +288,7 @@
 
 .fleet-priority {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -302,7 +302,7 @@
 
 .fleet-priority.tag-high-velocity {
   color: var(--accent-cyan);
-  border-color: rgba(30, 201, 255, 0.5);
+  border-color: rgba(23, 184, 224, 0.5);
 }
 
 .fleet-priority.tag-steady-flow,
@@ -335,7 +335,7 @@
 .modal-content {
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 24px;
   max-width: 500px;
   width: 90%;
@@ -351,7 +351,7 @@
 
 .fleet-task-assigner {
   border: 1px solid var(--border-default);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: var(--bg-surface);
   padding: 14px;
   margin-bottom: 14px;
@@ -374,7 +374,7 @@
   align-items: center;
   justify-content: space-between;
   border: 1px solid var(--border-default);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 10px 12px;
   background: var(--bg-base);
 }
@@ -404,16 +404,16 @@
   background: var(--bg-surface);
   color: var(--text-primary);
   border: 1px solid var(--border-default);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 6px 10px;
   font-size: 12px;
 }
 
 .fleet-task-complete {
   border: 1px solid var(--accent-cyan);
-  background: rgba(30, 201, 255, 0.1);
+  background: rgba(23, 184, 224, 0.1);
   color: var(--accent-cyan);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 6px 10px;
   font-size: 12px;
   cursor: pointer;
@@ -486,7 +486,7 @@
   padding: 10px 12px;
   background: #000;
   border: 1px solid var(--border-default);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-size: 14px;
 }
@@ -505,11 +505,11 @@
 
 .modal-actions button {
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: none;
   cursor: pointer;
   font-size: 14px;
-  transition: all 0.2s ease;
+  transition: var(--transition-fast);
 }
 
 .modal-actions button:first-child {
@@ -537,12 +537,12 @@
   padding: 8px 16px;
   background: var(--accent-gold);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: #000;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-fast);
 }
 
 .fleet-add-btn:hover {
@@ -567,11 +567,11 @@
   padding: 8px 12px;
   background: transparent;
   border: 1px solid var(--border-default);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-size: 13px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-fast);
 }
 
 .fleet-card-actions button:hover {
@@ -621,7 +621,7 @@
   width: 16px;
   height: 16px;
   background: var(--accent-gold);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
 }
 
@@ -629,7 +629,7 @@
   width: 16px;
   height: 16px;
   background: var(--accent-gold);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
   border: none;
 }
@@ -642,7 +642,7 @@
 
 .fleet-priority-medium {
   color: var(--accent-cyan);
-  border-color: rgba(30, 201, 255, 0.5);
+  border-color: rgba(23, 184, 224, 0.5);
 }
 
 .fleet-priority-high {
@@ -655,7 +655,7 @@
   width: 100%;
   background: rgba(9, 16, 27, 0.35);
   border: 1px solid var(--border-default);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 18px;
 }
 
@@ -669,7 +669,7 @@
   text-align: center;
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
 }
 
 .empty-icon {
@@ -693,12 +693,12 @@
     padding: 12px 24px;
     background: var(--accent-gold);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     color: #000;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: var(--transition-fast);
   }
 
   .fleet-add-btn-primary:hover {
@@ -717,9 +717,9 @@
   .fleet-collab-item {
     background: var(--bg-surface);
     border: 1px solid var(--border-default);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     overflow: hidden;
-    transition: all 0.2s ease;
+    transition: var(--transition-fast);
   }
 
   .fleet-collab-item:hover {
@@ -749,7 +749,7 @@
   .fleet-collab-avatar {
     width: 48px;
     height: 48px;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     background: var(--accent-gold);
     color: #000;
     display: flex;
@@ -786,7 +786,7 @@
     color: var(--accent-cyan);
     display:inline-block;
     padding: 2px 8px;
-    background: rgba(30, 201, 255, 0.1);
+    background: rgba(23, 184, 224, 0.1);
     border-radius: 4px;
     align-self: flex-start;
   }
@@ -827,7 +827,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: var(--transition-fast);
   }
 
   .fleet-expand-btn:hover {
@@ -856,7 +856,7 @@
   .fleet-detail-section {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid var(--border-default);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 16px;
   }
 
@@ -903,8 +903,8 @@
 
   .fleet-project-chip {
     padding: 6px 12px;
-    background: rgba(30, 201, 255, 0.1);
-    border: 1px solid rgba(30, 201, 255, 0.3);
+    background: rgba(23, 184, 224, 0.1);
+    border: 1px solid rgba(23, 184, 224, 0.3);
     border-radius: 6px;
     font-size: 12px;
     color: var(--accent-cyan);
@@ -925,7 +925,7 @@
     color: var(--accent-gold);
     font-size: 12px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: var(--transition-fast);
   }
 
   .fleet-add-btn-small:hover {
@@ -982,7 +982,7 @@
   .fleet-order-card {
     background: rgba(0, 0, 0, 0.5);
     border: 1px solid var(--border-default);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 12px;
   }
 
@@ -1046,7 +1046,7 @@
     color: var(--text-primary);
     font-size: 12px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: var(--transition-fast);
   }
 
   .fleet-order-actions button:hover {
@@ -1055,13 +1055,13 @@
   }
 
   .fleet-btn-complete {
-    background: rgba(30, 201, 255, 0.1) !important;
-    border-color: rgba(30, 201, 255, 0.5) !important;
+    background: rgba(23, 184, 224, 0.1) !important;
+    border-color: rgba(23, 184, 224, 0.5) !important;
     color: var(--accent-cyan) !important;
   }
 
   .fleet-btn-complete:hover {
-    background: rgba(30, 201, 255, 0.2) !important;
+    background: rgba(23, 184, 224, 0.2) !important;
     border-color: var(--accent-cyan) !important;
   }
 
@@ -1089,11 +1089,11 @@
     padding: 10px 20px;
     background: transparent;
     border: 1px solid var(--accent-gold);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     color: var(--accent-gold);
     font-size: 14px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: var(--transition-fast);
   }
 
   .fleet-btn-edit:hover {
@@ -1103,16 +1103,16 @@
   .fleet-btn-delete {
     padding: 10px 20px;
     background: transparent;
-    border: 1px solid #dc2626;
-    border-radius: 8px;
-    color: #dc2626;
+    border: 1px solid var(--color-error);
+    border-radius: var(--radius-sm);
+    color: var(--color-error);
     font-size: 14px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: var(--transition-fast);
   }
 
   .fleet-btn-delete:hover {
-    background: rgba(220, 38, 38, 0.1);
+    background: rgba(217, 64, 64, 0.1);
   }
 
   /* Modal improvements */
@@ -1143,13 +1143,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: var(--transition-fast);
   }
 
   .modal-close:hover {
-    background: rgba(220, 38, 38, 0.1);
-    border-color: #dc2626;
-    color: #dc2626;
+    background: rgba(217, 64, 64, 0.1);
+    border-color: var(--color-error);
+    color: var(--color-error);
   }
 
   .modal-large {
@@ -1216,7 +1216,7 @@
     border: 1px solid var(--border-default);
     border-radius: 6px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: var(--transition-fast);
   }
 
   .modal-checkbox-item:hover {

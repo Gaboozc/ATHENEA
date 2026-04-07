@@ -45,7 +45,7 @@
 
 .financehub-stat {
   border: 1px solid var(--border-default);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 1rem;
   background: var(--bg-surface);
   display: grid;
@@ -64,24 +64,24 @@
 }
 
 .financehub-stat-saldo {
-  border-color: #0891b2;
-  box-shadow: 0 0 0 1px rgba(8, 145, 178, 0.25);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 1px rgba(23, 184, 224, 0.25);
 }
 
 .financehub-stat-saldo strong {
-  color: #67e8f9;
+  color: var(--accent-cyan);
 }
 
 .financehub-list {
   border: 1px solid var(--border-default);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 1rem 1.25rem;
   background: var(--bg-surface);
 }
 
 .financehub-budget {
   border: 1px solid var(--border-default);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 1rem 1.25rem;
   background: var(--bg-surface);
   margin-bottom: 1.5rem;
@@ -104,10 +104,10 @@
 }
 
 .financehub-month {
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--accent-cyan);
   background: var(--bg-surface);
-  color: #e2e8f0;
+  color: var(--text-primary);
   padding: 0.35rem 0.9rem;
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -123,7 +123,7 @@
 
 .financehub-card {
   border: 1px solid var(--border-default);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 1rem;
   background: var(--bg-base);
   display: grid;
@@ -145,18 +145,18 @@
 
 .financehub-form input,
 .financehub-form select {
-  border-radius: 10px;
-  border: 1px solid #3e5d7d;
-  background: #122a42;
-  color: #f5f8ff;
-  -webkit-text-fill-color: #f5f8ff;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  -webkit-text-fill-color: var(--text-primary);
   padding: 0.55rem 0.75rem;
   font-size: 0.95rem;
 }
 
 .financehub-form input::placeholder {
-  color: #b9c8d9;
-  -webkit-text-fill-color: #b9c8d9;
+  color: var(--text-secondary);
+  -webkit-text-fill-color: var(--text-secondary);
 }
 
 .financehub-form input:focus,
@@ -172,7 +172,7 @@
   border: 1px solid var(--accent-cyan);
   background: transparent;
   color: var(--accent-cyan);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.35rem 0.9rem;
   font-size: 0.82rem;
   text-transform: uppercase;
@@ -194,7 +194,7 @@
 .financehub-progress {
   width: 100%;
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
   overflow: hidden;
@@ -203,7 +203,7 @@
 .financehub-progress span {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, var(--accent-cyan), #0ea5e9);
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-cyan));
 }
 
 .financehub-list h2 {
@@ -227,7 +227,7 @@
   justify-content: space-between;
   align-items: center;
   border: 1px solid var(--border-default);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 0.6rem 0.8rem;
   background: var(--bg-base);
 }
@@ -243,17 +243,17 @@
 
 /* F-FEAT-1: category delete button */
 .financehub-delete-cat {
-  border: 1px solid var(--color-error, #ef4444);
+  border: 1px solid var(--color-error);
   background: transparent;
-  color: var(--color-error, #ef4444);
-  border-radius: 999px;
+  color: var(--color-error);
+  border-radius: var(--radius-pill);
   padding: 0.2rem 0.65rem;
   font-size: 0.75rem;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 .financehub-delete-cat:hover {
-  background: var(--color-error, #ef4444);
+  background: var(--color-error);
   color: #fff;
 }
 
@@ -261,10 +261,10 @@
 .financehub-limit-input {
   width: 80px;
   padding: 2px 6px;
-  background: var(--bg-surface, #27272a);
+  background: var(--bg-surface);
   border: 1px solid var(--accent-cyan);
   border-radius: 6px;
-  color: var(--text-primary, #f4f4f5);
+  color: var(--text-primary);
   font-size: 0.85rem;
 }
 .financehub-limit-clickable {
@@ -276,13 +276,13 @@
 .jarvis-briefing {
   margin: 1rem 0;
   padding: 1rem 1.25rem;
-  border-left: 3px solid var(--accent-gold, #eab308);
-  background: rgba(234, 179, 8, 0.06);
-  border-radius: 10px;
+  border-left: 3px solid var(--accent-gold);
+  background: rgba(201, 162, 39, 0.06);
+  border-radius: var(--radius-md);
 }
 .jarvis-briefing h3 {
   margin: 0 0 0.5rem;
-  color: var(--accent-gold, #eab308);
+  color: var(--accent-gold);
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -350,7 +350,7 @@
 .wallet-kpi span { font-size: 0.75rem; color: var(--text-muted); }
 .wallet-kpi strong { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
 .wallet-kpi small { font-size: 0.72rem; color: var(--text-muted); }
-.wallet-kpi-usd strong { color: #22c55e; }
+.wallet-kpi-usd strong { color: var(--color-success); }
 .wallet-kpi-mxn strong { color: var(--accent-cyan); }
 .wallet-kpi-link {
   margin-left: auto;
@@ -363,4 +363,4 @@
   cursor: pointer;
   white-space: nowrap;
 }
-.wallet-kpi-link:hover { background: rgba(30,201,255,0.08); }
+.wallet-kpi-link:hover { background: var(--accent-cyan-dim); }

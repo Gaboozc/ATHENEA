@@ -43,14 +43,14 @@
   border-radius: 10px;
   border: 1px solid var(--border-default);
   background: var(--bg-base);
-  color: #e2e8f0;
+  color: var(--text-primary);
   padding: 0.65rem 0.75rem;
 }
 
 .todos-form button {
   border: none;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--accent-cyan), #0ea5e9);
+  background: var(--accent-cyan);
   color: var(--bg-base);
   font-weight: 700;
   text-transform: uppercase;
@@ -86,7 +86,7 @@
 .todo-card h2 {
   margin: 0;
   font-size: 1.1rem;
-  color: #e2e8f0;
+  color: var(--text-primary);
 }
 
 .todo-date {
@@ -160,7 +160,7 @@
   display: inline-block;
   margin-top: 0.25rem;
   margin-right: 0.5rem;
-  font-size: var(--font-size-xs, 0.75rem);
+  font-size: var(--font-size-xs);
   padding: 2px 8px;
   border-radius: 999px;
   border: 1px solid;
@@ -168,20 +168,20 @@
 }
 
 .priority-high {
-  color: var(--color-error, #ef4444);
-  border-color: var(--color-error, #ef4444);
+  color: var(--color-error);
+  border-color: var(--color-error);
 }
 
 .priority-low {
-  color: var(--text-muted, #94a3b8);
-  border-color: var(--text-muted, #94a3b8);
+  color: var(--text-muted);
+  border-color: var(--text-muted);
 }
 
 /* P-FIX-2: inline title editing */
 .todo-title-clickable {
   margin: 0;
   font-size: 1.1rem;
-  color: #e2e8f0;
+  color: var(--text-primary);
   cursor: text;
 }
 
@@ -195,7 +195,7 @@
   background: var(--bg-base);
   border: 1px solid var(--accent-cyan);
   border-radius: 6px;
-  color: #e2e8f0;
+  color: var(--text-primary);
   padding: 0.2rem 0.5rem;
   width: 100%;
   outline: none;

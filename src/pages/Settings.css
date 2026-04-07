@@ -21,7 +21,7 @@
   margin-bottom: 2rem;
   padding: 1.25rem 1.5rem;
   border: 1px solid var(--core-line);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   background: var(--bg-card);
 }
 
@@ -39,7 +39,7 @@
 
 .settings-message {
   padding: 0.9rem 1.15rem;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   margin-bottom: 1rem;
   font-size: 0.92rem;
   font-weight: 600;
@@ -60,7 +60,7 @@
 .settings-section {
   background: var(--core-panel);
   border: 1px solid var(--core-line);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   margin-bottom: 1.25rem;
   box-shadow: var(--shadow-card);
@@ -92,17 +92,7 @@
   font-weight: 600;
   cursor: pointer;
   padding: 0.7rem 1.15rem;
-  transition: all 0.2s ease;
-}
-
-.settings-button.primary {
-  background: linear-gradient(135deg, var(--core-accent), var(--core-accent-2));
-  color: #ffffff;
-}
-
-.settings-button.primary:hover {
-  filter: brightness(1.05);
-  transform: translateY(-1px);
+  transition: all var(--transition-fast);
 }
 
 .settings-button.secondary {
@@ -117,7 +107,7 @@
 }
 
 .settings-button.danger {
-  background: #dc2626;
+  background: var(--color-error);
   color: #ffffff;
 }
 
@@ -165,7 +155,7 @@
 .webhook-info {
   margin-bottom: 1rem;
   border: 1px solid var(--border-subtle);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--bg-card);
   padding: 0.9rem 1rem;
 }
@@ -220,7 +210,7 @@
   border: 1px solid var(--border-default);
   background: var(--bg-elevated);
   color: var(--text-primary);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 0.8rem 1rem;
   font-size: 0.93rem;
   font-weight: 700;
@@ -266,7 +256,7 @@
 
 /* FIX UX-6 — saved indicator */
 .settings-saved-indicator {
-  color: var(--color-success, #4ade80);
+  color: var(--color-success);
   font-size: 0.72rem;
   font-weight: 600;
   margin-left: 8px;
@@ -302,30 +292,30 @@
 .settings-section-title {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--accent-gold, #eab308);
+  color: var(--accent-gold);
   margin: 0 0 6px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 .settings-section-desc {
   font-size: 0.85rem;
-  color: var(--text-secondary, #9ca3af);
+  color: var(--text-secondary);
   margin: 0 0 1rem;
   line-height: 1.5;
 }
 .settings-label {
   font-size: 0.8rem;
-  color: var(--text-secondary, #9ca3af);
+  color: var(--text-secondary);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 .settings-input,
 .settings-select {
-  background: var(--bg-base, #0b0b0b);
-  border: 1px solid var(--border-default, #1e3a5f);
-  border-radius: 8px;
-  color: var(--text-primary, #e2e8f0);
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
   padding: 0.5rem 0.75rem;
   font-size: 0.9rem;
   outline: none;
@@ -333,14 +323,14 @@
 }
 .settings-input:focus,
 .settings-select:focus {
-  border-color: var(--accent-cyan, #1ec9ff);
+  border-color: var(--accent-cyan);
   box-shadow: 0 0 0 3px rgba(30, 201, 255, 0.15);
 }
 .settings-button.primary {
-  background: var(--accent-cyan, #1ec9ff);
+  background: var(--accent-cyan);
   color: #000;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.45rem 1.25rem;
   font-size: 0.82rem;
   font-weight: 700;

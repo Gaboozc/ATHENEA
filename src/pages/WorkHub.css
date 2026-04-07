@@ -26,7 +26,7 @@
 
 .workhub-stat {
   border: 1px solid var(--border-default);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 1rem;
   background: var(--bg-surface);
   display: grid;
@@ -54,7 +54,7 @@
   border: 1px solid var(--accent-cyan);
   background: transparent;
   color: var(--accent-cyan);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.5rem 1.25rem;
   font-size: 0.8rem;
   text-transform: uppercase;
@@ -87,7 +87,7 @@
 
 .workhub-card {
   border: 1px solid var(--border-default);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 1rem 1.25rem;
   background: var(--bg-surface);
 }
@@ -114,7 +114,7 @@
   align-items: center;
   gap: 0.5rem;
   border: 1px solid var(--border-default);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 0.6rem 0.8rem;
   background: var(--bg-base);
   flex-wrap: wrap;
@@ -136,7 +136,7 @@
 .workhub-progress-bar {
   width: 100%;
   height: 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--bg-base);
   border: 1px solid var(--border-default);
   overflow: hidden;
@@ -145,7 +145,7 @@
 .workhub-progress-bar span {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, var(--accent-cyan), #0ea5e9);
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-cyan));
 }
 
 .workhub-progress-meta {
@@ -159,7 +159,7 @@
 .workhub-pill {
   border: 1px solid var(--accent-gold);
   color: var(--accent-gold);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 2px 8px;
   font-size: 0.7rem;
   flex-shrink: 0;
@@ -180,7 +180,7 @@
   border: 1px solid var(--accent-cyan);
   background: transparent;
   color: var(--accent-cyan);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.5rem 1rem;
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -201,20 +201,20 @@
 
 /* W-FIX-8: Level badge color variants */
 .workhub-level-badge.level-critical {
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--color-error);
+  color: var(--color-error);
 }
 .workhub-level-badge.level-high-velocity {
-  border-color: #f97316;
-  color: #f97316;
+  border-color: var(--color-warning);
+  color: var(--color-warning);
 }
 .workhub-level-badge.level-steady-flow {
   border-color: var(--accent-cyan);
   color: var(--accent-cyan);
 }
 .workhub-level-badge.level-low-friction {
-  border-color: #22c55e;
-  color: #22c55e;
+  border-color: var(--color-success);
+  color: var(--color-success);
 }
 .workhub-level-badge.level-backlog {
   border-color: var(--text-secondary);
@@ -232,7 +232,7 @@
   gap: 0.75rem;
   border: 1px solid color-mix(in srgb, var(--accent-cyan) 30%, transparent);
   background: color-mix(in srgb, var(--accent-cyan) 6%, var(--bg-surface));
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 0.9rem 1.1rem;
   margin-bottom: 1.25rem;
 }
@@ -290,7 +290,7 @@
 
 /* NEW-WORK-3: phase badge in active projects list */
 .workhub-pill-phase {
-  background: rgba(30,201,255,0.08);
+  background: var(--accent-cyan-dim);
   border-color: var(--accent-cyan);
   color: var(--accent-cyan);
   font-size: 0.7rem;
@@ -315,11 +315,11 @@
 }
 .sitrep-value { font-size: 1.5rem; font-weight: 700; line-height: 1; }
 .sitrep-label { margin-top: 0.2rem; opacity: 0.8; text-align: center; }
-.sitrep-red    { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-.sitrep-amber  { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.sitrep-red    { background: rgba(239, 68, 68, 0.15); color: var(--color-error); }
+.sitrep-amber  { background: rgba(245, 158, 11, 0.15); color: var(--color-warning); }
 .sitrep-blue   { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-.sitrep-green  { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
-.sitrep-gray   { background: rgba(100, 100, 100, 0.1); color: var(--text-secondary, #888); }
+.sitrep-green  { background: rgba(34, 197, 94, 0.15); color: var(--color-success); }
+.sitrep-gray   { background: rgba(100, 100, 100, 0.1); color: var(--text-secondary); }
 
 /* ── Action List ────────────────────────────── */
 .workhub-action-list ul { list-style: none; padding: 0; margin: 0; }
@@ -332,8 +332,8 @@
   flex-wrap: wrap;
 }
 .workhub-action-item:last-child { border-bottom: none; }
-.action-overdue { border-left: 3px solid #ef4444; padding-left: 0.5rem; }
-.action-today   { border-left: 3px solid #f59e0b; padding-left: 0.5rem; }
+.action-overdue { border-left: 3px solid var(--color-error); padding-left: 0.5rem; }
+.action-today   { border-left: 3px solid var(--color-warning); padding-left: 0.5rem; }
 .action-urgency { width: 1.4rem; text-align: center; flex-shrink: 0; }
 .action-title {
   flex: 1 1 8rem;
@@ -352,7 +352,7 @@ button.action-title {
 }
 .action-title:hover { text-decoration: underline; }
 .action-due { font-size: 0.75rem; opacity: 0.7; white-space: nowrap; }
-.action-due--overdue { color: #ef4444; opacity: 1; font-weight: 600; }
+.action-due--overdue { color: var(--color-error); opacity: 1; font-weight: 600; }
 .action-buttons { display: flex; gap: 0.35rem; flex-shrink: 0; }
 .action-btn {
   width: 1.75rem; height: 1.75rem;
@@ -362,7 +362,7 @@ button.action-title {
   cursor: pointer;
   font-size: 0.85rem;
   display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s;
+  transition: background var(--transition-fast);
 }
 .action-btn--done:hover  { background: rgba(34,197,94,0.2); }
 .action-btn--start:hover { background: rgba(59,130,246,0.2); }

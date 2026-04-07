@@ -1,4 +1,4 @@
-﻿.payments-container {
+.payments-container {
   padding: 1.5rem 1.25rem 2rem;
   max-width: 1100px;
   margin: 0 auto;
@@ -26,7 +26,7 @@
 
 .payments-count {
   border: 1px solid var(--border-default);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.25rem 0.8rem;
   font-size: 0.85rem;
 }
@@ -40,17 +40,17 @@
 
 .payments-form input,
 .payments-form select {
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-default);
   background: var(--bg-base);
-  color: #e2e8f0;
+  color: var(--text-primary);
   padding: 0.65rem 0.75rem;
 }
 
 .payments-form button {
   border: none;
-  border-radius: 999px;
-  background: linear-gradient(135deg, var(--accent-cyan), #0ea5e9);
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-cyan));
   color: var(--bg-base);
   font-weight: 700;
   text-transform: uppercase;
@@ -66,7 +66,7 @@
 
 .payment-card {
   border: 1px solid var(--border-default);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 1rem 1.25rem;
   background: var(--bg-surface);
   display: grid;
@@ -82,7 +82,7 @@
 .payment-main h2 {
   margin: 0;
   font-size: 1.1rem;
-  color: #e2e8f0;
+  color: var(--text-primary);
 }
 
 .payment-meta {
@@ -113,7 +113,7 @@
   border: 1px solid var(--border-default);
   background: var(--bg-base);
   color: var(--text-primary);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.35rem 0.8rem;
   cursor: pointer;
   font-size: 0.8rem;
