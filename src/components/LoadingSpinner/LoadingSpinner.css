@@ -1,0 +1,7 @@
+.loading-spinner {
+  display: inline-block;
+  border-radius: 9999px;
+  border: 2px solid color-mix(in srgb, var(--text-secondary, #9ca3af) 35%, transparent);
+  border-top-color: var(--accent-cyan, #1ec9ff);
+  animation: spin 0.75s linear infinite;
+}

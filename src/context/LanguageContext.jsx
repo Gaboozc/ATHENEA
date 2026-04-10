@@ -1228,18 +1228,7 @@ const translations = {
 
     // ── ReminderToasts (I18N-1) ───────────────────────────────────────────
     'Debt payment due': '💳 Pago de deuda',
-    'Payment due': 'Pago pendiente',
-    'Todo due': 'Pendiente vence',
-    'Note reminder': 'Recordatorio de nota',
     'Task due': 'Tarea vence',
-    'Reminder': 'Recordatorio',
-    'Due today': 'Vence hoy',
-    'In 1 day': 'En 1 día',
-    'In 3 days': 'En 3 días',
-    'In 7 days': 'En 7 días',
-    'Overdue': 'Vencido',
-    'Open': 'Abrir',
-    'Dismiss': 'Descartar',
 
     // ── InterceptCard (I18N-2) ────────────────────────────────────────────
     'intercept.filter': 'Filtro Táctico',

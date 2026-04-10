@@ -14,6 +14,7 @@ import {
   deleteSavingsTransaction,
 } from '../../store/slices/walletsSlice';
 import { registerExpense } from '../store/thunks/financeThunks';
+import { EmptyState } from '../components';
 import './FinanceWallets.css';
 
 const INCOME_CATEGORIES = ['freelance', 'salary', 'investment', 'other'];
@@ -577,7 +578,20 @@ export const FinanceWallets = () => {
         </div>
 
         {filteredTx.length === 0 ? (
-          <div className="wallets-empty">{t('No hay transacciones aún.')}</div>
+          <EmptyState
+            icon={txFilter === FILTER_SAVINGS ? '🏦' : '📜'}
+            title={t('No hay transacciones aún.')}
+            description={
+              txFilter === FILTER_SAVINGS
+                ? t('Mueve dinero a ahorros para comenzar historial de ahorro.')
+                : t('Registra un ingreso o gasto para empezar tu historial.')
+            }
+            action={{
+              label: txFilter === FILTER_SAVINGS ? t('Ahorrar') : t('Ingreso MXN'),
+              icon: '+',
+              onClick: () => openForm(txFilter === FILTER_SAVINGS ? 'save' : 'income_mxn'),
+            }}
+          />
         ) : txFilter === FILTER_SAVINGS ? (
           /* SAVINGS-2D — Historial de ahorros */
           <ul className="wallets-tx-list">

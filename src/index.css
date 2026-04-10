@@ -92,6 +92,15 @@ body::after {
   }
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .app-content > * {
   animation: page-enter 0.18s ease forwards;
 }
@@ -194,5 +203,14 @@ textarea:focus {
    Bottom tab bar body padding (applied when BottomTabBar renders)
 ──────────────────────────────────────────────────────────────── */
 body.has-bottom-tab {
-  padding-bottom: calc(64px + var(--safe-bottom));
+  padding-bottom: calc(70px + max(24px, env(safe-area-inset-bottom, 24px)));
+}
+
+@media (max-width: 768px) {
+  .page-content,
+  .app-content,
+  .hub-content,
+  main {
+    padding-bottom: calc(120px + max(48px, env(safe-area-inset-bottom, 48px)));
+  }
 }

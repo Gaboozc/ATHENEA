@@ -1,15 +1,58 @@
 /* ProactiveHUD: Phase 5 clean minimal surface */
 
+/* FIX-D: skeleton placeholder while LLM message loads */
+.hud-skeleton {
+  min-width: 160px;
+  min-height: 1.2em;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    rgba(84, 108, 188, 0.12) 25%,
+    rgba(84, 108, 188, 0.28) 50%,
+    rgba(84, 108, 188, 0.12) 75%
+  );
+  background-size: 200% 100%;
+  animation: hud-shimmer 1.4s ease-in-out infinite;
+  color: transparent;
+  user-select: none;
+}
+
+@keyframes hud-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 .proactive-hud {
+  --hud-accent: #667eea;
+  --hud-accent-border: rgba(102, 126, 234, 0.32);
+  --hud-accent-soft: rgba(102, 126, 234, 0.2);
   display: flex;
   flex-direction: column;
   gap: 12px;
   padding: 16px;
   border-radius: 14px;
-  border: 1px solid rgba(84, 108, 188, 0.32);
+  border: 1px solid var(--hud-accent-border);
   background: linear-gradient(145deg, rgba(9, 16, 32, 0.96), rgba(14, 22, 40, 0.96));
   position: relative;
   overflow: hidden;
+}
+
+.proactive-hud.responder-cortana {
+  --hud-accent: #667eea;
+  --hud-accent-border: rgba(102, 126, 234, 0.32);
+  --hud-accent-soft: rgba(102, 126, 234, 0.2);
+}
+
+.proactive-hud.responder-jarvis {
+  --hud-accent: #f3c54a;
+  --hud-accent-border: rgba(243, 197, 74, 0.32);
+  --hud-accent-soft: rgba(243, 197, 74, 0.2);
+}
+
+.proactive-hud.responder-shodan {
+  --hud-accent: #41d467;
+  --hud-accent-border: rgba(65, 212, 103, 0.32);
+  --hud-accent-soft: rgba(65, 212, 103, 0.2);
 }
 
 /* FIX UX-8 — Header con identidad del agente activo */
@@ -20,7 +63,7 @@
   position: relative;
   z-index: 1;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(83, 108, 189, 0.2);
+  border-bottom: 1px solid var(--hud-accent-soft);
 }
 
 .hud-agent-icon {
@@ -31,7 +74,7 @@
 .hud-agent-name {
   font-size: 12px;
   font-weight: 700;
-  color: var(--accent-gold, #d4af37);
+  color: var(--hud-accent);
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -131,7 +174,7 @@
 .hud-section.neural-response {
   padding: 12px;
   border-radius: 10px;
-  border: 1px solid rgba(83, 108, 189, 0.32);
+  border: 1px solid var(--hud-accent-border);
   background: rgba(8, 14, 28, 0.76);
 }
 

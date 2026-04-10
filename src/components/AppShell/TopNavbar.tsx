@@ -79,6 +79,7 @@ export function TopNavbar() {
 
 	const dropdowns = [
 		{
+			key: 'work',
 			label: t('Work'),
 			items: [
 				{ label: t('Work Hub'), path: '/work' },
@@ -90,6 +91,7 @@ export function TopNavbar() {
 			],
 		},
 		{
+			key: 'personal',
 			label: t('Personal'),
 			items: [
 				{ label: t('Personal Hub'), path: '/personal' },
@@ -102,6 +104,7 @@ export function TopNavbar() {
 			],
 		},
 		{
+			key: 'finance',
 			label: t('Finance'),
 			items: [
 				{ label: t('Finance Hub'), path: '/finance' },
@@ -117,11 +120,11 @@ export function TopNavbar() {
 
 	return (
 		<>
-			<nav className="navbar athenea-navbar">
+			<nav className="navbar athenea-navbar top-navbar">
 				<div className="navbar-inner">
 					<Link
 						to="/dashboard"
-						className={`navbar-home-button${currentPath === '/' || currentPath.startsWith('/dashboard') ? ' is-active' : ''}`}
+						className={`navbar-home-button nav-logo${currentPath === '/' || currentPath.startsWith('/dashboard') ? ' is-active' : ''}`}
 						aria-label="ATHENEA home"
 					>
 						<span>ATHENEA</span>
@@ -144,7 +147,7 @@ export function TopNavbar() {
 							{dropdowns.map((group) => (
 								<div key={group.label} className="navbar-dropdown" ref={(el) => { dropdownRefs.current[group.label] = el; }}>
 									<button
-										className="navbar-dropdown-summary"
+										className={`navbar-dropdown-summary nav-hub-btn ${group.key}`}
 										onClick={() => toggleDropdown(group.label)}
 										aria-expanded={openDropdown === group.label}
 									>
@@ -175,14 +178,16 @@ export function TopNavbar() {
 							))}
 							<Link
 								to="/calendar"
-								className={`navbar-button${currentPath.startsWith('/calendar') ? ' is-active' : ''}`}
+								className={`navbar-button nav-calendar-btn${currentPath.startsWith('/calendar') ? ' is-active' : ''}`}
 							>
 								<span className="navbar-button-glow" />
 								{t('Calendar')}
 							</Link>
 						</div>
 
-						<div className="navbar-right-group" style={{ gap: '50px' }}>
+						<div className="nav-separator" />
+
+						<div className="navbar-right-group">
 							<button
 								onClick={toggleLanguage}
 								className="navbar-language-toggle"

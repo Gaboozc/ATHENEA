@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { useTasks } from '../context/TasksContext';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useLanguage } from '../context/LanguageContext';
-import EmptyState from '../components/EmptyState/EmptyState';
+import { EmptyState } from '../components';
 import './MyTasks.css';
 
 const TASK_STATUS_KEYS = ['Pending', 'In Progress', 'Near Completion', 'In Review', 'Completed'];

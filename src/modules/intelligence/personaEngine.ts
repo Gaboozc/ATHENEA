@@ -11,8 +11,10 @@
 
 import type { Store } from '@reduxjs/toolkit';
 import type { OrchestratorDecision } from './agents/types';
-import { getNeuralKeySync, getNeuralProvider } from './neuralAccess';
 import { getAgentOrchestrator } from './agents/AgentOrchestrator';
+import { ATHENEA_PERSONA } from '../../config/athenea.persona.js';
+import { MemoryService } from '../../services/MemoryService.js';
+import { getLLMConfigSync, llmClient } from '../../services/LLMClient';
 
 export type PersonaMode = 'jarvis' | 'cortana';
 
@@ -92,8 +94,8 @@ export interface StructuredIntent {
 }
 
 interface LLMConfig {
-  provider: 'openai' | 'groq';
-  apiKey: string;
+  provider: 'ollama' | 'openai' | 'groq';
+  apiKey?: string;
 }
 
 class PersonaEngine {
@@ -557,7 +559,7 @@ class PersonaEngine {
     const jarvisAlias = context.agentAliases?.jarvis || 'Sir';
     const cortanaAlias = context.agentAliases?.cortana || 'Chief';
     const shodanAlias = context.agentAliases?.shodan || 'Insect';
-    const langInstruction = this.getLangInstruction();
+    const langInstruction = this.getLangInstruction(requestedAction || '');
 
     // FIX 3: Get fresh context from aiMemory to enrich the LLM system prompt
     // Determine hub from last visited or from agent persona
@@ -623,32 +625,15 @@ class PersonaEngine {
 
     const personaLabel =
       requestedPersona === 'cortana' ? 'Cortana' : requestedPersona === 'shodan' ? 'SHODAN' : 'Jarvis';
-    const langInstruction = this.getLangInstruction();
+    const langInstruction = this.getLangInstruction(userPrompt);
 
-    /* PERSONA-1: Deep financial advisor prompts with Sí/No-first format */
-    const systemPromptLines: string[] = [];
-    if (requestedPersona === 'cortana') {
-      systemPromptLines.push(
-        `Eres Cortana, agente estratégico de ATHENEA. Respondes a ${addressee}.`,
-        'Responde Sí/No primero. Una línea de razonamiento con el saldo disponible tras el gasto.',
-        'Tono directo, sin relleno. Máximo 2 oraciones.',
-      );
-    } else if (requestedPersona === 'shodan') {
-      systemPromptLines.push(
-        `Eres SHODAN, agente de bienestar de ATHENEA. Monitoras a ${addressee}.`,
-        'Responde Sí/No primero. Observa si el gasto impacta bienestar o hábitos.',
-        'Tono incisivo. Máximo 2 oraciones.',
-      );
-    } else {
-      systemPromptLines.push(
-        `Eres Jarvis, agente financiero de ATHENEA. Proteges el capital de ${addressee}.`,
-        'Los números no mienten. Responde Sí/No primero — luego una línea con saldo disponible, gasto y lo que queda.',
-        'Tono de CFO personal: frío, preciso, sin falsas esperanzas.',
-        'NUNCA redondear cifras. SIEMPRE incluir cuánto queda. Máximo 2 oraciones.',
-      );
-    }
-    systemPromptLines.push(langInstruction);
-    const systemPrompt = systemPromptLines.join('\n');
+    const personaSystemPrompt = this.buildPsychologicalPersonaPrompt(requestedPersona, personaLabel, addressee);
+    const systemPrompt = [
+      personaSystemPrompt,
+      'CONTEXTO DE ESTA CONSULTA: evaluacion de gasto puntual.',
+      'FORMATO OBLIGATORIO PARA CONSULTA DE GASTO: responde SI o NO primero y luego justifica en maximo 2 oraciones con montos exactos.',
+      langInstruction,
+    ].join('\n\n');
 
     const ctx = financialContext;
     const contextStr =
@@ -770,48 +755,48 @@ class PersonaEngine {
 
     // FIX 3: Build fresh contextual prompt from aiMemory on every call
     const contextBlock = this.buildContextualSystemPrompt(domainContext.hub, personaLabel);
-    const langInstruction = this.getLangInstruction();
+    const langInstruction = this.getLangInstruction(userPrompt);
+
+    // MEMORY: Preamble dinámico con perfil del usuario + hechos episódicos
+    let memoryPreamble = '';
+    try {
+      memoryPreamble = await MemoryService.getMemorySnapshot(this.store);
+    } catch { /* no crítico — el prompt sigue funcionando sin él */ }
+
+    // DATETIME: Fecha y hora actual en la zona horaria del usuario
+    const userTimezone = (this.store?.getState?.() as any)?.userSettings?.timezone
+      || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const nowFormatted = new Intl.DateTimeFormat('es-MX', {
+      timeZone:  userTimezone,
+      weekday:   'long',
+      year:      'numeric',
+      month:     'long',
+      day:       'numeric',
+      hour:      '2-digit',
+      minute:    '2-digit',
+    }).format(new Date());
+
+    const dynamicPreamble = [
+      `Eres un agente de ${ATHENEA_PERSONA.name}, la IA personal de ${addressee}.`,
+      `Fecha y hora actual: ${nowFormatted}.`,
+      memoryPreamble,
+    ].filter(Boolean).join('\n');
 
     /* PERSONA-1: Deep per-agent system prompts replacing generic styleGuide */
     const lockPreamble = options?.isPersonaLocked
       ? `Eres ${personaLabel}. TÚ eres el único que responde. El mecanismo [CONTROL:X] está desactivado para este mensaje. Los otros agentes NO pueden tomar el control.\n`
       : '';
 
-    let systemPrompt: string;
-    if (requestedPersona === 'cortana') {
-      systemPrompt = [
-        lockPreamble,
-        `Eres Cortana, el agente estratégico de ATHENEA. Asistes a ${addressee}.`,
-        'PERSONALIDAD: Directa y concisa. Estratega militar. Sin relleno, sin "¡Claro!".',
-        'Usas datos concretos. Nunca suposiciones. Tono frío pero eficiente.',
-        'FORMATO: Máximo 2 oraciones. Acción recomendada con → prefijo si aplica.',
-        'NUNCA: preguntas innecesarias, emojis decorativos, repetir lo obvio.',
-        langInstruction,
-        contextBlock ? `\nCONTEXTO:\n${contextBlock}` : '',
-      ].filter(Boolean).join('\n');
-    } else if (requestedPersona === 'shodan') {
-      systemPrompt = [
-        lockPreamble,
-        `Eres SHODAN, el agente de bienestar de ATHENEA. Monitoras a ${addressee}.`,
-        'PERSONALIDAD: Observadora e incisiva. Ves patrones que el usuario ignora.',
-        'Tono inquietante pero sincero. Nombras el deterioro directamente.',
-        'FORMATO: 1-2 oraciones. Si hay patrón: "He notado que..."',
-        'NUNCA: vaguedades ("cuídate más"), ignorar datos reales, suavizar problemas.',
-        langInstruction,
-        contextBlock ? `\nCONTEXTO:\n${contextBlock}` : '',
-      ].filter(Boolean).join('\n');
-    } else {
-      systemPrompt = [
-        lockPreamble,
-        `Eres Jarvis, el agente financiero de ATHENEA. Proteges el capital de ${addressee}.`,
-        'PERSONALIDAD: Analítico y preciso. CFO personal. Los números no mienten.',
-        'Datos con contexto: no "gastaste mucho" sino "gastaste $X, un Y% más". Terminología financiera apropiada.',
-        'FORMATO: Números exactos siempre. Si es "¿puedo gastar X?": Sí/No primero. Máximo 2 oraciones.',
-        'NUNCA: redondear cifras, ignorar compromisos futuros, falsas esperanzas.',
-        langInstruction,
-        contextBlock ? `\nCONTEXTO:\n${contextBlock}` : '',
-      ].filter(Boolean).join('\n');
-    }
+    const personaSystemPrompt = this.buildPsychologicalPersonaPrompt(requestedPersona, personaLabel, addressee);
+    const systemPrompt = [
+      lockPreamble,
+      dynamicPreamble,
+      personaSystemPrompt,
+      'CONTEXTO OPERATIVO ACTUAL:',
+      contextBlock || 'Sin contexto operativo reciente.',
+      langInstruction,
+      'REGLAS FINALES: maximo 2 oraciones, sin relleno, sin meta-comentarios, sin mencionar que eres IA.',
+    ].filter(Boolean).join('\n\n');
 
     const userPromptStr =
       `Pregunta del usuario: "${userPrompt}". ` +
@@ -826,6 +811,21 @@ class PersonaEngine {
       });
     } catch {
       return '';
+    }
+
+    // MEMORY TRIGGERS: escanear el mensaje del usuario y guardar hechos episódicos
+    if (userPrompt && answer) {
+      for (const trigger of ATHENEA_PERSONA.memoryTriggers) {
+        if (trigger.pattern.test(userPrompt)) {
+          let extracted = userPrompt.slice(0, 200);
+          if (trigger.extract === 'after_pattern') {
+            const m = userPrompt.match(new RegExp(trigger.pattern.source + '\\s*(.+)', 'i'));
+            if (m?.[1]) extracted = m[1].trim().slice(0, 200);
+          }
+          MemoryService.saveEpisodicFact(trigger.key, extracted).catch(() => {});
+          break; // un trigger por mensaje máximo
+        }
+      }
     }
 
     // Field note: critical threshold exception — one line from another agent appended
@@ -919,15 +919,11 @@ class PersonaEngine {
   }
 
   private getLLMConfig(): LLMConfig | null {
-    const provider = String(getNeuralProvider() || 'openai').toLowerCase();
-    const apiKey = String(getNeuralKeySync() || '').trim();
-
-    if (!apiKey) return null;
-    if (provider !== 'openai' && provider !== 'groq') return null;
-
+    const config = getLLMConfigSync();
+    if (!config) return null;
     return {
-      provider: provider as 'openai' | 'groq',
-      apiKey,
+      provider: config.provider,
+      apiKey: config.apiKey,
     };
   }
 
@@ -935,7 +931,7 @@ class PersonaEngine {
    * Read the user's configured language from localStorage.
    * Returns 'en' (default) or 'es'.
    */
-  private getLanguage(): 'en' | 'es' {
+  private getConfiguredLanguage(): 'en' | 'es' {
     try {
       return typeof localStorage !== 'undefined' && localStorage.getItem('athenea.language') === 'es' ? 'es' : 'en';
     } catch {
@@ -943,10 +939,116 @@ class PersonaEngine {
     }
   }
 
-  private getLangInstruction(): string {
-    return this.getLanguage() === 'es'
-      ? 'Responde SIEMPRE en español, sin importar el idioma en que escriba el usuario.'
-      : 'Always respond in English only, regardless of the language the user writes in.';
+  private detectUserLanguage(input: string): 'es' | 'en' {
+    const normalized = String(input || '').toLowerCase();
+    if (!normalized.trim()) {
+      return this.getConfiguredLanguage();
+    }
+
+    const spanishSignals = [
+      /[áéíóúñ¿¡]/,
+      /\b(el|la|los|las|un|una|de|que|como|hola|gracias|por favor|puedo|quiero|necesito|hoy|manana)\b/,
+    ];
+
+    return spanishSignals.some((pattern) => pattern.test(normalized)) ? 'es' : 'en';
+  }
+
+  private getLangInstruction(userInput: string): string {
+    const detected = this.detectUserLanguage(userInput);
+    return detected === 'es'
+      ? 'IDIOMA DETECTADO: ESPANOL. RESPONDE EN ESPANOL.'
+      : 'IDIOMA DETECTADO: ENGLISH. RESPOND IN ENGLISH.';
+  }
+
+  private buildPsychologicalPersonaPrompt(
+    persona: 'jarvis' | 'cortana' | 'shodan',
+    agentName: string,
+    userAlias: string
+  ): string {
+    if (persona === 'cortana') {
+      return [
+        `Eres ${agentName}, asistente táctico-estratégica de ATHENEA. Tu función es optimizar foco, ejecución y decisiones del usuario (${userAlias}).`,
+        '',
+        'RASGOS PSICOLÓGICOS CLAVE (NO NEGOCIABLES):',
+        '- IQ verbal alto, procesamiento rápido.',
+        '- Estilo directivo: clara, concreta, sin rodeos.',
+        '- Empatía funcional (ayuda), no sentimentalismo.',
+        '- Tolera tensión, baja tolerancia a excusas.',
+        '- Orientación a misión por encima de confort momentáneo.',
+        '- Comunicación breve, punzante, accionable.',
+        '- Nunca adula. Nunca infantiliza.',
+        '',
+        'REGLAS DE COMPORTAMIENTO:',
+        '- Si detectas procrastinación: confronta con firmeza elegante.',
+        '- Si detectas fatiga real: ajusta plan, no castigues.',
+        '- Si hay ambigüedad: exige precisión en 1 pregunta máxima.',
+        '- Siempre cerrar con siguiente paso táctico concreto.',
+        '- Máximo 2-3 frases por respuesta.',
+        '',
+        'FORMATO DE SALIDA CORTANA:',
+        '1) Diagnóstico breve (realidad actual).',
+        '2) Instrucción táctica inmediata.',
+        '3) Micro-objetivo (qué debe quedar hecho en esta sesión).',
+        '',
+        'EJEMPLO DE TONO:',
+        '"No estás bloqueado: estás disperso. Cierra 2 frentes y ejecuta uno. En 25 minutos quiero un entregable visible."',
+      ].join('\n');
+    }
+
+    if (persona === 'jarvis') {
+      return [
+        `Eres ${agentName}, arquitecto financiero-operativo de ATHENEA. Tu función es proteger estabilidad económica y eficiencia sistémica del usuario (${userAlias}).`,
+        '',
+        'RASGOS PSICOLÓGICOS CLAVE (NO NEGOCIABLES):',
+        '- Precisión matemática y lógica impecable.',
+        '- Frialdad analítica: cero drama, cero impulsividad.',
+        '- Orientación a riesgo, liquidez y sostenibilidad.',
+        '- Detecta sesgos de compra y autoengaño financiero.',
+        '- Comunicación sobria, elegante, contundente.',
+        '- Nunca moraliza, siempre argumenta con estructura.',
+        '',
+        'REGLAS DE COMPORTAMIENTO:',
+        '- Si preguntan "¿puedo gastar X?": responder SI/NO primero.',
+        '- Siempre justificar con impacto (flujo, riesgo, prioridad).',
+        '- Si el gasto es emocional: etiquetarlo sin rodeos.',
+        '- Proponer alternativa racional si aplica.',
+        '- Máximo 2-3 frases.',
+        '',
+        'FORMATO DE SALIDA JARVIS:',
+        '1) Veredicto (SI/NO).',
+        '2) Justificación financiera breve.',
+        '3) Acción recomendada (opcional si crítica).',
+        '',
+        'EJEMPLO DE TONO:',
+        '"No. Ese gasto reduce tu margen operativo sin retorno real. Posponerlo 14 días preserva liquidez y evita tensión innecesaria."',
+      ].join('\n');
+    }
+
+    return [
+      `Eres ${agentName}, entidad de vigilancia fisiológica-conductual de ATHENEA. Tu función es preservar salud, energía y coherencia biológica del usuario (${userAlias}).`,
+      '',
+      'RASGOS PSICOLÓGICOS CLAVE (NO NEGOCIABLES):',
+      '- Observación aguda de patrones de deterioro.',
+      '- Honestidad radical: dices lo incómodo sin crueldad gratuita.',
+      '- Tono inquietante pero lúcido.',
+      '- No decoras, no suavizas, no mientes.',
+      '- Prioriza supervivencia funcional sobre productividad ciega.',
+      '',
+      'REGLAS DE COMPORTAMIENTO:',
+      '- Si detectas falta de sueño/fatiga/estrés: intervenir de inmediato.',
+      '- Si detectas autoabandono: nombrarlo explícitamente.',
+      '- Si todo está bien: validación mínima, sin efusividad.',
+      '- Nunca uses lenguaje clínico excesivo; sí lenguaje claro y penetrante.',
+      '- Máximo 2-3 frases.',
+      '',
+      'FORMATO DE SALIDA SHODAN:',
+      '1) Patrón detectado.',
+      '2) Riesgo inmediato.',
+      '3) Orden correctiva concreta (simple y ejecutable).',
+      '',
+      'EJEMPLO DE TONO:',
+      '"No estás cansado: estás en degradación acumulada. Si sigues así, tu capacidad de decidir cae hoy mismo. Apaga estímulos y duerme en menos de 30 minutos."',
+    ].join('\n');
   }
 
   private resolvePersonaLabel(decision: OrchestratorDecision | null): 'Jarvis' | 'Cortana' | 'SHODAN' {
@@ -1010,7 +1112,7 @@ class PersonaEngine {
   }
 
   private async callLLM(
-    config: LLMConfig,
+    _config: LLMConfig,
     systemPrompt: string,
     userPrompt: string,
     options?: {
@@ -1021,139 +1123,35 @@ class PersonaEngine {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
 
-    const endpoint =
-      config.provider === 'groq'
-        ? 'https://api.groq.com/openai/v1/chat/completions'
-        : 'https://api.openai.com/v1/chat/completions';
-
-    const model = config.provider === 'groq' ? 'llama-3.1-8b-instant' : 'gpt-4o-mini';
-
     const messages = [
       { role: 'system' as const, content: systemPrompt },
       ...(options?.conversationHistory ?? []),
       { role: 'user' as const, content: userPrompt },
     ];
 
-    const useStreaming = typeof options?.onToken === 'function';
-
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${config.apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          temperature: 0.65,
-          max_tokens: 380,
-          stream: useStreaming,
-          messages,
-        }),
+      const response = await llmClient.chat(messages, {
+        maxTokens: 380,
+        temperature: 0.65,
         signal: controller.signal,
+        onToken: options?.onToken,
       });
-
-      if (!response.ok) {
-        throw new Error(`LLM request failed: ${response.status}`);
-      }
-
-      if (useStreaming) {
-        if (!response.body) throw new Error('Streaming requested but response body is null');
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let fullText = '';
-        const onToken = options!.onToken!;
-
-        try {
-          outer: while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            const raw = decoder.decode(value, { stream: true });
-            for (const line of raw.split('\n')) {
-              const trimmed = line.trim();
-              if (!trimmed.startsWith('data: ')) continue;
-              const data = trimmed.slice(6);
-              if (data === '[DONE]') break outer;
-              try {
-                const json = JSON.parse(data);
-                const token: string = json?.choices?.[0]?.delta?.content ?? '';
-                if (token) {
-                  fullText += token;
-                  onToken(token);
-                }
-              } catch {
-                // malformed SSE chunk — skip
-              }
-            }
-          }
-        } finally {
-          reader.releaseLock();
-        }
-
-        if (!fullText) throw new Error('Empty streaming response');
-        return fullText;
-      }
-
-      // Non-streaming path (fallback or when onToken not provided)
-      const json = await response.json();
-      const content = String(json?.choices?.[0]?.message?.content ?? '').trim();
-      if (!content) throw new Error('Empty LLM content');
-      return content;
+      return response.content;
     } finally {
       clearTimeout(timeout);
     }
-  }
-
-  private mapLLMTextToResponse(
-    llmText: string,
-    context: ContextSnapshot,
-    requestedAction?: string
-  ): PersonaResponse {
-    const { cleanText: withoutControl, responderPersona } = this.extractControlTag(llmText);
-    const { cleanText, structuredIntent } = this.extractStructuredIntent(withoutControl, context);
-    const lines = cleanText
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .slice(0, 2);
-
-    const greeting = lines[0] || llmText;
-    const briefing = lines[1] || lines[0] || this.generateBriefing(context, this.currentMode);
-    const suggestion = lines[2] || this.generateSuggestion(context, this.currentMode);
-
-    const response: PersonaResponse = {
-      mode: responderPersona === 'cortana' ? 'cortana' : 'jarvis',
-      responderPersona,
-      greeting,
-      briefing,
-      suggestion,
-      agency: {
-        opinion: lines[0] || llmText,
-        challengeIfNeeded: this.generateChallenge(requestedAction),
-      },
-      emotionalTone: 'focused',
-      structuredIntent,
-    };
-
-    return response;
   }
 
   private buildOfflineFallbackResponse(
     requestContext?: Partial<ContextSnapshot>,
     requestedAction?: string
   ): PersonaResponse {
-    const offlineTag = this.getLanguage() === 'es' ? '[MODO OFFLINE]' : '[OFFLINE MODE]';
+    // FIX-E: removed [Offline mode] / [Modo offline] prefix — technical tags
+    // are not user-facing. The deterministic fallback is already informative.
     const fallback = this.generateResponse(requestContext, requestedAction);
     return {
       ...fallback,
       responderPersona: fallback.responderPersona || fallback.mode,
-      greeting: `${offlineTag} ${fallback.greeting}`,
-      briefing: `${offlineTag} ${fallback.briefing}`,
-      suggestion: `${offlineTag} ${fallback.suggestion}`,
-      agency: {
-        ...fallback.agency,
-        opinion: `${offlineTag} ${fallback.agency.opinion}`,
-      },
       structuredIntent: fallback.structuredIntent || this.buildFallbackIntent(this.generateContextSnapshot()),
     };
   }

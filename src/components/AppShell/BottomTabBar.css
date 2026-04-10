@@ -6,8 +6,11 @@
   z-index: 200;
   display: flex;
   align-items: center;
-  height: 56px;
-  padding-bottom: var(--safe-bottom);
+  height: calc(var(--mobile-tab-height) + max(48px, env(safe-area-inset-bottom, 48px)));
+  min-height: 64px;
+  padding-bottom: max(48px, env(safe-area-inset-bottom, 48px));
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
   background: var(--bg-surface);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -23,17 +26,20 @@
   justify-content: center;
   gap: 3px;
   height: 100%;
+  min-height: 44px;
   background: none;
   border: none;
   cursor: pointer;
   color: var(--text-muted);
   padding: 0 4px;
-  transition: color var(--transition-fast);
+  transition: color var(--transition-fast), transform var(--duration-fast) var(--ease-spring);
   -webkit-tap-highlight-color: transparent;
   position: relative;
 }
 
 .bottom-tab:active { transform: scale(0.94); }
+
+.bottom-tab.is-pressed { transform: translateY(1px) scale(0.97); }
 
 .bottom-tab.active {
   color: var(--accent-cyan);
@@ -48,6 +54,7 @@
   height: 2px;
   background: var(--accent-cyan);
   border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  animation: tab-indicator-in var(--duration-fast) var(--ease-decel);
 }
 
 .bottom-tab__icon {
@@ -80,10 +87,16 @@
   cursor: pointer;
   transition:
     transform var(--duration-fast) var(--ease-spring),
-    box-shadow var(--transition-fast);
+    box-shadow var(--transition-fast),
+    border-color var(--transition-fast);
   -webkit-tap-highlight-color: transparent;
   position: relative;
   overflow: hidden;
+}
+
+.bottom-tab-fab-btn:hover {
+  border-color: var(--accent-gold);
+  box-shadow: var(--shadow-glow-gold);
 }
 
 .bottom-tab-fab-btn:active {
@@ -109,4 +122,15 @@
   min-width: 16px;
   text-align: center;
   line-height: 1.4;
+}
+
+@keyframes tab-indicator-in {
+  from {
+    opacity: 0;
+    transform: scaleX(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
 }

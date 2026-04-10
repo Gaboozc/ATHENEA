@@ -10,11 +10,15 @@ const FEEDBACK_MAP: Record<string, string> = {
   'notes/addNote':    '📝 Nota guardada',
   'notes/updateNote': '📝 Nota actualizada',
   'notes/deleteNote': '🗑 Nota eliminada',
+  'notes/togglePinNote': '📌 Nota actualizada',
+  'notes/addTag': '🏷 Etiqueta actualizada',
 
   // Todos
   'todos/addTodo':      '✅ Tarea agregada',
   'todos/deleteTodo':   '🗑 Tarea eliminada',
   'todos/setTodoStatus':'✅ Tarea actualizada',
+  'todos/setTodoProgress': '📈 Progreso de tarea actualizado',
+  'todos/updateTodo': '✏️ Tarea editada',
 
   // Payments
   'payments/addPayment':    '💳 Pago registrado',
@@ -25,11 +29,19 @@ const FEEDBACK_MAP: Record<string, string> = {
 
   // Tasks (tasksSlice + GatekeeperModal)
   'tasks/addTask':     '📋 Tarea creada',
+  'tasks/addSubtask':  '🧩 Subtarea creada',
+  'tasks/updateTask':  '✏️ Tarea actualizada',
+  'tasks/rescheduleTask': '🗓 Fecha de tarea actualizada',
   'tasks/completeTask':'✅ Tarea completada',
+  'tasks/restoreTask': '↩️ Tarea reactivada',
   'tasks/logTime':     '⏱ Tiempo registrado',
 
   // Projects
   'projects/addProject':    '🚀 Proyecto creado',
+  'projects/updateProject': '✏️ Proyecto actualizado',
+  'projects/setProjectPhase': '🧭 Fase de proyecto actualizada',
+  'projects/addMeetingNote': '🗒 Nota de reunion agregada',
+  'projects/deleteMeetingNote': '🗑 Nota de reunion eliminada',
   'projects/deleteProject': '🗑 Proyecto eliminado',
 
   // Budget

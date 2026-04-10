@@ -1,0 +1,101 @@
+/* ============================================================
+   ATHENEA — Global Animations
+   Importar una sola vez en main.jsx o App.jsx
+   ============================================================ */
+
+@keyframes athenea-blink {
+  0%, 80%, 100% { opacity: 0.2; }
+  40%           { opacity: 1;   }
+}
+
+@keyframes athenea-pulse {
+  0%, 100% { opacity: 1;   transform: scale(1);    }
+  50%      { opacity: 0.5; transform: scale(0.85); }
+}
+
+@keyframes athenea-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes athenea-slide-up {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+@keyframes athenea-slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes athenea-scan {
+  0%   { background-position: 0% 0%;   }
+  100% { background-position: 0% 100%; }
+}
+
+/* Scan line overlay — usar en paneles de agentes */
+.athenea-scanlines {
+  position: relative;
+}
+.athenea-scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 212, 255, 0.015) 2px,
+    rgba(0, 212, 255, 0.015) 4px
+  );
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Glow border — usar en cards de agentes activos */
+.athenea-glow {
+  box-shadow: 0 0 0 1px var(--accent-border), 0 0 20px var(--accent-glow);
+}
+
+/* Blinking cursor — para inputs de agentes */
+.athenea-cursor::after {
+  content: '▋';
+  animation: athenea-blink 1s infinite;
+  color: var(--accent);
+  font-size: 0.9em;
+}
+
+/* Status dot pulse */
+.athenea-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.athenea-status-dot.live {
+  background: var(--color-success);
+  animation: athenea-pulse 2s infinite;
+}
+.athenea-status-dot.offline {
+  background: var(--text-tertiary);
+}
+.athenea-status-dot.alert {
+  background: var(--color-danger);
+  animation: athenea-pulse 1s infinite;
+}
+
+/* Scrollbar custom */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}

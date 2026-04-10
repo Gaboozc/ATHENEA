@@ -46,6 +46,14 @@
   --font-size-xl:  1.375rem;
   --font-size-2xl: 1.75rem;
 
+  /* Dashboard / card typography */
+  --font-size-card-title: 0.875rem;
+  --font-size-card-body: 0.75rem;
+  --font-size-card-meta: 0.6875rem;
+
+  /* Mobile shell */
+  --mobile-tab-height: 56px;
+
   /* ── Spacing ──────────────────────────────────────────── */
   --space-1: 4px;
   --space-2: 8px;

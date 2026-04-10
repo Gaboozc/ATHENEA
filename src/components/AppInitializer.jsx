@@ -27,6 +27,7 @@ import { initializeActionBridgeListener } from '../modules/actions/ActionBridge'
 import { initNeuralKey } from '../modules/intelligence/neuralAccess';
 import { initializeNotificationEngine, getNotificationEngine } from '../modules/intelligence/notificationEngine';
 import { addNotification } from '../store/slices/notificationsSlice';
+import { initProactiveSchedule } from '../services/ProactiveService.js';
 
 /**
  * AppInitializer - Initialize app features on mount
@@ -79,6 +80,9 @@ const AppInitializer = ({ children }) => {
     initializeActionBridgeListener(store);
     // FASE 5: Initialize proactive trend analyzer
     initializeShadowChronos(store);
+
+    // PROACTIVE: Notificaciones diarias de check-in (solo en Android nativo)
+    initProactiveSchedule(store).catch(() => { /* silencioso en web */ });
 
     // Wire NotificationEngine → Redux so tactical alerts appear in Notifications page
     const engine = initializeNotificationEngine();

@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { recordSession, setCurrentTask, startSession, clearSession } from '../../store/slices/focusSlice';
 import { useLanguage } from '../context/LanguageContext';
 import { showToast } from '../components/Toast/Toast';
+import { EmptyState } from '../components';
 import './FocusMode.css';
 
 const PRESETS = [
@@ -279,6 +280,15 @@ export const FocusMode = () => {
       </div>
 
       {/* Recent session history */}
+      {sessions.length === 0 && (
+        <EmptyState
+          icon="🍅"
+          title={t('No focus sessions yet.')}
+          description={t('Start your first Pomodoro session to build momentum.')}
+          action={{ label: t('Start'), icon: '▶', onClick: start }}
+        />
+      )}
+
       {sessions.length > 0 && (
         <div className="focus-history">
           <h3>{t('Recent Sessions')}</h3>

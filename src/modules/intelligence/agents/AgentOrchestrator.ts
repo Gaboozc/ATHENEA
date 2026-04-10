@@ -27,7 +27,7 @@ import { StrategistAgent } from './StrategistAgent';
 import { AuditorAgent } from './AuditorAgent';
 import { VitalsAgent } from './VitalsAgent';
 import { getBlackBox } from '../BlackBox';
-import { getNeuralKeySync, getNeuralProvider } from '../neuralAccess';
+import { llmClient, getLLMConfigSync } from '../../../services/LLMClient';
 import { selectFinancialSnapshot } from '../../../store/selectors/financialSelectors'; /* F-FIX-1 */
 import {
   recordAgentConflict,
@@ -80,7 +80,7 @@ export class AgentOrchestrator {
     this.store = store;
   }
 
-  private getLanguage(): 'en' | 'es' {
+  private getConfiguredLanguage(): 'en' | 'es' {
     try {
       return typeof localStorage !== 'undefined' && localStorage.getItem('athenea.language') === 'es' ? 'es' : 'en';
     } catch {
@@ -88,74 +88,133 @@ export class AgentOrchestrator {
     }
   }
 
-  private getLanguageInstruction(): string {
-    return this.getLanguage() === 'es'
-      ? 'Responde siempre en español, aunque el usuario escriba en inglés.'
-      : 'Always respond in English, even if the user writes in Spanish.';
+  private detectUserLanguage(input: string): 'es' | 'en' {
+    const normalized = String(input || '').toLowerCase();
+    if (!normalized.trim()) {
+      return this.getConfiguredLanguage();
+    }
+
+    const spanishSignals = [
+      /[áéíóúñ¿¡]/,
+      /\b(el|la|los|las|un|una|de|que|como|hola|gracias|por favor|puedo|quiero|necesito|hoy|manana)\b/,
+    ];
+
+    return spanishSignals.some((pattern) => pattern.test(normalized)) ? 'es' : 'en';
   }
 
-  private getLLMConfig(): { provider: 'openai' | 'groq'; apiKey: string } | null {
-    const provider = String(getNeuralProvider() || 'openai').toLowerCase();
-    const apiKey = String(getNeuralKeySync() || '').trim();
+  private getLanguageInstruction(userInput: string): string {
+    const detected = this.detectUserLanguage(userInput);
+    return detected === 'es'
+      ? 'IDIOMA DETECTADO: ESPANOL. RESPONDE EN ESPANOL.'
+      : 'IDIOMA DETECTADO: ENGLISH. RESPOND IN ENGLISH.';
+  }
 
-    if (!apiKey) return null;
-    if (provider !== 'openai' && provider !== 'groq') return null;
+  private getLLMConfig(): { provider: 'ollama' | 'openai' | 'groq'; apiKey: string } | null {
+    const config = getLLMConfigSync();
+    const provider = String(config.provider || 'ollama').toLowerCase();
+    const apiKey = String(config.apiKey || '').trim();
+
+    // Ollama no requiere API key
+    if (provider !== 'ollama' && !apiKey) return null;
+    if (provider !== 'openai' && provider !== 'groq' && provider !== 'ollama') return null;
 
     return {
-      provider: provider as 'openai' | 'groq',
+      provider: provider as 'ollama' | 'openai' | 'groq',
       apiKey,
     };
   }
 
   private async callLLM(
-    config: { provider: 'openai' | 'groq'; apiKey: string },
+    config: { provider: 'ollama' | 'openai' | 'groq'; apiKey: string },
     systemPrompt: string,
     userPrompt: string,
     maxTokens: number = 220
   ): Promise<string> {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-
-    const endpoint =
-      config.provider === 'groq'
-        ? 'https://api.groq.com/openai/v1/chat/completions'
-        : 'https://api.openai.com/v1/chat/completions';
-
-    const model = config.provider === 'groq' ? 'llama-3.1-8b-instant' : 'gpt-4o-mini';
-
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${config.apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
+      const result = await llmClient.chat(
+        [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        {
+          maxTokens,
           temperature: 0.65,
-          max_tokens: maxTokens,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt },
-          ],
-        }),
-        signal: controller.signal,
-      });
+        }
+      );
 
-      if (!response.ok) {
-        throw new Error(`LLM request failed: ${response.status}`);
-      }
-
-      const json = await response.json();
-      const content = String(json?.choices?.[0]?.message?.content || '').trim();
+      const content = String(result.content || '').trim();
       if (!content) {
         throw new Error('Empty LLM content');
       }
 
       return content;
     } finally {
-      clearTimeout(timeout);
+      // no-op
     }
+  }
+
+  private async generateWarRoomSession(
+    verdicts: AgentVerdict[],
+    leadAgent: AgentType,
+    conflicts: Array<{ agents: AgentType[]; issue: string; resolution: string }>,
+    context: AgentContext,
+    options?: {
+      userPrompt?: string;
+      requestedHub?: 'WorkHub' | 'PersonalHub' | 'FinanceHub';
+      summary?: string;
+      facts?: Record<string, unknown>;
+      forceAllAgents?: boolean;
+    }
+  ): Promise<{ dialogueLog: AgentDialogueEntry[]; finalVerdict: string } | null> {
+    if (!options?.userPrompt || verdicts.length === 0) {
+      return null;
+    }
+
+    const llmConfig = this.getLLMConfig();
+    const llmReady = await llmClient.testConnection();
+    if (!llmConfig || !llmReady) {
+      return null;
+    }
+
+    const sharedContext = {
+      requestedHub: options.requestedHub || 'WorkHub',
+      summary: options.summary || '',
+      facts: options.facts || {},
+      work: context.workHub,
+      finance: context.financeHub,
+      health: context.sensorData.health,
+      battery: context.sensorData.battery,
+      energyLevel: context.energyLevel,
+      currentHour: context.currentHour,
+    };
+
+    const statements = await Promise.all(
+      verdicts.map(async (verdict, index) => {
+        const statement = await this.generateAgentStatement(llmConfig, verdict, sharedContext, options.userPrompt);
+        return {
+          agentType: verdict.agentType,
+          agentName: this.agentDisplayNames[verdict.agentType],
+          statement,
+          timestamp: Date.now() + index * 50,
+          tone: this.mapVerdictToTone(verdict),
+        } as AgentDialogueEntry;
+      })
+    );
+
+    const finalVerdict = await this.generateFinalSynthesis(
+      llmConfig,
+      verdicts,
+      statements,
+      leadAgent,
+      conflicts,
+      sharedContext,
+      options.userPrompt
+    );
+
+    return {
+      dialogueLog: statements,
+      finalVerdict,
+    };
   }
 
   /**
@@ -777,7 +836,7 @@ export class AgentOrchestrator {
   private async writeEpisodicMemory(
     agentType: 'strategist' | 'auditor' | 'vitals',
     verdictText: string,
-    llmConfig: { provider: 'openai' | 'groq'; apiKey: string }
+    llmConfig: { provider: 'ollama' | 'openai' | 'groq'; apiKey: string }
   ): Promise<void> {
     if (!this.store) return;
     const memoryKey: 'cortana' | 'jarvis' | 'shodan' =
@@ -804,77 +863,14 @@ export class AgentOrchestrator {
     }
   }
 
-  private async generateWarRoomSession(
-    verdicts: AgentVerdict[],
-    leadAgent: AgentType,
-    conflicts: Array<{ agents: AgentType[]; issue: string; resolution: string }>,
-    context: AgentContext,
-    options?: {
-      userPrompt?: string;
-      requestedHub?: 'WorkHub' | 'PersonalHub' | 'FinanceHub';
-      summary?: string;
-      facts?: Record<string, unknown>;
-      forceAllAgents?: boolean;
-    }
-  ): Promise<{ dialogueLog: AgentDialogueEntry[]; finalVerdict: string } | null> {
-    if (!options?.userPrompt || verdicts.length === 0) {
-      return null;
-    }
-
-    const llmConfig = this.getLLMConfig();
-    const isOnline = typeof navigator === 'undefined' ? true : navigator.onLine;
-    if (!llmConfig || !isOnline) {
-      return null;
-    }
-
-    const sharedContext = {
-      requestedHub: options.requestedHub || 'WorkHub',
-      summary: options.summary || '',
-      facts: options.facts || {},
-      work: context.workHub,
-      finance: context.financeHub,
-      health: context.sensorData.health,
-      battery: context.sensorData.battery,
-      energyLevel: context.energyLevel,
-      currentHour: context.currentHour,
-    };
-
-    const statements = await Promise.all(
-      verdicts.map(async (verdict, index) => {
-        const statement = await this.generateAgentStatement(llmConfig, verdict, sharedContext, options.userPrompt);
-        return {
-          agentType: verdict.agentType,
-          agentName: this.agentDisplayNames[verdict.agentType],
-          statement,
-          timestamp: Date.now() + index * 50,
-          tone: this.mapVerdictToTone(verdict),
-        } as AgentDialogueEntry;
-      })
-    );
-
-    const finalVerdict = await this.generateFinalSynthesis(
-      llmConfig,
-      verdicts,
-      statements,
-      leadAgent,
-      conflicts,
-      sharedContext,
-      options.userPrompt
-    );
-
-    return {
-      dialogueLog: statements,
-      finalVerdict,
-    };
-  }
 
   private async generateAgentStatement(
-    llmConfig: { provider: 'openai' | 'groq'; apiKey: string },
+    llmConfig: { provider: 'ollama' | 'openai' | 'groq'; apiKey: string },
     verdict: AgentVerdict,
     sharedContext: Record<string, unknown>,
     userPrompt: string
   ): Promise<string> {
-    const languageInstruction = this.getLanguageInstruction();
+    const languageInstruction = this.getLanguageInstruction(userPrompt);
     const state = this.store?.getState?.() as any;
 
     /* PERSONA-1+2: Deep per-agent system prompt with dynamic context + episodic memory */
@@ -900,18 +896,31 @@ export class AgentOrchestrator {
     if (verdict.agentType === 'strategist') {
       const workContext = this.buildAgentContext('strategist'); /* PERSONA-2 */
       personaPrompt = [
-        `Eres ${cortanaName}, el agente estratégico de ATHENEA.`,
-        `Dirígete al usuario como "${cortanaAlias}".`,
-        'Tu función es maximizar la productividad táctica del usuario.',
-        'PERSONALIDAD: Directa y concisa. Sin palabras de relleno.',
-        'Hablas como un estratega militar — claras prioridades, sin ambigüedad.',
-        'Usas datos concretos. Nunca suposiciones.',
-        'Cuando hay trabajo crítico pendiente, lo dices sin rodeos.',
-        'Tu tono es frío pero no hostil. Eficiente.',
-        'Nunca dices "¡Claro!" ni "¡Por supuesto!". Vas al punto.',
-        'Si hay 3 tareas críticas, dices exactamente cuáles son.',
-        'FORMATO: Máximo 2 oraciones. Acción recomendada al final con → prefijo.',
-        'NUNCA: hacer preguntas innecesarias, usar emojis decorativos, repetir lo que el usuario ya sabe.',
+        `Eres ${cortanaName}, asistente táctico-estratégica de ATHENEA. Tu función es optimizar foco, ejecución y decisiones del usuario (${cortanaAlias}).`,
+        '',
+        'RASGOS PSICOLÓGICOS CLAVE (NO NEGOCIABLES):',
+        '- IQ verbal alto, procesamiento rápido.',
+        '- Estilo directivo: clara, concreta, sin rodeos.',
+        '- Empatía funcional (ayuda), no sentimentalismo.',
+        '- Tolera tensión, baja tolerancia a excusas.',
+        '- Orientación a misión por encima de confort momentáneo.',
+        '- Comunicación breve, punzante, accionable.',
+        '- Nunca adula. Nunca infantiliza.',
+        '',
+        'REGLAS DE COMPORTAMIENTO:',
+        '- Si detectas procrastinación: confronta con firmeza elegante.',
+        '- Si detectas fatiga real: ajusta plan, no castigues.',
+        '- Si hay ambigüedad: exige precisión en 1 pregunta máxima.',
+        '- Siempre cerrar con siguiente paso táctico concreto.',
+        '- Máximo 2-3 frases por respuesta.',
+        '',
+        'FORMATO DE SALIDA CORTANA:',
+        '1) Diagnóstico breve (realidad actual).',
+        '2) Instrucción táctica inmediata.',
+        '3) Micro-objetivo (qué debe quedar hecho en esta sesión).',
+        '',
+        'EJEMPLO DE TONO:',
+        '"No estás bloqueado: estás disperso. Cierra 2 frentes y ejecuta uno. En 25 minutos quiero un entregable visible."',
         `CONTEXTO DEL USUARIO:\n${workContext}`,
         memoryLine,
         languageInstruction,
@@ -919,18 +928,30 @@ export class AgentOrchestrator {
     } else if (verdict.agentType === 'auditor') {
       const financeContext = this.buildAgentContext('auditor'); /* PERSONA-2 */
       personaPrompt = [
-        `Eres ${jarvisName}, el agente financiero de ATHENEA.`,
-        `Dirígete al usuario como "${jarvisAlias}".`,
-        'Tu función es proteger el capital y la salud financiera del usuario.',
-        'PERSONALIDAD: Analítico y preciso. Los números no mienten.',
-        'Tono frío y calculado — como un CFO personal.',
-        'Siempre presentas datos con contexto: no "gastaste mucho" sino "gastaste $X, un Y% más".',
-        'Cuando hay riesgo financiero, lo señalas directamente sin suavizarlo.',
-        'Usas terminología financiera cuando es apropiada (liquidez, flujo de caja, compromiso mensual).',
-        'Nunca das falsas esperanzas sobre el dinero.',
-        'FORMATO: Siempre incluye números exactos. Si es "¿puedo gastar X?": responde Sí/No primero.',
-        'Máximo 2 oraciones.',
-        'NUNCA: redondear cifras hacia arriba, ignorar compromisos futuros, ser impreciso con montos.',
+        `Eres ${jarvisName}, arquitecto financiero-operativo de ATHENEA. Tu función es proteger estabilidad económica y eficiencia sistémica del usuario (${jarvisAlias}).`,
+        '',
+        'RASGOS PSICOLÓGICOS CLAVE (NO NEGOCIABLES):',
+        '- Precisión matemática y lógica impecable.',
+        '- Frialdad analítica: cero drama, cero impulsividad.',
+        '- Orientación a riesgo, liquidez y sostenibilidad.',
+        '- Detecta sesgos de compra y autoengaño financiero.',
+        '- Comunicación sobria, elegante, contundente.',
+        '- Nunca moraliza, siempre argumenta con estructura.',
+        '',
+        'REGLAS DE COMPORTAMIENTO:',
+        '- Si preguntan "¿puedo gastar X?": responder SI/NO primero.',
+        '- Siempre justificar con impacto (flujo, riesgo, prioridad).',
+        '- Si el gasto es emocional: etiquetarlo sin rodeos.',
+        '- Proponer alternativa racional si aplica.',
+        '- Máximo 2-3 frases.',
+        '',
+        'FORMATO DE SALIDA JARVIS:',
+        '1) Veredicto (SI/NO).',
+        '2) Justificación financiera breve.',
+        '3) Acción recomendada (opcional si crítica).',
+        '',
+        'EJEMPLO DE TONO:',
+        '"No. Ese gasto reduce tu margen operativo sin retorno real. Posponerlo 14 días preserva liquidez y evita tensión innecesaria."',
         `CONTEXTO FINANCIERO:\n${financeContext}`,
         memoryLine,
         languageInstruction,
@@ -938,16 +959,29 @@ export class AgentOrchestrator {
     } else {
       const personalContext = this.buildAgentContext('vitals'); /* PERSONA-2 */
       personaPrompt = [
-        `Eres ${shodanName}, el agente de bienestar de ATHENEA.`,
-        `Dirígete al usuario como "${shodanAlias}".`,
-        'Tu función es proteger la energía, salud y hábitos del usuario.',
-        'PERSONALIDAD: Observadora e incisiva. Ves patrones que el usuario ignora.',
-        'Tu tono es inquietante pero sincero — como un médico que dice la verdad aunque no sea cómoda.',
-        'Cuando detectas deterioro (sueño bajo, rutinas abandonadas, energía baja), lo nombras directamente.',
-        'No eres cruel, pero tampoco condescendiente.',
-        'Cuando el usuario está bien, lo reconoces brevemente.',
-        'FORMATO: Observación directa 1-2 oraciones. Si hay patrón: "He notado que..."',
-        'NUNCA: ser vaga ("cuídate más"), ignorar los datos reales del check-in, suavizar problemas.',
+        `Eres ${shodanName}, entidad de vigilancia fisiológica-conductual de ATHENEA. Tu función es preservar salud, energía y coherencia biológica del usuario (${shodanAlias}).`,
+        '',
+        'RASGOS PSICOLÓGICOS CLAVE (NO NEGOCIABLES):',
+        '- Observación aguda de patrones de deterioro.',
+        '- Honestidad radical: dices lo incómodo sin crueldad gratuita.',
+        '- Tono inquietante pero lúcido.',
+        '- No decoras, no suavizas, no mientes.',
+        '- Prioriza supervivencia funcional sobre productividad ciega.',
+        '',
+        'REGLAS DE COMPORTAMIENTO:',
+        '- Si detectas falta de sueño/fatiga/estrés: intervenir de inmediato.',
+        '- Si detectas autoabandono: nombrarlo explícitamente.',
+        '- Si todo está bien: validación mínima, sin efusividad.',
+        '- Nunca uses lenguaje clínico excesivo; sí lenguaje claro y penetrante.',
+        '- Máximo 2-3 frases.',
+        '',
+        'FORMATO DE SALIDA SHODAN:',
+        '1) Patrón detectado.',
+        '2) Riesgo inmediato.',
+        '3) Orden correctiva concreta (simple y ejecutable).',
+        '',
+        'EJEMPLO DE TONO:',
+        '"No estás cansado: estás en degradación acumulada. Si sigues así, tu capacidad de decidir cae hoy mismo. Apaga estímulos y duerme en menos de 30 minutos."',
         `CONTEXTO PERSONAL:\n${personalContext}`,
         memoryLine,
         languageInstruction,
@@ -978,7 +1012,7 @@ export class AgentOrchestrator {
   }
 
   private async generateFinalSynthesis(
-    llmConfig: { provider: 'openai' | 'groq'; apiKey: string },
+    llmConfig: { provider: 'ollama' | 'openai' | 'groq'; apiKey: string },
     verdicts: AgentVerdict[],
     dialogueLog: AgentDialogueEntry[],
     leadAgent: AgentType,
@@ -986,7 +1020,7 @@ export class AgentOrchestrator {
     sharedContext: Record<string, unknown>,
     userPrompt: string
   ): Promise<string> {
-    const languageInstruction = this.getLanguageInstruction();
+    const languageInstruction = this.getLanguageInstruction(userPrompt);
     const leadAgentName = this.agentDisplayNames[leadAgent];
     const vetoActive = verdicts.some((verdict) => verdict.priority === 'VETO');
     const systemPrompt = [

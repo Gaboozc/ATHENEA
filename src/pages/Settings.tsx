@@ -16,7 +16,7 @@ import { getPlanLimits } from "../utils/planLimits";
 import { useDataExport } from "../hooks/useDataExport";
 import { cacheManager } from "../utils/cacheManager";
 import { IdentityPanel } from "../components/settings/IdentityPanel";
-import { getNeuralKeySync, setNeuralKey, getNeuralProvider, setNeuralProvider } from "../modules/intelligence/neuralAccess";
+import { llmClient, getLLMConfigSync } from "../services/LLMClient";
 
 const INVITES_STORAGE_KEY = "athenea.invites";
 const ACCESS_DENIED_KEY = "athenea.accessDenied";
@@ -31,6 +31,18 @@ const EXPIRY_OPTIONS = [
 const buildToken = () =>
   Math.random().toString(36).slice(2, 10).toUpperCase() +
   Math.random().toString(36).slice(2, 6).toUpperCase();
+
+const defaultBaseUrlByProvider = {
+  ollama: "http://localhost:11434/v1",
+  openai: "https://api.openai.com/v1",
+  groq: "https://api.groq.com/openai/v1",
+} as const;
+
+const defaultModelByProvider = {
+  ollama: "llama3.2:3b",
+  openai: "gpt-4o-mini",
+  groq: "llama-3.1-8b-instant",
+} as const;
 
 export const Settings = () => {
   const dispatch = useDispatch();
@@ -91,15 +103,24 @@ export const Settings = () => {
   const [logoUrl, setLogoUrl] = useState(currentOrg?.logoUrl || "");
   /* FIX UX-6 — feedback de guardado inline */
   const [savedField, setSavedField] = useState<string | null>(null);
+  const [visualPreset, setVisualPreset] = useState<'neon' | 'minimal'>(() => {
+    const stored = localStorage.getItem('athenea.settings.visualPreset');
+    return stored === 'minimal' ? 'minimal' : 'neon';
+  });
   const markSaved = (key: string) => {
     setSavedField(key);
     setTimeout(() => setSavedField(null), 1500);
   };
 
+  useEffect(() => {
+    localStorage.setItem('athenea.settings.visualPreset', visualPreset);
+  }, [visualPreset]);
+
   // AI / Neural settings
-  const [aiProvider, setAiProvider] = useState(() => getNeuralProvider());
-  const [aiKey, setAiKey] = useState(() => getNeuralKeySync());
-  const [aiKeyVisible, setAiKeyVisible] = useState(false);
+  const [aiProvider] = useState<'ollama'>('ollama');
+  const [aiBaseUrl, setAiBaseUrl] = useState(() => getLLMConfigSync().baseUrl);
+  const [aiModel, setAiModel] = useState(() => getLLMConfigSync().model);
+  const [aiKey, setAiKey] = useState(() => getLLMConfigSync().apiKey);
   const [aiTestStatus, setAiTestStatus] = useState<null | 'testing' | 'ok' | 'error'>(null);
   const [aiMessage, setAiMessage] = useState<{ text: string; type: string } | null>(null);
   const showAiMessage = (text: string, type = 'success') => {
@@ -107,21 +128,41 @@ export const Settings = () => {
     setTimeout(() => setAiMessage(null), 4000);
   };
   const handleSaveAI = async () => {
-    setNeuralProvider(aiProvider);
-    await setNeuralKey(aiKey);
+    const safeBaseUrl = (aiBaseUrl || defaultBaseUrlByProvider[aiProvider]).trim();
+    const safeModel = (aiModel || defaultModelByProvider[aiProvider]).trim();
+    const safeKey = aiKey.trim();
+
+    localStorage.setItem('athenea.llm.provider', aiProvider);
+    localStorage.setItem('athenea.llm.base_url', safeBaseUrl);
+    localStorage.setItem('athenea.llm.model', safeModel);
+    localStorage.setItem('athenea.neural.key', safeKey);
+
+    window.dispatchEvent(new CustomEvent('athenea:neural-key-updated', { detail: { hasKey: !!safeKey } }));
+    window.dispatchEvent(new CustomEvent('athenea:llm-config-updated'));
+
     showAiMessage(t('AI configuration saved'));
   };
+
   const handleTestAI = async () => {
-    const key = aiKey.trim();
-    if (!key) { showAiMessage(t('Enter your API key first'), 'error'); return; }
+    const safeBaseUrl = (aiBaseUrl || defaultBaseUrlByProvider[aiProvider]).trim();
+    const safeModel = (aiModel || defaultModelByProvider[aiProvider]).trim();
+    const safeKey = aiKey.trim();
+
+    localStorage.setItem('athenea.llm.provider', aiProvider);
+    localStorage.setItem('athenea.llm.base_url', safeBaseUrl);
+    localStorage.setItem('athenea.llm.model', safeModel);
+    localStorage.setItem('athenea.neural.key', safeKey);
+
+    if (aiProvider !== 'ollama' && !safeKey) {
+      showAiMessage(t('Enter your API key first'), 'error');
+      return;
+    }
+
     setAiTestStatus('testing');
     try {
-      const url = aiProvider === 'groq'
-        ? 'https://api.groq.com/openai/v1/models'
-        : 'https://api.openai.com/v1/models';
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${key}` } });
-      setAiTestStatus(res.ok ? 'ok' : 'error');
-      showAiMessage(res.ok ? t('Connection successful — AI active') : `✗ Error ${res.status}`, res.ok ? 'success' : 'error');
+      const ok = await llmClient.testConnection();
+      setAiTestStatus(ok ? 'ok' : 'error');
+      showAiMessage(ok ? t('Connection successful — AI active') : t('Could not connect to AI provider'), ok ? 'success' : 'error');
     } catch {
       setAiTestStatus('error');
       showAiMessage(t('Could not connect to AI provider'), 'error');
@@ -246,10 +287,30 @@ export const Settings = () => {
   };
 
   return (
-    <div className="settings-page">
+    <div className={`settings-page ${visualPreset === 'minimal' ? 'settings-theme-b' : 'settings-theme-a'}`}>
       <header className="settings-header">
-        <h1>{t("Settings")}</h1>
-        <p>{t("Identity & Governance")}</p>
+        <div className="settings-header-top">
+          <div>
+            <h1>{t("Settings")}</h1>
+            <p>{t("Identity & Governance")}</p>
+          </div>
+          <div className="settings-theme-toggle" role="group" aria-label="Settings visual preset">
+            <button
+              type="button"
+              className={`settings-theme-btn ${visualPreset === 'neon' ? 'is-active' : ''}`}
+              onClick={() => setVisualPreset('neon')}
+            >
+              Neon
+            </button>
+            <button
+              type="button"
+              className={`settings-theme-btn ${visualPreset === 'minimal' ? 'is-active' : ''}`}
+              onClick={() => setVisualPreset('minimal')}
+            >
+              Minimal
+            </button>
+          </div>
+        </div>
       </header>
 
       <section className="settings-card">
@@ -418,7 +479,7 @@ export const Settings = () => {
           {/* FIX UX-4 — Voice Language */}
           <div className="settings-section">
             <h3>🎙 {t("Voice Language")} {savedField === 'voiceLanguage' && <span className="settings-saved-indicator">✓ Guardado</span>}</h3>
-            <div className="settings-row" style={{ flexWrap: 'wrap', gap: 8 }}>
+            <div className="settings-row settings-chip-row">
               {(['auto', 'en-US', 'es-MX', 'es-ES'] as VoiceLanguage[]).map((lang) => (
                 <button
                   key={lang}
@@ -489,39 +550,45 @@ export const Settings = () => {
       {/* ── AI / Neural ──────────────────────────────────────────────────── */}
       <section className="settings-card">
         <h2>🤖 {t("Artificial Intelligence")}</h2>
-        <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary, #9aa3ad)', marginBottom: '1rem' }}>
-          {t("Configure your API key to activate Cortana, Jarvis and SHODAN with real AI.")}
+        <p className="settings-card-subtitle">
+          {t("Configure local Ollama to activate Cortana, Jarvis and SHODAN with real AI.")}
         </p>
         {aiMessage && (
-          <div className={`settings-message ${aiMessage.type}`} style={{ marginBottom: 12 }}>
+          <div className={`settings-message ${aiMessage.type}`}>
             {aiMessage.text}
           </div>
         )}
-        <div style={{ display: 'grid', gap: '0.75rem', maxWidth: 480 }}>
-          <label style={{ display: 'grid', gap: 4 }}>
+        <div className="settings-form-grid">
+          <label className="settings-field">
             <span>{t("Provider")}</span>
-            <select className="settings-action" value={aiProvider} onChange={(e) => setAiProvider(e.target.value)}>
-              <option value="openai">OpenAI (GPT-4o-mini)</option>
-              <option value="groq">Groq (Llama 3.1 — free)</option>
-            </select>
+            <input
+              type="text"
+              className="settings-input settings-input-readonly"
+              value="Ollama (local)"
+              readOnly
+            />
           </label>
-          <label style={{ display: 'grid', gap: 4 }}>
-            <span>API Key</span>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input
-                type={aiKeyVisible ? 'text' : 'password'}
-                className="settings-action"
-                value={aiKey}
-                onChange={(e) => setAiKey(e.target.value)}
-                placeholder={aiProvider === 'groq' ? 'gsk_...' : 'sk-...'}
-                style={{ flex: 1 }}
-              />
-              <button type="button" className="settings-action" onClick={() => setAiKeyVisible((v) => !v)}>
-                {aiKeyVisible ? '🙈' : '👁'}
-              </button>
-            </div>
+          <label className="settings-field">
+            <span>{t("Base URL")}</span>
+            <input
+              type="text"
+              className="settings-input"
+              value={aiBaseUrl}
+              onChange={(e) => setAiBaseUrl(e.target.value)}
+              placeholder={defaultBaseUrlByProvider[aiProvider]}
+            />
           </label>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <label className="settings-field">
+            <span>{t("Model")}</span>
+            <input
+              type="text"
+              className="settings-input"
+              value={aiModel}
+              onChange={(e) => setAiModel(e.target.value)}
+              placeholder={defaultModelByProvider[aiProvider]}
+            />
+          </label>
+          <div className="settings-actions-inline">
             <button type="button" className="settings-action" onClick={handleSaveAI}>{t("Save")}</button>
             <button type="button" className="settings-action" onClick={handleTestAI} disabled={aiTestStatus === 'testing'}>
               {aiTestStatus === 'testing' ? `⏳ ${t("Testing…")}` :
@@ -535,39 +602,36 @@ export const Settings = () => {
 
       {/* ── Data Backup & Restore ─────────────────────────────────────────── */}
       <section className="settings-card">
-        <h2 style={{ marginBottom: '0.5rem' }}>
+        <h2>
           <button
             type="button"
-            className="settings-action"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: 0 }}
+            className="settings-toggle-button"
             onClick={() => setAdvancedOpen((v) => !v)}
           >
             💾 {t("Backup & Restore")} {advancedOpen ? '−' : '+'}
           </button>
         </h2>
         {advancedOpen && (
-          <>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+          <div className="settings-advanced-body">
+            <div className="settings-export-actions">
               <button type="button" className="settings-action" onClick={handleExportPDF}>📄 {t("Export PDF")}</button>
               <button type="button" className="settings-action" onClick={handleExportJSON}>💾 {t("Export JSON")}</button>
             </div>
             <textarea
-              style={{ width: '100%', minHeight: 80, fontFamily: 'monospace', fontSize: 12 }}
+              className="settings-import-textarea"
               value={importText}
               onChange={(e) => setImportText(e.target.value)}
               placeholder={t("Paste your backup JSON here…")}
             />
-            <button type="button" className="settings-action" onClick={handleImport} disabled={!importText.trim()}
-              style={{ marginTop: 8 }}>
+            <button type="button" className="settings-action" onClick={handleImport} disabled={!importText.trim()}>
               {t("Import & Restore")}
             </button>
-            <div style={{ marginTop: 16, borderTop: '1px solid var(--color-border, #2a2f3a)', paddingTop: 12 }}>
-              <button type="button" className="settings-action" style={{ background: '#7f1d1d', color: '#fca5a5' }}
-                onClick={handleClearAll}>
+            <div className="settings-danger-divider">
+              <button type="button" className="settings-action is-danger-solid" onClick={handleClearAll}>
                 🔥 {t("Clear All Data")}
               </button>
             </div>
-          </>
+          </div>
         )}
       </section>
     </div>

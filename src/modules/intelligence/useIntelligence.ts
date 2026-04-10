@@ -26,7 +26,15 @@ interface UseIntelligenceReturn {
   sendPrompt: (
     prompt: string,
     hub?: 'WorkHub' | 'PersonalHub' | 'FinanceHub',
-    options?: { autoExecute?: boolean; onToken?: (chunk: string) => void; conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }> }
+    options?: {
+      autoExecute?: boolean;
+      onToken?: (chunk: string) => void;
+      conversationHistory?: Array<{
+        role: 'user' | 'assistant' | 'agent' | 'system';
+        content?: string;
+        text?: string;
+      }>;
+    }
   ) => Promise<{
     executed: boolean; 
     response: IntelligenceResponse | null;
@@ -50,10 +58,11 @@ interface UseIntelligenceReturn {
 
 /**
  * Autonomous execution threshold
- * Skills with all required params and >= 90% confidence auto-execute without confirmation.
+ * Skills with all required params and >= 95% confidence auto-execute without confirmation.
  * Finance/destructive actions always require confirmation regardless of confidence.
+ * Raised from 90 → 95 to reduce false positives (FIX-B).
  */
-const AUTO_EXECUTE_THRESHOLD = 90;
+const AUTO_EXECUTE_THRESHOLD = 95;
 
 /**
  * useIntelligence Hook
@@ -81,7 +90,15 @@ export function useIntelligence(
     async (
       prompt: string,
       hub?: 'WorkHub' | 'PersonalHub' | 'FinanceHub',
-      options?: { autoExecute?: boolean; onToken?: (chunk: string) => void; conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }> }
+      options?: {
+        autoExecute?: boolean;
+        onToken?: (chunk: string) => void;
+        conversationHistory?: Array<{
+          role: 'user' | 'assistant' | 'agent' | 'system';
+          content?: string;
+          text?: string;
+        }>;
+      }
     ) => {
       try {
         setIsLoading(true);

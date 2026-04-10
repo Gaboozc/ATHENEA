@@ -4,9 +4,9 @@ import { useTasks } from '../context/TasksContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '../components/Skeleton/Skeleton';
-import { getNeuralKeySync } from '../modules/intelligence/neuralAccess';
+import { getLLMConfigSync } from '../services/LLMClient';
 import { DailyStandup } from '../components/DailyStandup/DailyStandup';
-import EmptyState from '../components/EmptyState/EmptyState';
+import { EmptyState } from '../components';
 import './WorkHub.css';
 
 const openGatekeeper = () => window.dispatchEvent(new CustomEvent('athenea:gatekeeper:open'));
@@ -21,6 +21,25 @@ export const WorkHub = () => {
   const { tasks, updateTask: updateTaskCtx } = useTasks();
   const [isReady, setIsReady] = useState(false);
   useEffect(() => { setIsReady(true); }, []);
+
+  const [llmConfigured, setLlmConfigured] = useState(() => {
+    const cfg = getLLMConfigSync();
+    return cfg.provider === 'ollama' || !!cfg.apiKey;
+  });
+
+  useEffect(() => {
+    const refresh = () => {
+      const cfg = getLLMConfigSync();
+      setLlmConfigured(cfg.provider === 'ollama' || !!cfg.apiKey);
+    };
+
+    window.addEventListener('athenea:llm-config-updated', refresh);
+    window.addEventListener('athenea:neural-key-updated', refresh);
+    return () => {
+      window.removeEventListener('athenea:llm-config-updated', refresh);
+      window.removeEventListener('athenea:neural-key-updated', refresh);
+    };
+  }, []);
 
   /* NEW-WORK-2: DailyStandup — show once per day if not completed */
   const STANDUP_KEY = `athenea.standup.${new Date().toISOString().split('T')[0]}`;
@@ -166,7 +185,7 @@ export const WorkHub = () => {
         </div>
       </header>
 
-      {lastVerdict && getNeuralKeySync() && (Date.now() - lastVerdict.timestamp < 30 * 60 * 1000) && (
+      {lastVerdict && llmConfigured && (Date.now() - lastVerdict.timestamp < 30 * 60 * 1000) && (
         <div className="cortana-briefing">
           <span className="cortana-icon">🧿</span>
           <div className="cortana-content">
@@ -262,10 +281,16 @@ export const WorkHub = () => {
       <section className="workhub-card">
         <h2>{t('Active Projects')}</h2>
         {activeProjects.length === 0 ? (
-          <div className="workhub-empty-block">
-            <div className="workhub-empty">{t('No active projects.')}</div>
-            <button className="workhub-inline-action" onClick={() => navigate('/projects')}>{t('Go to Projects')}</button>
-          </div>
+          <EmptyState
+            icon="📁"
+            title={t('No active projects.')}
+            description={t('Start by creating a project to organize your workflow.')}
+            action={{
+              label: t('Go to Projects'),
+              icon: '→',
+              onClick: () => navigate('/projects'),
+            }}
+          />
         ) : (
           <ul>
             {activeProjects.slice(0, 3).map((project) => {

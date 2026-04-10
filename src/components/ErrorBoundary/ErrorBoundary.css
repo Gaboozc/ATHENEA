@@ -70,12 +70,12 @@
 }
 .eb-fallback__btn:hover { opacity: 0.8; }
 
-.eb-fallback__btn.primary {
+.eb-fallback__btn--primary {
   background: var(--accent-cyan, #1ec9ff);
   color: #000;
 }
 
-.eb-fallback__btn.secondary {
+.eb-fallback__btn--secondary {
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary, #e2e8f0);
   border: 1px solid rgba(255, 255, 255, 0.15);

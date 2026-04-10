@@ -30,6 +30,9 @@
 }
 
 .empty-state__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   margin-top: 4px;
   border: 1px solid var(--accent-cyan, #1ec9ff);
   background: transparent;

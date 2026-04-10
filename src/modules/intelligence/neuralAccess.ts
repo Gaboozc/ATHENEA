@@ -1,4 +1,4 @@
-export type NeuralProvider = 'openai' | 'groq';
+export type NeuralProvider = 'ollama' | 'openai' | 'groq';
 
 const NEURAL_PROVIDER_KEY = 'athenea.neural.provider';
 const NEURAL_API_KEY = 'athenea.neural.key';
@@ -15,7 +15,10 @@ function readEnvValue(name: string): string {
 }
 
 function normalizeProvider(value: string): NeuralProvider {
-  return String(value || '').toLowerCase() === 'groq' ? 'groq' : 'openai';
+  const normalized = String(value || '').toLowerCase();
+  if (normalized === 'groq') return 'groq';
+  if (normalized === 'openai') return 'openai';
+  return 'ollama';
 }
 
 // ── Capacitor Preferences helper (native builds only) ─────────────────────────

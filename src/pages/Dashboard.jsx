@@ -1,525 +1,263 @@
-import "./Dashboard.css";
-import { useMemo, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import './Dashboard.css';
+import { useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { useTasks } from "../context/TasksContext";
 import { useLanguage } from '../context/LanguageContext';
-import { useCurrentUser } from '../hooks/useCurrentUser';
-import DashboardWidget from '../components/DashboardWidget';
-import { WelcomeBanner } from '../components/Onboarding/WelcomeBanner'; /* FIX UX-2 */
-import { selectFinancialSnapshot } from '../store/selectors/financialSelectors';
-import { Skeleton } from '../components/Skeleton/Skeleton';
 
-const PRIORITY_BUCKETS = [
-  "Critical",
-  "High Velocity",
-  "Steady Flow",
-  "Low Friction",
-  "Backlog"
-];
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Buenos dias';
+  if (hour < 19) return 'Buenas tardes';
+  return 'Buenas noches';
+};
+
+const parseDateMs = (value) => {
+  if (!value) return NaN;
+  const ms = new Date(value).getTime();
+  return Number.isFinite(ms) ? ms : NaN;
+};
+
+const formatCurrency = (value, currency) => {
+  const n = Number(value || 0);
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n);
+};
 
 export const Dashboard = () => {
-  const navigate = useNavigate();
-  const projects = useSelector((state) => state.projects?.projects ?? []);
-  const workstreams = useSelector((state) => state.organizations?.workstreams ?? []);
-  const notes = useSelector((state) => state.notes?.notes ?? []);
-  const todos = useSelector((state) => state.todos?.todos ?? []);
-  const payments = useSelector((state) => state.payments?.payments ?? []);
-  const budget = useSelector((state) => state.budget);
-  const { tasks } = useTasks();
   const { t } = useLanguage();
-  const { user, role } = useCurrentUser();
-  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 768px)').matches);
-  const [isReady, setIsReady] = useState(false);
-  useEffect(() => { setIsReady(true); }, []);
-  const isAdmin = (role || '').toLowerCase() === 'admin' || (role || '').toLowerCase() === 'super-admin';
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(max-width: 768px)');
-    const handleMediaChange = (event) => setIsMobile(event.matches);
+  const identity = useSelector((state) => state.userIdentity || state.identity || {});
+  const tasks = useSelector((state) => state.tasks?.tasks || []);
+  const wallets = useSelector((state) => state.wallets || {});
+  const checkins = useSelector((state) => state.checkins?.checkins || []);
+  const routines = useSelector((state) => state.routines?.routines || []);
+  const lastVerdict = useSelector((state) => state.aiMemory?.lastVerdict || null);
 
-    setIsMobile(mediaQuery.matches);
-    mediaQuery.addEventListener('change', handleMediaChange);
+  const greeting = useMemo(() => getGreeting(), []);
+  const userName = useMemo(() => {
+    const preferred = identity?.preferredName;
+    const first = identity?.firstName;
+    const name = preferred || first || 'Operador';
+    const normalized = String(name).trim();
+    return normalized || 'Operador';
+  }, [identity?.preferredName, identity?.firstName]);
 
-    return () => mediaQuery.removeEventListener('change', handleMediaChange);
-  }, []);
+  // 2) Card Cortana — datos reales desde tasksSlice
+  const cortanaData = useMemo(() => {
+    const now = Date.now();
+    const normalized = (Array.isArray(tasks) ? tasks : []).filter(Boolean);
 
-  // Single-user mode: todas las tareas son visibles
-  const visibleTasks = Array.isArray(tasks) ? tasks.filter(Boolean) : [];
+    const pending = normalized.filter((task) => {
+      const status = String(task.status || '').toLowerCase();
+      return !status.includes('complet');
+    });
 
-  const externalTasks = visibleTasks.filter(
-    (task) => task.metadata?.source === 'field_report'
-  );
+    const critical = pending.filter((task) => String(task.level || '').toLowerCase() === 'critical');
+    const overdue = pending.filter((task) => {
+      const dueMs = parseDateMs(task.dueDate);
+      return Number.isFinite(dueMs) && dueMs < now;
+    });
 
-  const tasksByLevel = PRIORITY_BUCKETS.reduce((acc, level) => {
-    acc[level] = visibleTasks.filter((task) => task.level === level);
-    return acc;
-  }, {});
-
-  const activeProjects = (projects || []).filter((project) => project.status !== 'cancelled');
-  
-  const orgWorkstreams = (workstreams || []).filter((stream) => stream.enabled);
-
-  const recentNotes = useMemo(() => {
-    return [...(notes || [])]
-      .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-      .slice(0, 5);
-  }, [notes]);
-
-  const reminders = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const buildReminder = (item, type, dateField, route) => {
-      const rawDate = item[dateField];
-      if (!rawDate) return null;
-      const dueDate = new Date(rawDate);
-      if (Number.isNaN(dueDate.getTime())) return null;
-      dueDate.setHours(0, 0, 0, 0);
-      const diffDays = Math.ceil((dueDate - today) / 86400000);
-      return {
-        id: item.id,
-        title: item.title || item.name || t('Untitled'),
-        type,
-        dueDate,
-        diffDays,
-        route,
-      };
+    return {
+      criticalCount: critical.length,
+      overdueCount: overdue.length,
+      summary:
+        critical.length + overdue.length > 0
+          ? `${critical.length} criticas · ${overdue.length} vencidas`
+          : 'Sin alertas críticas por ahora',
     };
+  }, [tasks]);
 
-    const upcomingNotes = (notes || [])
-      .filter(Boolean)
-      .map((note) => buildReminder(note, 'note', 'reminderDate', '/notes'))
-      .filter(Boolean);
+  // 2) Card Jarvis + 4) Resumen financiero — walletsSlice
+  const jarvisData = useMemo(() => {
+    const walletMXN = Number(wallets.walletMXN || 0);
+    const walletUSD = Number(wallets.walletUSD || 0);
 
-    const upcomingTodos = (todos || [])
-      .filter(Boolean)
-      .map((todo) => buildReminder(todo, 'todo', 'dueDate', '/todos'))
-      .filter(Boolean);
+    return {
+      walletMXN,
+      walletUSD,
+      hasData: walletMXN !== 0 || walletUSD !== 0,
+    };
+  }, [wallets.walletMXN, wallets.walletUSD]);
 
-    const financialSnapshot = selectFinancialSnapshot({ payments: { payments }, budget });
-    const financeWindowDays = financialSnapshot.healthScore < 35 || financialSnapshot.saldoLibre < 0 ? 14 : 7;
+  // 2) Card SHODAN — checkinsSlice + routinesSlice
+  const shodanData = useMemo(() => {
+    const list = (Array.isArray(checkins) ? checkins : []).filter(Boolean);
 
-    const upcomingPayments = (payments || [])
-      .filter(Boolean)
-      .filter((payment) => (payment?.status || 'pending') !== 'paid')
-      .map((payment) => buildReminder(payment, 'payment', 'nextDueDate', '/payments'))
-      .filter(Boolean);
+    let latest = null;
+    let latestMs = Number.NEGATIVE_INFINITY;
+    list.forEach((entry) => {
+      const ms = parseDateMs(entry.createdAt || entry.date);
+      if (Number.isFinite(ms) && ms > latestMs) {
+        latest = entry;
+        latestMs = ms;
+      }
+    });
 
-    return [...upcomingNotes, ...upcomingTodos, ...upcomingPayments]
-      .filter((reminder) => {
-        if (reminder.type === 'payment') {
-          return reminder.diffDays <= financeWindowDays;
-        }
-        return reminder.diffDays <= 7;
+    const todayIndex = new Date().getDay();
+    const routinesToday = (Array.isArray(routines) ? routines : []).filter((routine) => {
+      if (!routine || routine.archived) return false;
+      const days = Array.isArray(routine.daysOfWeek) ? routine.daysOfWeek : [];
+      return days.includes(todayIndex);
+    });
+
+    return {
+      latestCheckin: latest,
+      latestCheckinLabel: latest ? new Date(latest.createdAt || latest.date).toLocaleString('es-MX') : 'Sin check-ins',
+      routinesTodayCount: routinesToday.length,
+      routinesToday,
+    };
+  }, [checkins, routines]);
+
+  // 3) Tareas urgentes — maximo 3, solo si hay datos
+  const urgentTasks = useMemo(() => {
+    const now = Date.now();
+
+    const pending = (Array.isArray(tasks) ? tasks : []).filter((task) => {
+      const status = String(task?.status || '').toLowerCase();
+      return !status.includes('complet');
+    });
+
+    const ranked = pending
+      .filter((task) => {
+        const isCritical = String(task.level || '').toLowerCase() === 'critical';
+        const dueMs = parseDateMs(task.dueDate);
+        const isOverdue = Number.isFinite(dueMs) && dueMs < now;
+        return isCritical || isOverdue;
       })
-      .sort((a, b) => a.diffDays - b.diffDays)
-      .slice(0, 8);
-  }, [notes, todos, payments, budget, t]);
+      .sort((a, b) => {
+        const aCritical = String(a.level || '').toLowerCase() === 'critical' ? 1 : 0;
+        const bCritical = String(b.level || '').toLowerCase() === 'critical' ? 1 : 0;
+        if (aCritical !== bCritical) return bCritical - aCritical;
 
-  const getReminderLabel = (diffDays) => {
-    if (diffDays < 0) return t('Overdue');
-    if (diffDays === 0) return t('Due today');
-    return `+${diffDays}d`;
-  };
+        const aDue = parseDateMs(a.dueDate);
+        const bDue = parseDateMs(b.dueDate);
+        if (!Number.isFinite(aDue) && !Number.isFinite(bDue)) return 0;
+        if (!Number.isFinite(aDue)) return 1;
+        if (!Number.isFinite(bDue)) return -1;
+        return aDue - bDue;
+      })
+      .slice(0, 3);
 
-  const taskHealth = useMemo(() => {
-    const total = visibleTasks.length;
-    const completed = visibleTasks.filter((task) => (task.status || '').toLowerCase() === 'completed').length;
-    const inProgress = visibleTasks.filter((task) => (task.status || '').toLowerCase() === 'active' || (task.status || '').toLowerCase() === 'in-progress').length;
-    const critical = tasksByLevel.Critical?.length || 0;
-    const avgScore = total > 0
-      ? Math.round(
-          visibleTasks.reduce((acc, task) => acc + (Number(task.totalScore) || 0), 0) / total
-        )
-      : 0;
+    return ranked;
+  }, [tasks]);
 
-    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
-    if (total === 0) {
-      return {
-        total,
-        completed,
-        inProgress,
-        critical,
-        avgScore,
-        completionRate,
-        healthScore: 0,
-        healthLabel: t('No Data'),
-      };
-    }
-
-    const healthScore = Math.max(
-      0,
-      Math.min(100, Math.round(completionRate * 0.6 + Math.max(0, 100 - critical * 12) * 0.4))
-    );
-
-    let healthLabel = t('Steady Flow');
-    if (healthScore >= 80) healthLabel = t('Low Friction');
-    else if (healthScore < 50) healthLabel = t('High Velocity');
-    if (critical >= 3) healthLabel = t('Critical');
-
-    return {
-      total,
-      completed,
-      inProgress,
-      critical,
-      avgScore,
-      completionRate,
-      healthScore,
-      healthLabel,
-    };
-  }, [visibleTasks, tasksByLevel, t]);
-  
-  const projectsByWorkstream = orgWorkstreams.map((stream) => {
-    const streamProjects = activeProjects.filter(
-      (project) => project.workstreamId === stream.id
-    );
-    const activeCount = streamProjects.filter(
-      (project) => project.status !== 'completed'
-    ).length;
-    const completedCount = streamProjects.filter(
-      (project) => project.status === 'completed'
-    ).length;
-    return {
-      ...stream,
-      projects: streamProjects,
-      activeCount,
-      completedCount
-    };
-  });
-  
-  // En single-user mode, mostrar todas las áreas
-  const leadStreams = projectsByWorkstream;
-
-  const getInitials = (name = '') => {
-    const parts = name.trim().split(' ').filter(Boolean);
-    if (parts.length === 0) return 'NA';
-    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  };
+  // 5) Ultimo veredicto — solo ultimas 24h
+  const recentVerdict = useMemo(() => {
+    if (!lastVerdict?.timestamp) return null;
+    const ts = Number(lastVerdict.timestamp);
+    if (!Number.isFinite(ts)) return null;
+    if (Date.now() - ts > DAY_MS) return null;
+    return lastVerdict;
+  }, [lastVerdict]);
 
   return (
-    <div className="dashboard-container">
-      <header className="dashboard-header">
-        <div>
-          <h1>ATHENEA Personal Assistant</h1>
-          <p>{t('Your tasks organized by priority level.')}</p>
-        </div>
-      </header>
-
-      {/* FIX UX-2 — micro-onboarding primera sesión */}
-      <WelcomeBanner />
-
-      {/* Dashboard Widget - Quick Overview */}
-      <DashboardWidget />
-
-      {/* FIX UX-7 — Reminders antes que Recent Notes (urgencia > arbitrariedad) */}
-      <section className="reminders">
-        <div className="reminders-header">
-          <h2>{t('Reminders')}</h2>
-          <span>{reminders.length}</span>
-        </div>
-        {!isReady ? (
-          <div className="reminders-skeleton">
-            <Skeleton type="card" height="56px" />
-            <Skeleton type="card" height="56px" />
-          </div>
-        ) : reminders.length === 0 ? (
-          <div className="reminders-empty">{t('No upcoming reminders.')}</div>
-        ) : (
-          <ul className="reminders-list">
-            {reminders.map((reminder) => (
-              <li
-                key={reminder.id}
-                className={[
-                  'reminder-card',
-                  `reminder-${reminder.type}`,
-                  reminder.diffDays <= 0 ? 'reminder-card--overdue' : '',
-                  reminder.diffDays === 1 ? 'reminder-card--urgent' : '',
-                ].filter(Boolean).join(' ')}
-              >
-                <div>
-                  <span className="reminder-title">{reminder.title}</span>
-                  <span className="reminder-date">
-                    {reminder.dueDate.toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="reminder-meta">
-                  <span className="reminder-badge">{getReminderLabel(reminder.diffDays)}</span>
-                  <button
-                    type="button"
-                    className="reminder-link"
-                    onClick={() => navigate(reminder.route)}
-                  >
-                    {t('View')}
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+    <div className="dashboard-v2 dashboard-root">
+      {/* 1) SALUDO CONTEXTUAL */}
+      <section className="db-section db-greeting" aria-label={t('Saludo contextual')}>
+        <h1>{`${greeting}, ${userName}`}</h1>
+        <p>{t('Panel ejecutivo de hoy con estado real de agentes, tareas, finanzas y contexto personal.')}</p>
       </section>
 
-      <section className="notes-recent">
-        <div className="notes-recent-header">
-          <h2>{t('Recent Notes')}</h2>
-          <button
-            type="button"
-            className="notes-recent-link"
-            onClick={() => navigate('/notes')}
-          >
-            {t('View all notes')}
-          </button>
+      {/* 2) CARDS DE LOS 3 AGENTES */}
+      <section className="db-section" aria-label={t('Estado de agentes')}>
+        <h2>{t('Estado de Agentes')}</h2>
+        <div className="agent-grid dashboard-agent-cards">
+          <article className="agent-card">
+            <header>
+              <h3 className="agent-card-name">Cortana</h3>
+              <span className="agent-role">Work Intel</span>
+            </header>
+            <div className="agent-metrics agent-card-metrics">
+              <div><span className="metric-secondary">Críticas</span><strong className="metric-danger">{cortanaData.criticalCount}</strong></div>
+              <div><span className="metric-secondary">Vencidas</span><strong className="metric-value">{cortanaData.overdueCount}</strong></div>
+            </div>
+            <p>{cortanaData.summary}</p>
+          </article>
+
+          <article className="agent-card">
+            <header>
+              <h3 className="agent-card-name">Jarvis</h3>
+              <span className="agent-role">Finance Intel</span>
+            </header>
+            <div className="agent-metrics agent-card-metrics">
+              <div><span className="metric-secondary">Wallet MXN</span><strong className="metric-value">{formatCurrency(jarvisData.walletMXN, 'MXN')}</strong></div>
+              <div><span className="metric-secondary">Wallet USD</span><strong className="metric-value">{formatCurrency(jarvisData.walletUSD, 'USD')}</strong></div>
+            </div>
+            <p>{jarvisData.hasData ? 'Balance dual actualizado desde walletsSlice.' : 'Sin movimientos financieros registrados.'}</p>
+          </article>
+
+          <article className="agent-card">
+            <header>
+              <h3 className="agent-card-name">SHODAN</h3>
+              <span className="agent-role">Personal Intel</span>
+            </header>
+            <div className="agent-metrics agent-card-metrics">
+              <div><span className="metric-secondary">Último check-in</span><strong className="metric-ok">{shodanData.latestCheckin ? 'Registrado' : 'N/A'}</strong></div>
+              <div><span className="metric-secondary">Rutinas hoy</span><strong className="metric-value">{shodanData.routinesTodayCount}</strong></div>
+            </div>
+            <p>{shodanData.latestCheckinLabel}</p>
+          </article>
         </div>
-        {!isReady ? (
-          <div className="notes-recent-skeleton">
-            <Skeleton type="line" width="75%" />
-            <Skeleton type="line" width="60%" />
-            <Skeleton type="line" width="80%" />
-          </div>
-        ) : recentNotes.length === 0 ? (
-          <div className="notes-recent-empty">{t('No notes yet.')}</div>
-        ) : (
-          <ul className="notes-recent-list">
-            {recentNotes.map((note) => (
-              <li key={note.id} className="notes-recent-card">
-                <div className="notes-recent-title">
-                  <span>{note.title}</span>
-                  {note.reminderDate && (
-                    <span className="notes-recent-date">
-                      {new Date(note.reminderDate).toLocaleDateString()}
-                    </span>
-                  )}
-                </div>
-                <p className="notes-recent-preview">
-                  {note.content.length > 140
-                    ? `${note.content.slice(0, 140)}...`
-                    : note.content}
-                </p>
-                <button
-                  type="button"
-                  className="notes-recent-more"
-                  onClick={() => navigate('/notes')}
-                >
-                  {t('View more')}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
       </section>
 
-      {isMobile ? (
-        <section className="workflow-health-mobile">
-          <div className="workflow-health-header">
-            <h2>{t('Intelligence Workflow')}</h2>
-            <button type="button" onClick={() => navigate('/intelligence')}>
-              {t('Open')}
-            </button>
-          </div>
-
-          <div className="workflow-health-score">
-            <div>
-              <span className="workflow-health-label">{t('Work Health')}</span>
-              <strong>{taskHealth.healthScore}%</strong>
-              <p>{taskHealth.healthLabel}</p>
-            </div>
-            <div className="workflow-health-progress" aria-hidden="true">
-              <span style={{ width: `${taskHealth.healthScore}%` }} />
-            </div>
-          </div>
-
-          <div className="workflow-health-metrics">
-            <article>
-              <span>{t('Tasks')}</span>
-              <strong>{taskHealth.total}</strong>
-            </article>
-            <article>
-              <span>{t('Completed')}</span>
-              <strong>{taskHealth.completionRate}%</strong>
-            </article>
-            <article>
-              <span>{t('Critical')}</span>
-              <strong>{taskHealth.critical}</strong>
-            </article>
-            <article>
-              <span>{t('PS')}</span>
-              <strong>{taskHealth.avgScore}/14</strong>
-            </article>
-          </div>
-
-          <div className="workflow-health-priority-snapshot">
-            {PRIORITY_BUCKETS.map((level) => (
-              <div key={level}>
-                <span>{level}</span>
-                <strong>{tasksByLevel[level].length}</strong>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : (
-        <section className="priority-board">
-          <div className="priority-columns">
-            {PRIORITY_BUCKETS.map((level) => (
-              <div
-                key={level}
-                className={`priority-column${level === "Critical" ? " priority-column-critical" : ""}`}
-              >
-                <div className="priority-column-header">
-                  <span className="priority-level">{level}</span>
-                  <span className="priority-count">{tasksByLevel[level].length}</span>
-                </div>
-                {tasksByLevel[level].length === 0 ? (
-                  <div className="priority-empty">{t('No tasks in this bucket.')}</div>
-                ) : (
-                  <ul className="priority-task-list">
-                    {tasksByLevel[level].map((task) => (
-                      <li
-                        key={task.id}
-                        className={`priority-card${
-                          task.metadata?.source === 'field_report'
-                            ? ' priority-card-external'
-                            : ''
-                        }`}
-                      >
-                        <div className="priority-card-header">
-                          <span className="priority-card-title">{task.title}</span>
-                          <span className="priority-card-score">[PS: {task.totalScore}/14]</span>
-                        </div>
-                        {task.projectName && (
-                          <div className="priority-card-project">{task.projectName}</div>
-                        )}
-                        {task.description && (
-                          <div className="priority-card-desc">{task.description}</div>
-                        )}
-                        <div className="priority-card-tags">
-                          {(Array.isArray(task.workstreams) ? task.workstreams : []).map((stream) => (
-                            <span key={stream} className="priority-tag">
-                              {stream}
-                            </span>
-                          ))}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {externalTasks.length > 0 && (
-        <section className="external-requests">
-          <div className="external-header">
-            <h2>{t('External Requests')}</h2>
-            <span>{externalTasks.length}</span>
-          </div>
-          <ul className="external-list">
-            {externalTasks.map((task) => (
-              <li key={task.id} className="external-card">
+      {/* 3) TAREAS URGENTES */}
+      {urgentTasks.length > 0 && (
+        <section className="db-section" aria-label={t('Tareas urgentes')}>
+          <h2>{t('Tareas Urgentes')}</h2>
+          <ul className="urgent-list">
+            {urgentTasks.map((task) => (
+              <li key={task.id} className="urgent-item">
                 <div>
-                  <span className="external-title">{task.title}</span>
-                  {task.projectName && (
-                    <span className="external-project">{task.projectName}</span>
-                  )}
+                  <strong>{task.title || 'Tarea sin título'}</strong>
+                  <p>
+                    {(task.level || 'Sin prioridad')} · {task.dueDate ? new Date(task.dueDate).toLocaleDateString('es-MX') : 'Sin fecha'}
+                  </p>
                 </div>
-                <div className="external-meta">
-                  <span className="external-status">{task.status}</span>
-                  <span className="external-score">PS: {task.totalScore}/14</span>
-                  <span className="external-priority">{task.level}</span>
-                </div>
+                <span className="mono">{task.totalScore != null ? `PS ${task.totalScore}/14` : 'PS N/A'}</span>
               </li>
             ))}
           </ul>
         </section>
       )}
 
-      {!isMobile && leadStreams.length > 0 && (
-        <section className="lead-center">
-          <div className="lead-center-header">
-            <h2>{t('Work Areas Overview')}</h2>
-            <span>{leadStreams.length}</span>
-          </div>
-          <div className="lead-center-grid">
-            {leadStreams.map((stream) => (
-              <div key={stream.id} className="lead-center-card">
-                <div className="lead-center-title">{stream.label}</div>
-                <div className="lead-center-meta">
-                  {stream.activeCount > 0 || stream.completedCount > 0
-                    ? `${stream.activeCount} ${t('Active Projects Short')} / ${stream.completedCount} ${t('Completed Short')}`
-                    : t('No active projects.')}
-                </div>
-                {stream.projects.length === 0 ? (
-                  <div className="lead-center-empty">{t('No projects yet')}</div>
-                ) : (
-                  <ul className="lead-center-projects">
-                    {stream.projects.map((project) => (
-                      <li key={project.id}>
-                        <span>{project.name}</span>
-                        <span className="lead-center-status">{project.status}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
+      {/* 4) RESUMEN FINANCIERO */}
+      {jarvisData.hasData && (
+        <section className="db-section" aria-label={t('Resumen financiero')}>
+          <h2>{t('Resumen Financiero')}</h2>
+          <div className="finance-grid">
+            <article className="finance-card">
+              <span>Wallet MXN</span>
+              <strong>{formatCurrency(jarvisData.walletMXN, 'MXN')}</strong>
+            </article>
+            <article className="finance-card">
+              <span>Wallet USD</span>
+              <strong>{formatCurrency(jarvisData.walletUSD, 'USD')}</strong>
+            </article>
           </div>
         </section>
       )}
 
-      {!isMobile && orgWorkstreams.length > 0 && (
-        <section className="active-projects">
-          <div className="active-projects-header">
-            <h2>{t('Active Workstreams')}</h2>
-            <span>{orgWorkstreams.length}</span>
-          </div>
-          <ul className="active-projects-list">
-            {projectsByWorkstream.map((stream) => (
-              <li
-                key={stream.id}
-                className={`active-project-card${
-                  stream.leadId && stream.leadId === user?.id ? ' is-lead' : ''
-                }${
-                  isAdmin || stream.leadId === user?.id ? ' is-clickable' : ''
-                }`}
-                onClick={() => {
-                  if (isAdmin || stream.leadId === user?.id) {
-                    navigate(`/workstreams/${stream.id}`);
-                  }
-                }}
-              >
-                <div>
-                  <span className="active-project-title">{stream.label}</span>
-                  <span className="active-project-client">
-                    {stream.activeCount > 0 || stream.completedCount > 0
-                      ? `${stream.activeCount} ${t('Active Projects Short')} / ${stream.completedCount} ${t('Completed Short')}`
-                      : t('No projects yet')}
-                  </span>
-                </div>
-                <div className="active-project-meta">
-                  <span className="active-project-status">
-                    {stream.projects.length > 0 ? t('Active') : t('Empty')}
-                  </span>
-                  <span className="active-project-date">
-                    {stream.projects[0]?.endDate
-                      ? new Date(stream.projects[0].endDate).toLocaleDateString()
-                      : 'TBD'}
-                  </span>
-                  <div className="active-project-lead">
-                    <span className="active-project-avatar">
-                      --
-                    </span>
-                    <span>
-                      {t('No lead assigned')}
-                    </span>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+      {/* 5) ÚLTIMO VEREDICTO */}
+      {recentVerdict && (
+        <section className="db-section" aria-label={t('Último veredicto')}>
+          <h2>{t('Último Veredicto')}</h2>
+          <article className="verdict-card">
+            <p>{recentVerdict.summary || recentVerdict.text}</p>
+            <footer>
+              <span>Prioridad: {recentVerdict.priority || 'N/A'}</span>
+              <span>{new Date(recentVerdict.timestamp).toLocaleString('es-MX')}</span>
+            </footer>
+          </article>
         </section>
       )}
+
+      {/* 6) Sin sección de hubs: accesos ya están en Navbar */}
     </div>
   );
 };

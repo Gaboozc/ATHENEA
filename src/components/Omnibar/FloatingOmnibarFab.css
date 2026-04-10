@@ -78,6 +78,3 @@
   }
 }
 
-@media (max-width: 768px) {
-  .omnibar-fab { display: none !important; }
-}

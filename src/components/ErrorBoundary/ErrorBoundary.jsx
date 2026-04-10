@@ -37,11 +37,11 @@ class ErrorBoundary extends Component {
               <code className="eb-fallback__detail">{this.state.error.message}</code>
             )}
             <div className="eb-fallback__actions">
-              <button className="eb-fallback__btn primary" onClick={this.handleReset}>
+              <button className="eb-fallback__btn eb-fallback__btn--primary" onClick={this.handleReset}>
                 Reintentar
               </button>
               <button
-                className="eb-fallback__btn secondary"
+                className="eb-fallback__btn eb-fallback__btn--secondary"
                 onClick={() => { window.location.href = '/#/dashboard'; }}
               >
                 Ir al Dashboard

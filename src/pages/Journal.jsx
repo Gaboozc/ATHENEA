@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addEntry, updateEntry, deleteEntry } from '../../store/slices/journalSlice';
 import { useLanguage } from '../context/LanguageContext';
-import EmptyState from '../components/EmptyState/EmptyState';
+import { EmptyState } from '../components';
 import './Journal.css';
 
 const MOOD_LABELS = ['', '😞', '😕', '😐', '🙂', '😊'];
@@ -139,7 +139,14 @@ export const Journal = () => {
           ))}
           {filteredEntries.length === 0 && (
             <li className="journal-empty">
-              {search ? t('No entries match your search.') : t('No entries yet. Create your first entry!')}
+              <EmptyState
+                icon={search ? '🔎' : '📔'}
+                title={search ? t('No entries match your search.') : t('No entries yet.')}
+                description={search ? t('Try another search term.') : t('Create your first entry to start your journal.')}
+                action={search
+                  ? { label: t('Clear search'), icon: '✕', onClick: () => setSearch('') }
+                  : { label: t('New Entry'), icon: '+', onClick: handleNewEntry }}
+              />
             </li>
           )}
         </ul>

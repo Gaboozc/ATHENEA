@@ -6,6 +6,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { addDebt, updateDebt, deleteDebt, deletePayment } from '../../store/slices/debtsSlice';
 import { payDebt } from '../store/thunks/financeThunks'; /* DEBTS-2 */
 import { addEvent, unlinkFromCalendar } from '../../store/slices/calendarSlice';
+import { EmptyState } from '../components';
 import './FinanceDebts.css';
 
 // I18N-9: keys in English — t() maps to Spanish when needed
@@ -435,18 +436,24 @@ export const FinanceDebts = () => {
 
       {/* Debt list */}
       {filtered.length === 0 ? (
-        <div className="debts-empty">
-          <p>
-            {filter === 'all'
+        <EmptyState
+          icon="💳"
+          title={
+            filter === 'all'
               ? 'No tienes deudas registradas. ¡Bien hecho!'
-              : `Sin deudas en estado "${STATUS_LABELS[filter] || filter}".`}
-          </p>
-          {filter === 'all' && (
-            <button className="btn-primary" onClick={() => setShowForm(true)}>
-              + Registrar primera deuda
-            </button>
-          )}
-        </div>
+              : `Sin deudas en estado "${STATUS_LABELS[filter] || filter}".`
+          }
+          description={
+            filter === 'all'
+              ? 'Puedes registrar una deuda para controlar pagos y vencimientos.'
+              : 'Cambia el filtro o registra una nueva deuda.'
+          }
+          action={
+            filter === 'all'
+              ? { label: 'Registrar primera deuda', icon: '+', onClick: () => setShowForm(true) }
+              : { label: 'Ver todas', icon: '↺', onClick: () => setFilter('all') }
+          }
+        />
       ) : (
         <div className="debts-list">
           {filtered.map((debt) => {

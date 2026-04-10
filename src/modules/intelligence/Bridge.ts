@@ -45,6 +45,7 @@ import { getONNXEngine } from './inference/ONNXInferenceEngine';
 import { suggestionsEngine } from './inference/SuggestionsEngine';
 import { getPersonaEngine } from './personaEngine';
 import { getAgentOrchestrator } from './agents/AgentOrchestrator';
+import type { ChatMessage as LLMChatMessage } from '../../services/LLMClient';
 
 /**
  * Inference layer enum
@@ -181,9 +182,22 @@ export class IntelligenceBridge {
     const effectiveHub = keywordHub || request.context.currentHub;
     const hub = (effectiveHub || 'WorkHub') as 'WorkHub' | 'PersonalHub' | 'FinanceHub';
 
+    // CONVERSATIONAL GATE (FIX-A + FIX-C): If the message is clearly conversational
+    // (greeting, question, advice request, or starts with an agent name), bypass
+    // skill routing entirely and go straight to the domain agent.
+    if (this.isConversationalMessage(request.userPrompt, reduxGetState)) {
+      try {
+        return await this.handleConversationalQuestion(
+          request, hub, null, 100, InferenceLayer.FAST_PATH, reduxGetState, onToken
+        );
+      } catch (convErr) {
+        console.warn('[Bridge] Conversational gate error:', convErr);
+      }
+    }
+
     // FIX 2: Skill-first routing — try skill match BEFORE falling through to conversational.
     // If a skill is matched with sufficient confidence, return it directly.
-    // The useIntelligence hook will auto-execute (threshold 90) or show Canvas.
+    // The useIntelligence hook will auto-execute (threshold 95) or show Canvas.
     try {
       const skillResult = await this.trySkillFirstRoute(request, hub, reduxGetState);
       if (skillResult) return skillResult;
@@ -618,6 +632,58 @@ export class IntelligenceBridge {
     };
   }
 
+  /**
+   * CONVERSATIONAL GATE (FIX-A + FIX-C)
+   *
+   * Returns true if the message is clearly conversational and should bypass
+   * skill-first routing. Covers:
+   *   - Greetings / saludos
+   *   - Questions ending in "?"
+   *   - Advisory requests (consejos, recomienda, explícame…)
+   *   - Messages starting with an agent name (FIX-C)
+   */
+  private isConversationalMessage(userPrompt: string, reduxGetState: () => any): boolean {
+    const text = String(userPrompt || '').trim();
+    if (!text) return false;
+
+    // FIX-C: if the message starts with an agent name, route conversationally
+    const AGENT_NAMES = ['jarvis', 'cortana', 'shodan'];
+    try {
+      const userSettings = reduxGetState()?.userSettings || {};
+      const customNames: string[] = [
+        userSettings?.agentNames?.cortana,
+        userSettings?.agentNames?.jarvis,
+        userSettings?.agentNames?.shodan,
+      ].filter(Boolean).map((n: string) => n.toLowerCase());
+      const allAgentNames = [...AGENT_NAMES, ...customNames];
+      if (allAgentNames.some(name => text.toLowerCase().startsWith(name))) return true;
+    } catch {
+      if (AGENT_NAMES.some(name => text.toLowerCase().startsWith(name))) return true;
+    }
+
+    // FIX-A: explicit conversational patterns
+    const CONVERSATIONAL_PATTERNS: RegExp[] = [
+      /^hola\b/i,
+      /^buenos\s+(d[íi]as|tardes|noches)/i,
+      /^buenas\b/i,
+      /^hey\b/i,
+      /^qu[eé]\s+tal\b/i,
+      /^c[oó]mo\s+(est[aá]s|va|te)/i,
+      /consejos?/i,
+      /recomienda/i,
+      /qu[eé]\s+(me|puedes|deber[íi])/i,
+      /ayúdame\s+a\s+entender/i,
+      /ayudame\s+a\s+entender/i,
+      /expl[íi]came/i,
+      /qu[eé]\s+piensas/i,
+      /an[aá]lisis/i,
+      /situaci[oó]n/i,
+      /\?$/,
+    ];
+
+    return CONVERSATIONAL_PATTERNS.some(p => p.test(text));
+  }
+
   private isConversationalQuestion(
     userPrompt: string,
     selectedSkill: SkillManifest | null
@@ -640,6 +706,33 @@ export class IntelligenceBridge {
     return true;
   }
 
+  /**
+   * Normalize UI/raw conversation history into LLM-compatible messages.
+   * - Accepts Omnibar chat shape ({ role: user|agent, text }) and LLM shape ({ role, content })
+   * - Keeps only user/assistant turns
+   * - Caps to latest 10 messages to avoid context saturation
+   */
+  private buildConversationHistory(
+    chatMessages: Array<{
+      role?: string;
+      content?: string;
+      text?: string;
+    }> = []
+  ): Array<Pick<LLMChatMessage, 'role' | 'content'>> {
+    return chatMessages
+      .filter((msg) => msg?.role === 'user' || msg?.role === 'agent' || msg?.role === 'assistant')
+      .map((msg) => {
+        const normalizedRole = msg.role === 'user' ? 'user' : 'assistant';
+        const normalizedContent = String(msg.content ?? msg.text ?? '').trim();
+        return {
+          role: normalizedRole as 'user' | 'assistant',
+          content: normalizedContent,
+        };
+      })
+      .filter((msg) => msg.content.length > 0)
+      .slice(-10);
+  }
+
   private async handleConversationalQuestion(
     request: IntelligenceRequest,
     hub: 'WorkHub' | 'PersonalHub' | 'FinanceHub',
@@ -651,6 +744,7 @@ export class IntelligenceBridge {
   ): Promise<IntelligenceResponse> {
     const state = reduxGetState();
     const lower = String(request.userPrompt || '').toLowerCase();
+    const normalizedConversationHistory = this.buildConversationHistory(request.conversationHistory as any[]);
 
     const explicitPersona = this.detectPersonaFromPrompt(request.userPrompt);
     const persona = explicitPersona || (hub === 'FinanceHub' ? 'jarvis' : hub === 'PersonalHub' ? 'shodan' : 'cortana');
@@ -817,7 +911,7 @@ export class IntelligenceBridge {
             persona,
             {
               isPersonaLocked: explicitPersona !== null,
-              conversationHistory: request.conversationHistory,
+              conversationHistory: normalizedConversationHistory,
               onToken,
             }
           );
@@ -837,7 +931,7 @@ export class IntelligenceBridge {
             persona,
             {
               isPersonaLocked: explicitPersona !== null,
-              conversationHistory: request.conversationHistory,
+              conversationHistory: normalizedConversationHistory,
               onToken,
             }
           );
@@ -860,7 +954,7 @@ export class IntelligenceBridge {
           persona,
           {
             isPersonaLocked: explicitPersona !== null,
-            conversationHistory: request.conversationHistory,
+              conversationHistory: normalizedConversationHistory,
             onToken,
           }
         );

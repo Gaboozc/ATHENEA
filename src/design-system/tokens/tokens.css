@@ -1,0 +1,91 @@
+/* ============================================================
+   ATHENEA DESIGN SYSTEM — TOKENS
+   "Sistema de mando" dark tech aesthetic
+   ============================================================ */
+
+:root {
+  /* ── Backgrounds ── */
+  --bg-base:        #0a0d12;   /* page root */
+  --bg-surface:     #0f1520;   /* navbar, bottom nav */
+  --bg-panel:       #151c2b;   /* cards, inputs */
+  --bg-panel-alt:   #1a2235;   /* hover states, nested panels */
+  --bg-overlay:     rgba(10, 13, 18, 0.80); /* modals backdrop */
+
+  /* ── Accent (cian) ── */
+  --accent:         #00d4ff;
+  --accent-hover:   #33ddff;
+  --accent-dark:    #0099cc;
+  --accent-dim:     rgba(0, 212, 255, 0.10);
+  --accent-border:  rgba(0, 212, 255, 0.22);
+  --accent-glow:    rgba(0, 212, 255, 0.15);
+
+  /* ── Semantic ── */
+  --color-success:        #00e5a0;
+  --color-success-dim:    rgba(0, 229, 160, 0.10);
+  --color-success-border: rgba(0, 229, 160, 0.22);
+
+  --color-danger:         #ff4060;
+  --color-danger-dim:     rgba(255, 64, 96, 0.10);
+  --color-danger-border:  rgba(255, 64, 96, 0.22);
+
+  --color-warning:        #ffb700;
+  --color-warning-dim:    rgba(255, 183, 0, 0.10);
+  --color-warning-border: rgba(255, 183, 0, 0.22);
+
+  --color-purple:         #a78bfa;
+  --color-purple-dim:     rgba(167, 139, 250, 0.10);
+  --color-purple-border:  rgba(167, 139, 250, 0.22);
+
+  /* ── Text ── */
+  --text-primary:   #e8f0fe;
+  --text-secondary: #8899bb;
+  --text-tertiary:  #4a5a7a;
+  --text-on-accent: #050810;   /* text on --accent background */
+
+  /* ── Borders ── */
+  --border-default: #1e2d45;
+  --border-subtle:  rgba(255, 255, 255, 0.04);
+  --border-strong:  #2d4060;
+
+  /* ── Radius ── */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   18px;
+  --radius-pill: 9999px;
+
+  /* ── Spacing ── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+
+  /* ── Typography ── */
+  --font-display: 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+  --font-body:    'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  --font-mono:    'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  --text-xs:   11px;
+  --text-sm:   12px;
+  --text-base: 13px;
+  --text-md:   15px;
+  --text-lg:   18px;
+  --text-xl:   22px;
+  --text-2xl:  28px;
+
+  /* ── Transitions ── */
+  --transition-fast:   0.12s ease;
+  --transition-normal: 0.20s ease;
+  --transition-slow:   0.35s ease;
+
+  /* ── Z-index ── */
+  --z-base:    0;
+  --z-panel:   10;
+  --z-nav:     100;
+  --z-modal:   200;
+  --z-toast:   300;
+}

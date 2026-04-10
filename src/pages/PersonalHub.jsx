@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { addRoutine, toggleRoutineToday, deleteRoutine, updateRoutine } from '../../store/slices/routinesSlice'; /* P-FIX-1 */
 import DailyCheckin from '../components/DailyCheckin/DailyCheckin'; /* Block 3 */
 import HabitTracker from '../components/HabitTracker/HabitTracker'; /* Block 5 */
-import EmptyState from '../components/EmptyState/EmptyState';
+import { EmptyState } from '../components';
 import './PersonalHub.css';
 
 export const PersonalHub = () => {
@@ -17,6 +17,7 @@ export const PersonalHub = () => {
   const { routines } = useSelector((state) => state.routines);
   const [routineTitle, setRoutineTitle] = useState('');
   const [routineDays, setRoutineDays] = useState([1, 2, 3, 4, 5]);
+  const routineInputRef = useRef(null);
   /* P-FIX-1: inline editing state for routines */
   const [editingRoutineId, setEditingRoutineId] = useState(null);
   const [editingRoutineTitle, setEditingRoutineTitle] = useState('');
@@ -144,7 +145,16 @@ export const PersonalHub = () => {
         <div className="personalhub-card">
           <h2>{t('Upcoming Reminders')}</h2>
           {upcomingReminders.length === 0 ? (
-            <div className="personalhub-empty">{t('No upcoming reminders.')}</div>
+            <EmptyState
+              icon="🔔"
+              title={t('No upcoming reminders.')}
+              description={t('You can create reminders from notes, todos, or calendar events.')}
+              action={{
+                label: t('Go to Calendar'),
+                icon: '📅',
+                onClick: () => navigate('/calendar'),
+              }}
+            />
           ) : (
             <ul>
               {upcomingReminders.map((item) => (
@@ -160,6 +170,7 @@ export const PersonalHub = () => {
           <h2>{t('Daily Routines')}</h2>
           <form className="personalhub-form" onSubmit={handleAddRoutine}>
             <input
+              ref={routineInputRef}
               type="text"
               value={routineTitle}
               onChange={(e) => setRoutineTitle(e.target.value)}
@@ -189,7 +200,16 @@ export const PersonalHub = () => {
             <button type="submit">{t('Add')}</button>
           </form>
           {routinesToday.length === 0 ? (
-            <EmptyState icon="🔁" message={t('No routines today.')} ctaLabel={`+ ${t('Add Routine')}`} onCta={() => {}} />
+            <EmptyState
+              icon="🔁"
+              title={t('No routines today.')}
+              description={t('Create a routine and assign it to today to keep momentum.')}
+              action={{
+                label: t('Add Routine'),
+                icon: '+',
+                onClick: () => routineInputRef.current?.focus(),
+              }}
+            />
           ) : (
             <ul>
               {routinesToday.slice(0, 6).map((routine) => {

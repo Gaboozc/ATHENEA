@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
-import EmptyState from '../components/EmptyState/EmptyState';
+import { EmptyState } from '../components';
 import { addTodo, deleteTodo, setTodoProgress, setTodoStatus, updateTodo } from '../../store/slices/todosSlice'; /* P-FIX-2 */
 import { linkTodoToCalendar, unlinkFromCalendar } from '../../store/slices/calendarSlice';
 import './Todos.css';

@@ -30,12 +30,13 @@ import {
 import type { CanvasArtifact, DynamicInsight } from '../../modules/intelligence';
 import { useOmnibar } from './useOmnibar';
 import { InterceptCard } from './InterceptCard'; /* INTERCEPT: conectar feature existente */
-import { ProactiveHUD } from './ProactiveHUD.tsx';
 import { WarRoomView } from './WarRoomView';
 import { isOnboardingCompleted, markOnboardingCompleted } from '../../modules/intelligence/proactive/welcomeOnboarding';
 import { playSuccessSound, playErrorSound } from '../../modules/intelligence/utils/audioFeedback';
-import { getNeuralKeySync } from '../../modules/intelligence/neuralAccess';
+import { llmClient } from '../../services/LLMClient';
 import { showToast } from '../../components/Toast'; /* OMNI-FIX-8: sistema global de toasts */
+import { LoadingSpinner } from '..';
+import athenaLogo from '../../assets/img/Athena-logo.png';
 import './Omnibar.css';
 
 interface OmnibarProps {
@@ -158,6 +159,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   const [activeInsight, setActiveInsight] = useState<DynamicInsight | null>(null);
   const [activeInsightArtifact, setActiveInsightArtifact] = useState<CanvasArtifact | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const nativeSpeechRef = useRef<any>(null);
@@ -306,17 +308,24 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  // Close when clicking outside modal
+  // Close only on true outside interaction (robust for nested/complex DOM trees)
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+    const handlePointerDownOutside = (e: PointerEvent) => {
+      const modalEl = modalRef.current;
+      if (!modalEl) return;
+
+      // composedPath handles shadow DOM and complex event retargeting.
+      const eventPath = typeof e.composedPath === 'function' ? e.composedPath() : [];
+      const clickedInside = eventPath.includes(modalEl) || modalEl.contains(e.target as Node);
+
+      if (!clickedInside) {
         closeOmnibar();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener('pointerdown', handlePointerDownOutside);
+      return () => document.removeEventListener('pointerdown', handlePointerDownOutside);
     }
   }, [isOpen, closeOmnibar]);
 
@@ -353,14 +362,6 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     setChatMessages((prev) => [...prev, userMsg]);
     setInputValue('');
 
-    const historyMessages = chatMessagesRef.current
-      .filter((m) => !m.artifact)
-      .slice(-8)
-      .map((m) => ({
-        role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
-        content: m.text,
-      }));
-
     // Create agent placeholder bubble immediately
     const agentBubbleId = `a_${Date.now()}`;
     const agentPlaceholder = getAgentInfoFromPersona(null, selectedHub, userText);
@@ -375,6 +376,23 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     setChatMessages((prev) => [...prev, placeholderMsg]);
     setStreamingMsgId(agentBubbleId);
 
+    // If no content arrives in time, avoid leaving an empty visible bubble.
+    const responseTimeout = window.setTimeout(() => {
+      setChatMessages((prev) =>
+        prev.map((m) => {
+          if (m.id === agentBubbleId && (!m.text || m.text.trim() === '')) {
+            return {
+              ...m,
+              text: language === 'es'
+                ? 'El agente tardo demasiado en responder. Verifica que Ollama esta corriendo.'
+                : 'The agent took too long to respond. Check that Ollama is running.',
+            };
+          }
+          return m;
+        })
+      );
+    }, 20000);
+
     // onToken: append each SSE token to the placeholder bubble
     const onToken = (chunk: string) => {
       setChatMessages((prev) =>
@@ -388,10 +406,11 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     try {
       result = await sendPrompt(userText, selectedHub, {
         autoExecute: true,
-        conversationHistory: historyMessages,
+        conversationHistory: chatMessagesRef.current,
         onToken,
       });
     } catch (err) {
+      window.clearTimeout(responseTimeout);
       setStreamingMsgId(null);
       setChatMessages((prev) =>
         prev.map((m) =>
@@ -403,6 +422,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
       playErrorSound();
       return;
     } finally {
+      window.clearTimeout(responseTimeout);
       setStreamingMsgId(null);
     }
 
@@ -444,11 +464,21 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     } else if (result.needsConfirmation && result.response?.artifact) {
       const artifact = result.response.artifact;
       if (artifact.type === 'text') {
-        // Pure conversational response — text was already streamed, dismiss Canvas
+        // Pure conversational response — ensure fallback text if stream produced no tokens.
+        const fallbackText =
+          result.response?.userMessage ||
+          (typeof artifact?.props?.description === 'string' ? artifact.props.description : '') ||
+          t('Something went wrong.');
+
         setChatMessages((prev) =>
           prev.map((m) =>
             m.id === agentBubbleId
-              ? { ...m, agentName: agent.name, agentIcon: agent.icon }
+              ? {
+                  ...m,
+                  agentName: agent.name,
+                  agentIcon: agent.icon,
+                  text: m.text && m.text.trim() !== '' ? m.text : fallbackText,
+                }
               : m
           )
         );
@@ -501,7 +531,10 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     }
 
     setInputValue(insight.suggestedPrompt);
-    const result = await sendPrompt(insight.suggestedPrompt, selectedHub, { autoExecute: true });
+    const result = await sendPrompt(insight.suggestedPrompt, selectedHub, {
+      autoExecute: true,
+      conversationHistory: chatMessagesRef.current,
+    });
 
     if (result.executed) {
       const skillName = result.response?.reasoning.matchedSkill?.name || insight.title;
@@ -681,7 +714,10 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         success: true
       });
 
-      const result = await sendPrompt(normalizedTranscript, selectedHub, { autoExecute: true });
+      const result = await sendPrompt(normalizedTranscript, selectedHub, {
+        autoExecute: true,
+        conversationHistory: chatMessagesRef.current,
+      });
 
       if (result.executed) {
         const skillName = result.response?.reasoning.matchedSkill?.name || 'Action';
@@ -917,18 +953,111 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     dispatch(clearLatestActionableIntercept());
   }, [dispatch]);
 
+  const userIdentity = useSelector((s: any) => s.userIdentity || null);
+
+  const getInputPlaceholder = useCallback((hub: 'WorkHub' | 'PersonalHub' | 'FinanceHub') => {
+    if (hub === 'WorkHub') return 'Habla con Cortana...';
+    if (hub === 'PersonalHub') return 'Habla con SHODAN...';
+    if (hub === 'FinanceHub') return 'Habla con Jarvis...';
+    return 'Escribe un comando...';
+  }, []);
+
+  const getAgentKey = useCallback((hub: 'WorkHub' | 'PersonalHub' | 'FinanceHub') => {
+    if (hub === 'WorkHub') return 'cortana';
+    if (hub === 'PersonalHub') return 'shodan';
+    return 'jarvis';
+  }, []);
+
+  const getAgentIcon = useCallback((hub: 'WorkHub' | 'PersonalHub' | 'FinanceHub') => {
+    if (hub === 'WorkHub') return '🧿';
+    if (hub === 'PersonalHub') return '👁';
+    return '🤖';
+  }, []);
+
+  const getAgentDisplayName = useCallback((hub: 'WorkHub' | 'PersonalHub' | 'FinanceHub') => {
+    if (hub === 'WorkHub') return userIdentity?.agentNames?.cortana || 'CORTANA';
+    if (hub === 'PersonalHub') return userIdentity?.agentNames?.shodan || 'SHODAN';
+    return userIdentity?.agentNames?.jarvis || 'JARVIS';
+  }, [userIdentity]);
+
+  const getAgentRole = useCallback((hub: 'WorkHub' | 'PersonalHub' | 'FinanceHub') => {
+    if (hub === 'WorkHub') return 'Estrategia & trabajo';
+    if (hub === 'PersonalHub') return 'Salud & bienestar';
+    return 'Finanzas & control';
+  }, []);
+
+  const getAgentQuickActions = useCallback((hub: 'WorkHub' | 'PersonalHub' | 'FinanceHub') => {
+    if (hub === 'WorkHub') return [
+      { id: 'task', label: '+ Tarea', prompt: 'crear tarea ' },
+      { id: 'focus', label: '⏱ Focus', prompt: 'iniciar foco 25 minutos' },
+      { id: 'status', label: '¿Cómo voy?', prompt: 'cortana resumen del día' },
+    ];
+    if (hub === 'PersonalHub') return [
+      { id: 'checkin', label: '+ Check-in', prompt: 'registrar check-in' },
+      { id: 'journal', label: '✏ Diario', prompt: 'abrir diario' },
+      { id: 'status', label: '¿Cómo estoy?', prompt: 'shodan cómo estoy hoy' },
+    ];
+    return [
+      { id: 'expense', label: '+ Gasto', prompt: 'registrar gasto ' },
+      { id: 'income', label: '+ Ingreso', prompt: 'registrar ingreso ' },
+      { id: 'status', label: '¿Cuánto tengo?', prompt: 'jarvis cuánto tengo disponible' },
+    ];
+  }, []);
+
+  const [hudMessage, setHudMessage] = useState('');
+
+  useEffect(() => {
+    if (!isOpen || chatMessages.length > 0 || !!inputValue || !!lastError) return;
+    setHudMessage('');
+    const hubHints: Record<'WorkHub' | 'PersonalHub' | 'FinanceHub', string> = {
+      WorkHub: 'Detectando prioridades de trabajo para hoy.',
+      PersonalHub: 'Preparando check-in de bienestar del dia.',
+      FinanceHub: 'Analizando estado financiero en tiempo real.',
+    };
+    const timer = window.setTimeout(() => {
+      setHudMessage(hubHints[selectedHub]);
+    }, 180);
+    return () => window.clearTimeout(timer);
+  }, [isOpen, chatMessages.length, inputValue, lastError, selectedHub]);
+
+  const handleSubmit = useCallback(() => {
+    formRef.current?.requestSubmit();
+  }, []);
+
   /* OMNI-FIX-9: memoizar para evitar doble cálculo */
   const agentInfo = useMemo(
     () => getAgentInfo(selectedHub, inputValue),
     [selectedHub, inputValue]
   );
 
-  /* OMNI-PERF-2: reactive — updates when API key is set */
-  const [hasNeuralKey, setHasNeuralKey] = useState(() => !!getNeuralKeySync());
+  /* OMNI-PERF-2: real connectivity status via universal LLM client */
+  const [aiOnline, setAiOnline] = useState<boolean | null>(null);
   useEffect(() => {
-    const onKeyUpdate = (e: Event) => setHasNeuralKey(!!(e as CustomEvent).detail?.hasKey);
-    window.addEventListener('athenea:neural-key-updated', onKeyUpdate);
-    return () => window.removeEventListener('athenea:neural-key-updated', onKeyUpdate);
+    let mounted = true;
+
+    const refreshConnection = async () => {
+      try {
+        const ok = await llmClient.testConnection();
+        if (mounted) setAiOnline(ok);
+      } catch {
+        if (mounted) setAiOnline(false);
+      }
+    };
+
+    void refreshConnection();
+
+    const onConfigUpdate = () => {
+      void refreshConnection();
+    };
+
+    window.addEventListener('athenea:llm-config-updated', onConfigUpdate);
+    window.addEventListener('athenea:neural-key-updated', onConfigUpdate);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener('athenea:llm-config-updated', onConfigUpdate);
+      window.removeEventListener('athenea:neural-key-updated', onConfigUpdate);
+    };
   }, []);
 
   /* FIX-2: useMemo para evitar re-crear el objeto en cada keystroke
@@ -967,125 +1096,169 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   return (
     <div className="omnibar-overlay">
       <div className="omnibar-container" ref={modalRef} role="dialog" aria-modal="true" aria-label="ATHENEA Assistant"> {/* OMNI-A11Y-1 */}
-        <div className="omnibar-top-strip" />
-        {/* Header */}
+        <div className={`omnibar-top-strip ${selectedHub === 'WorkHub' ? 'work' : selectedHub === 'PersonalHub' ? 'personal' : 'finance'}`} />
+
+        {/* 1) HEADER */}
         <div className="omnibar-header">
-          <div className="omnibar-title">
-            <span className="omnibar-icon">🤖</span>
-            <span>ATHENEA Assistant</span>
-            {import.meta.env.DEV && <span className="omnibar-version">UI v2</span>}
-            {hasNeuralKey /* OMNI-PERF-2 */ ? (
-              <span className="omnibar-ai-badge active">IA activa</span>
-            ) : (
-              <span className="omnibar-ai-badge offline">Modo offline</span>
-            )}
+          <div className="omnibar-header-left">
+            <img src={athenaLogo} className="omnibar-logo" alt="ATHENEA" />
+            <span className={`athenea-status-dot ${aiOnline ? 'live' : 'offline'}`} />
           </div>
+
+          <div className="omnibar-hub-tabs">
+            <button
+              className={`omnibar-hub-tab ${selectedHub === 'WorkHub' ? 'active work' : ''}`}
+              onClick={() => {
+                setSelectedHub('WorkHub');
+                setInputValue('');
+                setChatMessages([]);
+              }}
+            >
+              Work
+            </button>
+            <button
+              className={`omnibar-hub-tab ${selectedHub === 'PersonalHub' ? 'active personal' : ''}`}
+              onClick={() => {
+                setSelectedHub('PersonalHub');
+                setInputValue('');
+                setChatMessages([]);
+              }}
+            >
+              Personal
+            </button>
+            <button
+              className={`omnibar-hub-tab ${selectedHub === 'FinanceHub' ? 'active finance' : ''}`}
+              onClick={() => {
+                setSelectedHub('FinanceHub');
+                setInputValue('');
+                setChatMessages([]);
+              }}
+            >
+              Finance
+            </button>
+          </div>
+
           <button
             type="button"
-            className="omnibar-shortcut omnibar-close-btn"
+            className="omnibar-close-btn"
             onClick={closeOmnibar}
             aria-label="Close assistant"
           >
-            ✕ {t('omnibar.closeHint')}
+            ✕
           </button>
         </div>
 
-        {/* Hub Selector Tabs */}
-        <div className="omnibar-tabs">
-          <button
-            className={`omnibar-tab ${selectedHub === 'WorkHub' ? 'active' : ''}`}
-            onClick={() => {
-              setSelectedHub('WorkHub');
-              setInputValue('');
-              setChatMessages([]); /* FIX-3: limpiar contexto del hub anterior */
-            }}
-          >
-            💼 Work
-          </button>
-          <button
-            className={`omnibar-tab ${selectedHub === 'PersonalHub' ? 'active' : ''}`}
-            onClick={() => {
-              setSelectedHub('PersonalHub');
-              setInputValue('');
-              setChatMessages([]); /* FIX-3 */
-            }}
-          >
-            📝 Personal
-          </button>
-          <button
-            className={`omnibar-tab ${selectedHub === 'FinanceHub' ? 'active' : ''}`}
-            onClick={() => {
-              setSelectedHub('FinanceHub');
-              setInputValue('');
-              setChatMessages([]); /* FIX-3 */
-            }}
-          >
-            💰 Finance
-          </button>
-        </div>
-
-        {/* Main Content Area */}
-        <div className="omnibar-content">
-          {/* FIX UX-4 — WarRoomView solo si advancedMode */}
-          {advancedMode && <WarRoomView />}
-
-          {/* Input Section */}
-          <form onSubmit={handleSubmitPrompt} className="omnibar-form">
+        {/* 2) INPUT */}
+        <div className="omnibar-input-section">
+          <form ref={formRef} onSubmit={handleSubmitPrompt} className="omnibar-input-wrapper">
             <input
               ref={inputRef}
               type="text"
               className="omnibar-input"
-              placeholder={`${t('What do you want to do?')}`}
+              placeholder={getInputPlaceholder(selectedHub)}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
               disabled={isLoading}
-              aria-label={t('What do you want to do?')} /* OMNI-A11Y-1 */
+              aria-label={t('What do you want to do?')}
             />
-            {/* FIX 6.6: Voice button with 4 visual states */}
+            {chatMessages.length > 0 && (
+              <span
+                className="omnibar-context-indicator"
+                title={`${chatMessages.length} mensajes en contexto`}
+              >
+                {Math.floor(chatMessages.length / 2)}
+              </span>
+            )}
             <button
               type="button"
-              className={[
-                'omnibar-voice-btn',
-                voiceState === 'listening' ? 'omnibar-voice-btn--listening' : '',
-                voiceState === 'processing' ? 'omnibar-voice-btn--processing' : '',
-                voiceState === 'error' ? 'omnibar-voice-btn--error' : '',
-              ].filter(Boolean).join(' ')}
+              className={`omnibar-voice-btn ${voiceState}`}
               onClick={handleVoiceInput}
               disabled={isLoading || voiceState === 'processing'}
               aria-label={voiceState === 'listening' ? 'Stop voice input' : 'Start voice input'}
               title={voiceState === 'listening' ? 'Tap to stop' : 'Voice input'}
             >
-              {voiceState === 'idle' ? '🎙' : voiceState === 'listening' ? '⏹' : voiceState === 'processing' ? '⏳' : '⚠️'}
+              {voiceState === 'listening' ? '⏹' : '🎙'}
             </button>
             <button
-              type="submit"
-              className="omnibar-submit-btn"
+              type="button"
+              className="omnibar-send-btn"
               disabled={isLoading || !inputValue.trim()}
+              onClick={handleSubmit}
               title="Send"
             >
-              {isLoading ? '⏳' : '→'}
+              {isLoading ? (
+                <span className="omnibar-spinner" />
+              ) : (
+                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                  <polyline points="12 5 19 12 12 19"/>
+                </svg>
+              )}
             </button>
           </form>
-          {/* FIX 6.6: Voice status bar */}
           {voiceState !== 'idle' && (
-            <div className={`omnibar-voice-status${voiceState === 'error' ? ' omnibar-voice-status--error' : ''}`} aria-live="assertive" aria-atomic="true"> {/* OMNI-A11Y-1 */}
+            <div className={`omnibar-voice-status${voiceState === 'error' ? ' omnibar-voice-status--error' : ''}`} aria-live="assertive" aria-atomic="true">
               {voiceState === 'listening' && `🎙 ${t('Listening')}…`}
               {voiceState === 'processing' && `⏳ ${t('Processing')}…`}
               {voiceState === 'error' && `⚠️ ${voiceError || t('Voice error')}`}
             </div>
           )}
+        </div>
 
-          {showInlineOnboardingHint && (
-            <div className="omnibar-inline-onboarding-hint">
-              <div className="onboarding-hint-title">{t('First command setup')}</div>
-              <div className="onboarding-hint-text">
-                {t('Type a natural language command. Examples: "add task review tomorrow", "spent 50 on food", "how are my finances?"')}
-                {/* OMNI-FIX-10 */}
+        {/* Main Content Area */}
+        <div className="omnibar-content">
+          {advancedMode && <WarRoomView />}
+
+          {/* 3) AGENTE PANEL */}
+          {chatMessages.length === 0 && !inputValue && !lastError && (
+            <div className={`omnibar-agent-panel agent-${getAgentKey(selectedHub)}`}>
+              <div className="athenea-scanlines omnibar-scanlines" />
+
+              <div className="agent-panel-header">
+                <span className="agent-panel-icon">{getAgentIcon(selectedHub)}</span>
+                <div className="agent-panel-identity">
+                  <span className="agent-panel-name">{getAgentDisplayName(selectedHub)}</span>
+                  <span className="agent-panel-role">{getAgentRole(selectedHub)}</span>
+                </div>
+                <span className="athenea-status-dot live" />
+              </div>
+
+              <div className="agent-panel-message">
+                {hudMessage ? (
+                  <p>{hudMessage}</p>
+                ) : (
+                  <div className="agent-message-loading">
+                    <div className="skeleton-line" />
+                    <div className="skeleton-line short" />
+                  </div>
+                )}
+              </div>
+
+              <div className="agent-panel-actions">
+                {getAgentQuickActions(selectedHub).map((action) => (
+                  <button
+                    key={action.id}
+                    className="agent-quick-action"
+                    onClick={() => {
+                      setInputValue(action.prompt);
+                      setTimeout(() => inputRef.current?.focus(), 50);
+                    }}
+                    type="button"
+                  >
+                    {action.label}
+                  </button>
+                ))}
               </div>
             </div>
           )}
 
-          {/* INTERCEPT: tarjeta de intercepción de notificaciones cuando hay una accionable */}
+          {/* INTERCEPT: mantener lógica existente */}
           {chatMessages.length === 0 && !inputValue && latestIntercept && latestIntercept.actionType !== 'none' && (
             <InterceptCard
               appName={latestIntercept.appName}
@@ -1100,20 +1273,29 @@ export const Omnibar: React.FC<OmnibarProps> = ({
             />
           )}
 
-          {/* Proactive HUD - shown only when chat is empty */}
+          {/* 4) SKILLS CHIPS */}
           {chatMessages.length === 0 && !inputValue && !lastError && (
-            <div className="omnibar-proactive-hud-section">
-              <ProactiveHUD
-                onApplySuggestion={(suggestion) => {
-                  setInputValue(suggestion);
-                  setTimeout(() => inputRef.current?.focus(), 0);
-                  showToast('Suggestion moved to command box', 'info');
-                }}
-              />
+            <div className="omnibar-skills-section">
+              <div className="omnibar-skills-grid">
+                {getSkillsByHub(selectedHub).slice(0, 4).map((skill) => (
+                  <button
+                    key={skill.id}
+                    className="omnibar-skill-chip"
+                    onClick={() => setInputValue(skill.name.toLowerCase())}
+                    type="button"
+                  >
+                    <span className="skill-chip-icon" style={{ fontSize: '16px' }}>{skill.icon}</span>
+                    <div className="skill-chip-text">
+                      <span className="skill-chip-name">{skill.name}</span>
+                      <span className="skill-chip-desc">{skill.description}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* ── CHAT AREA ── */}
+          {/* 5) CHAT */}
           {chatMessages.length > 0 ? (
             <div className="omnibar-chat" role="log" aria-live="polite"> {/* OMNI-A11Y-1 */}
               {chatMessages.map((msg) => (
@@ -1158,64 +1340,23 @@ export const Omnibar: React.FC<OmnibarProps> = ({
               )}
               <div ref={chatEndRef} />
             </div>
-          ) : (
-            <>
-              {/* Empty state — suggested shortcuts */}
-              {!inputValue && !lastError && (
-                <div className="omnibar-empty">
-                  <div className="omnibar-shortcuts-row" role="group" aria-label={`${selectedHub} quick shortcuts`}>
-                    {activeShortcuts.map((shortcut) => (
-                      <button
-                        key={shortcut.id}
-                        type="button"
-                        className="omnibar-shortcut-btn"
-                        onClick={() => {
-                          setInputValue(shortcut.prompt);
-                          setTimeout(() => inputRef.current?.focus(), 0);
-                        }}
-                      >
-                        {shortcut.label}
-                      </button>
-                    ))}
-                  </div>
+          ) : null}
 
-                  <div className="empty-title">{t('What do you want to do?')}</div>
-                  <div className="suggested-skills">
-                    {suggestedSkills.map((skill) => (
-                      <button
-                        key={skill.id}
-                        className="skill-suggestion"
-                        onClick={() => setInputValue(skill.name.toLowerCase())} /* OMNI-CLEAN-4 */
-                        type="button"
-                      >
-                        <span className="skill-icon">{skill.icon}</span>
-                        <div className="skill-info">
-                          <div className="skill-name">{skill.name}</div>
-                          <div className="skill-desc">{skill.description}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {lastError && (
-                <div className="omnibar-error">
-                  <span>⚠️ {lastError}</span>
-                </div>
-              )}
-            </>
+          {lastError && (
+            <div className="omnibar-error">
+              <span>⚠️ {lastError}</span>
+            </div>
           )}
         </div>
 
-        {/* Footer — FIX-9: shortcuts de teclado */}
+        {/* FOOTER */}
         <div className="omnibar-footer">
-          <span className="footer-agent">
-            {agentInfo.icon} {agentInfo.name}
-          </span>
-          <span className="footer-shortcuts">
-            <kbd>Enter</kbd> {t('send')}
-            <kbd>Esc</kbd> {t('close')}
+          <kbd>Enter</kbd> enviar
+          <span className="omnibar-footer-sep">·</span>
+          <kbd>Esc</kbd> cerrar
+          <span className="omnibar-footer-sep">·</span>
+          <span className="omnibar-footer-agent">
+            {getAgentDisplayName(selectedHub)}
           </span>
         </div>
       </div>

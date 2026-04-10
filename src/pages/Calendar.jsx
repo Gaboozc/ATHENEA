@@ -11,6 +11,7 @@ import { useAgentCalendar } from '../hooks/useAgentCalendar';
 import { useGoogleCalendar } from '../hooks/useGoogleCalendar';
 import { selectFinancialSnapshot } from '../store/selectors/financialSelectors';
 import { showToast } from '../components/Toast/Toast';
+import { EmptyState, LoadingSpinner } from '../components';
 import './Calendar.css';
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -159,6 +160,8 @@ export const Calendar = () => {
     const allowed = HUB_TYPE_MAP[hubFilter] || [];
     return events.filter((ev) => allowed.includes(ev.type) || ev.hub === hubFilter);
   }, [events, hubFilter]);
+
+  const hasFilteredEvents = filteredEvents.length > 0;
 
   const getEventsForDate = (date) => {
     const dateStr = date.toISOString().split('T')[0];
@@ -393,7 +396,12 @@ export const Calendar = () => {
               onClick={gcalSync}
               disabled={syncStatus === 'loading'}
             >
-              {syncStatus === 'loading' ? '⏳ Sincronizando…' : '🔄 Sincronizar'}
+              {syncStatus === 'loading' ? (
+                <>
+                  <LoadingSpinner size="sm" label="Sincronizando" />
+                  <span>Sincronizando…</span>
+                </>
+              ) : '🔄 Sincronizar'}
             </button>
             <button className="calendar-gcal-btn secondary" onClick={gcalDisconnect}>
               Desconectar
@@ -436,6 +444,19 @@ export const Calendar = () => {
           </button>
         ))}
       </div>
+
+      {!hasFilteredEvents && syncStatus !== 'loading' && (
+        <EmptyState
+          icon="🗓️"
+          title={t('No events in this view.')}
+          description={t('Create a new event or adjust your hub filter.')}
+          action={{
+            label: t('New Event'),
+            icon: '+',
+            onClick: () => handleOpenCreateForm(selectedDate || new Date()),
+          }}
+        />
+      )}
 
       {/* CAL-FEAT-4: Month grid (only in month view) */}
       {viewMode === 'month' && (

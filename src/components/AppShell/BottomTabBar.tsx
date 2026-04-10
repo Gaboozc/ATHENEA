@@ -1,18 +1,21 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { useOmnibar } from '../Omnibar/useOmnibar';
 import athenaLogo from '../../assets/img/Athena-logo.png';
 import './BottomTabBar.css';
+import { useState } from 'react';
+import { MobileHubSheet } from '../Navigation/MobileHubSheet';
 
 const LEFT_TABS = [
-  { label: 'Work',     icon: '⚡', path: '/workhub' },
-  { label: 'Personal', icon: '🌿', path: '/personalhub' },
+  { label: 'Work',     icon: '⚡', path: '/work', sheet: 'work' },
+  { label: 'Personal', icon: '🌿', path: '/personal', sheet: 'personal' },
 ] as const;
 
 const RIGHT_TABS = [
-  { label: 'Finance',  icon: '💎', path: '/financehub' },
-  { label: 'Settings', icon: '⚙️', path: '/settings' },
+  { label: 'Finance',  icon: '💎', path: '/finance', sheet: 'finance' },
+  { label: 'Más',      icon: '➕', path: '/settings', sheet: 'more' },
 ] as const;
+
+type SheetHub = 'work' | 'personal' | 'finance' | 'more';
 
 interface BottomTabBarProps {
   highInsightsCount?: number;
@@ -21,16 +24,37 @@ interface BottomTabBarProps {
 export function BottomTabBar({ highInsightsCount = 0 }: BottomTabBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { openOmnibar } = useOmnibar();
+  const [pressedPath, setPressedPath] = useState<string | null>(null);
+  const [activeSheet, setActiveSheet] = useState<SheetHub | null>(null);
 
   const handleTab = async (path: string) => {
+    setPressedPath(path);
+    window.setTimeout(() => setPressedPath((prev) => (prev === path ? null : prev)), 160);
     try { await Haptics.impact({ style: ImpactStyle.Light }); } catch { /* desktop/web */ }
     navigate(path);
   };
 
-  const handleFab = async () => {
+  const handleOpenSheet = async (hub: SheetHub, path: string) => {
+    setPressedPath(path);
+    window.setTimeout(() => setPressedPath((prev) => (prev === path ? null : prev)), 160);
+    try { await Haptics.impact({ style: ImpactStyle.Light }); } catch { /* desktop/web */ }
+    setActiveSheet(hub);
+  };
+
+  const handleHubTap = async (hub: Exclude<SheetHub, 'more'>, path: string) => {
+    if (isActive(path)) {
+      setActiveSheet((prev) => (prev === hub ? null : hub));
+      return;
+    }
+
+    setActiveSheet(null);
+    await handleTab(path);
+  };
+
+  const handleDashboard = async () => {
     try { await Haptics.impact({ style: ImpactStyle.Medium }); } catch { /* desktop/web */ }
-    openOmnibar();
+    setActiveSheet(null);
+    navigate('/');
   };
 
   const isActive = (path: string) =>
@@ -41,8 +65,8 @@ export function BottomTabBar({ highInsightsCount = 0 }: BottomTabBarProps) {
       {LEFT_TABS.map(tab => (
         <button
           key={tab.path}
-          className={`bottom-tab${isActive(tab.path) ? ' active' : ''}`}
-          onClick={() => handleTab(tab.path)}
+          className={`bottom-tab${isActive(tab.path) ? ' active' : ''}${pressedPath === tab.path ? ' is-pressed' : ''}`}
+          onClick={() => handleHubTap(tab.sheet, tab.path)}
           aria-label={tab.label}
           aria-current={isActive(tab.path) ? 'page' : undefined}
         >
@@ -54,8 +78,8 @@ export function BottomTabBar({ highInsightsCount = 0 }: BottomTabBarProps) {
       <div className="bottom-tab bottom-tab--fab">
         <button
           className="bottom-tab-fab-btn"
-          onClick={handleFab}
-          aria-label="Open Athenea assistant"
+          onClick={handleDashboard}
+          aria-label="Go to Dashboard"
           type="button"
         >
           <img src={athenaLogo} alt="Athenea" />
@@ -70,8 +94,8 @@ export function BottomTabBar({ highInsightsCount = 0 }: BottomTabBarProps) {
       {RIGHT_TABS.map(tab => (
         <button
           key={tab.path}
-          className={`bottom-tab${isActive(tab.path) ? ' active' : ''}`}
-          onClick={() => handleTab(tab.path)}
+          className={`bottom-tab${isActive(tab.path) ? ' active' : ''}${pressedPath === tab.path ? ' is-pressed' : ''}`}
+          onClick={() => (tab.sheet === 'finance' ? handleHubTap('finance', tab.path) : handleOpenSheet(tab.sheet, tab.path))}
           aria-label={tab.label}
           aria-current={isActive(tab.path) ? 'page' : undefined}
         >
@@ -79,6 +103,13 @@ export function BottomTabBar({ highInsightsCount = 0 }: BottomTabBarProps) {
           <span className="bottom-tab__label">{tab.label}</span>
         </button>
       ))}
+
+      {activeSheet && (
+        <MobileHubSheet
+          hub={activeSheet}
+          onClose={() => setActiveSheet(null)}
+        />
+      )}
     </nav>
   );
 }

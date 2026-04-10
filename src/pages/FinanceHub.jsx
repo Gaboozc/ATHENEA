@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +9,7 @@ import { selectFinancialSnapshot, selectFinancialHealthScore } from '../store/se
 import { Skeleton } from '../components/Skeleton/Skeleton';
 import { SpendingCharts } from '../components/SpendingCharts/SpendingCharts';
 import { CashFlowProjection } from '../components/CashFlowProjection/CashFlowProjection';
-import EmptyState from '../components/EmptyState/EmptyState';
+import { EmptyState } from '../components';
 import './FinanceHub.css';
 
 export const FinanceHub = () => {
@@ -58,6 +58,8 @@ export const FinanceHub = () => {
   /* F-FEAT-1: inline limit editing */
   const [editingLimitId, setEditingLimitId] = useState(null);
   const [editingLimitValue, setEditingLimitValue] = useState('');
+  const categoryNameInputRef = useRef(null);
+  const expenseAmountInputRef = useRef(null);
   const [expenseAmount, setExpenseAmount] = useState('');
   const [expenseCategory, setExpenseCategory] = useState('');
   const [expenseNote, setExpenseNote] = useState('');
@@ -221,7 +223,7 @@ export const FinanceHub = () => {
       )}
 
       {/* DEBTS-4: Debt KPI card */}
-      {(activeDebts.length > 0 || true) && (
+      {activeDebts.length > 0 && (
         <section className="financehub-wallets-row financehub-debts-row">
           <div className="wallet-kpi wallet-kpi-debt">
             <span>💳 {t('Deuda total')}</span>
@@ -305,6 +307,7 @@ export const FinanceHub = () => {
             <h3>{t('Add Category')}</h3>
             <form className="financehub-form" onSubmit={handleAddCategory}>
               <input
+                ref={categoryNameInputRef}
                 type="text"
                 value={categoryName}
                 onChange={(e) => setCategoryName(e.target.value)}
@@ -333,6 +336,7 @@ export const FinanceHub = () => {
             <h3>{t('Add Expense')}</h3>
             <form className="financehub-form" onSubmit={handleAddExpense}>
               <input
+                ref={expenseAmountInputRef}
                 type="number"
                 min="0"
                 step="0.01"
@@ -372,7 +376,16 @@ export const FinanceHub = () => {
         <div className="financehub-card">
           <h3>{t('Categories')}</h3>
           {budgetCategories.length === 0 ? (
-            <EmptyState icon="🏷️" message={t('No categories yet.')} ctaLabel={`+ ${t('Add Category')}`} onCta={() => {}} />
+            <EmptyState
+              icon="🏷️"
+              title={t('No categories yet.')}
+              description={t('Create your first category to organize budget tracking.')}
+              action={{
+                label: t('Add Category'),
+                icon: '+',
+                onClick: () => categoryNameInputRef.current?.focus(),
+              }}
+            />
           ) : (
             <ul>
               {/* F-FEAT-1: delete + inline limit edit */}
@@ -430,7 +443,16 @@ export const FinanceHub = () => {
         <div className="financehub-card">
           <h3>{t('Monthly History')}</h3>
           {monthHistory.length === 0 ? (
-            <EmptyState icon="💸" message={t('No expenses yet.')} ctaLabel={`+ ${t('Add Expense')}`} onCta={() => navigate('/finance/budgeting')} />
+            <EmptyState
+              icon="💸"
+              title={t('No expenses yet.')}
+              description={t('Register your first expense to start building monthly history.')}
+              action={{
+                label: t('Add Expense'),
+                icon: '+',
+                onClick: () => expenseAmountInputRef.current?.focus(),
+              }}
+            />
           ) : (
             <ul>
               {monthHistory.slice(0, 6).map((month) => (
@@ -446,7 +468,16 @@ export const FinanceHub = () => {
         <div className="financehub-card">
           <h3>{t('Recent Expenses')}</h3>
           {monthlyExpenses.length === 0 ? (
-            <EmptyState icon="💸" message={t('No expenses yet.')} ctaLabel={`+ ${t('Add Expense')}`} onCta={() => navigate('/finance/budgeting')} />
+            <EmptyState
+              icon="💸"
+              title={t('No expenses yet.')}
+              description={t('Add an expense to keep this month under control.')}
+              action={{
+                label: t('Add Expense'),
+                icon: '+',
+                onClick: () => expenseAmountInputRef.current?.focus(),
+              }}
+            />
           ) : (
             <ul>
               {monthlyExpenses.slice(0, 6).map((expense) => (
