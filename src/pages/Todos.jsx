@@ -113,10 +113,13 @@ export const Todos = () => {
         {sortedTodos.length === 0 ? (
           <EmptyState
             icon="✅"
-            title={t('No todos yet.')}
-            message={t('Add your first todo using the form above.')}
-            ctaLabel={`+ ${t('Add Todo')}`}
-            onCta={() => titleInputRef.current?.focus()}
+            title={t('No tengo todos todavia.')}
+            description={t('Escribe uno arriba y lo agrego de inmediato.')}
+            action={{
+              label: t('Agregar todo'),
+              icon: '+',
+              onClick: () => titleInputRef.current?.focus(),
+            }}
           />
         ) : (
           sortedTodos.map((todo) => (

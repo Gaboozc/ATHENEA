@@ -57,6 +57,53 @@
   background: var(--accent-dim);
 }
 
+.nav-logo-pill {
+  height: 38px;
+  padding: 3px 14px 3px 4px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #0f2746 0%, #123761 50%, #0e2e52 100%);
+  border: 1px solid rgba(160, 198, 255, 0.5);
+  box-shadow: inset 0 1px 0 rgba(230, 241, 255, 0.25), 0 4px 14px rgba(2, 8, 18, 0.45);
+  gap: 10px;
+  color: #d5e7ff;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.nav-logo-pill:hover,
+.nav-logo-pill.is-active {
+  border-color: rgba(132, 187, 255, 0.75);
+  background: linear-gradient(135deg, #163860 0%, #19507f 50%, #17466f 100%);
+  color: #eff6ff;
+  box-shadow: inset 0 1px 0 rgba(230, 241, 255, 0.3), 0 0 0 1px rgba(74, 182, 255, 0.2), 0 8px 20px rgba(5, 26, 54, 0.5);
+}
+
+.nav-logo-icon-wrap {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 30% 25%, rgba(87, 203, 255, 0.35), rgba(15, 48, 88, 0.9) 70%);
+  border: 1px solid rgba(166, 220, 255, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(230, 241, 255, 0.14);
+}
+
+.nav-logo-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 2px rgba(87, 203, 255, 0.6));
+}
+
+.nav-logo-label {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .navbar-main {
   flex: 1;
   min-width: 0;
@@ -301,6 +348,32 @@
   stroke: currentColor;
 }
 
+.nav-icon-btn {
+  width: auto;
+  height: auto;
+  min-width: 48px;
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.nav-icon-label {
+  font-size: 9px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.nav-icon-btn:hover .nav-icon-label,
+.nav-icon-btn.is-active .nav-icon-label {
+  color: var(--accent);
+}
+
 .navbar-badge {
   position: absolute;
   top: 2px;
@@ -429,6 +502,15 @@
   }
 
   .navbar-main {
+    display: none;
+  }
+
+  .nav-icon-btn {
+    min-width: 34px;
+    padding: 0;
+  }
+
+  .nav-icon-label {
     display: none;
   }
 }

@@ -20,6 +20,7 @@ import { intelligenceBridge } from './Bridge';
 import { audioFeedback } from './utils/audioFeedback';
 import { openclawAdapter } from './adapters/openclawAdapter';
 import { actionHistoryStore } from './actionHistory';
+import { showToast } from '../../components/Toast';
 
 interface UseIntelligenceReturn {
   // Prompt handling
@@ -58,11 +59,11 @@ interface UseIntelligenceReturn {
 
 /**
  * Autonomous execution threshold
- * Skills with all required params and >= 95% confidence auto-execute without confirmation.
+ * Skills with all required params and >= 97% confidence auto-execute without confirmation.
  * Finance/destructive actions always require confirmation regardless of confidence.
- * Raised from 90 → 95 to reduce false positives (FIX-B).
+ * Raised from 95 → 97 to reduce false positives.
  */
-const AUTO_EXECUTE_THRESHOLD = 95;
+const AUTO_EXECUTE_THRESHOLD = 97;
 
 /**
  * useIntelligence Hook
@@ -128,6 +129,7 @@ export function useIntelligence(
         if (!response.success) {
           setLastError(response.userMessage);
           audioFeedback.playError();
+          showToast(response.userMessage || 'Inference failed', 'error');
           actionHistoryStore.recordAction({
             type: 'user-command',
             hub: hub || initialHub || 'WorkHub',
@@ -163,6 +165,9 @@ export function useIntelligence(
           if (!adapterResult.success || !adapterResult.action) {
             console.error('[OpenClaw Adapter] Failed:', adapterResult.error);
             audioFeedback.playError();
+            const adapterErrorMsg = adapterResult.error || 'Could not adapt command for execution';
+            setLastError(adapterErrorMsg);
+            showToast(adapterErrorMsg, 'error');
             actionHistoryStore.recordAction({
               type: 'voice-command',
               hub: hub || initialHub || 'WorkHub',
@@ -193,6 +198,9 @@ export function useIntelligence(
           } catch (dispatchError) {
             console.error('[Redux Dispatch] Failed:', dispatchError);
             audioFeedback.playError();
+            const dispatchErrorMsg = dispatchError instanceof Error ? dispatchError.message : 'Failed to execute adapted action';
+            setLastError(dispatchErrorMsg);
+            showToast(dispatchErrorMsg, 'error');
             actionHistoryStore.recordAction({
               type: 'voice-command',
               hub: hub || initialHub || 'WorkHub',
@@ -217,6 +225,7 @@ export function useIntelligence(
         setLastError(errorMsg);
         console.error('Intelligence error:', error);
         audioFeedback.playError();
+        showToast(errorMsg, 'error');
         actionHistoryStore.recordAction({
           type: 'user-command',
           hub: hub || initialHub || 'WorkHub',
@@ -256,6 +265,9 @@ export function useIntelligence(
       if (!adapterResult.success || !adapterResult.action) {
         console.error('[OpenClaw Adapter] Failed:', adapterResult.error);
         audioFeedback.playError();
+        const adapterErrorMsg = adapterResult.error || 'Could not adapt command for confirmation';
+        setLastError(adapterErrorMsg);
+        showToast(adapterErrorMsg, 'error');
         actionHistoryStore.recordAction({
           type: 'user-command',
           hub: initialHub || 'WorkHub',
@@ -287,6 +299,7 @@ export function useIntelligence(
       setLastError(errorMsg);
       console.error('Action execution error:', error);
       audioFeedback.playError();
+      showToast(errorMsg, 'error');
       actionHistoryStore.recordAction({
         type: 'user-command',
         hub: initialHub || 'WorkHub',

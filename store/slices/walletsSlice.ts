@@ -3,7 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 export interface WalletTransaction {
   id: string;
-  type: 'income_usd' | 'income_mxn' | 'expense_usd' | 'expense_mxn' | 'conversion';
+  type: 'income_usd' | 'income_mxn' | 'expense_usd' | 'expense_mxn' | 'conversion' | 'conversion_mxn_to_usd';
   amountUSD: number | null;
   amountMXN: number | null;
   rate: number | null; // only on conversions
@@ -140,6 +140,30 @@ const walletsSlice = createSlice({
       });
     },
 
+    /* BUG-5: Conversion MXN→USD */
+    convertMXNtoUSD: (state, action) => {
+      const { id, amountMXN, amountUSD, rate, description, date } = action.payload;
+      const mxn = Number(amountMXN);
+      const usd = Number(amountUSD);
+      const conversionRate = Number(rate) || (usd > 0 ? mxn / usd : 0);
+
+      state.walletMXN = Math.max(0, state.walletMXN - mxn);
+      state.walletUSD += usd;
+      state.referenceRate = conversionRate;
+      state.lastConversionDate = date;
+      state.transactions.unshift({
+        id,
+        type: 'conversion_mxn_to_usd',
+        amountUSD: usd,
+        amountMXN: mxn,
+        rate: conversionRate,
+        description: description || `Conversión MXN→USD a tasa $${conversionRate.toFixed(2)} MXN/USD`,
+        category: 'conversion',
+        date,
+        createdAt: new Date().toISOString(),
+      });
+    },
+
     /* SAVINGS-1: Transfer available → savings */
     transferToSavings: (state, action) => {
       const { id, amount, currency, description, date } = action.payload;
@@ -234,6 +258,10 @@ const walletsSlice = createSlice({
           state.walletUSD += tx.amountUSD!;
           state.walletMXN -= tx.amountMXN!;
           break;
+        case 'conversion_mxn_to_usd':
+          state.walletMXN += tx.amountMXN!;
+          state.walletUSD -= tx.amountUSD!;
+          break;
       }
       state.walletUSD = Math.max(0, state.walletUSD);
       state.walletMXN = Math.max(0, state.walletMXN);
@@ -248,6 +276,7 @@ export const {
   addExpenseUSD,
   addExpenseMXN,
   recordConversion,
+  convertMXNtoUSD,
   deleteTransaction,
   transferToSavings,      /* SAVINGS-1 */
   withdrawFromSavings,    /* SAVINGS-1 */

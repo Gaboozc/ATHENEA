@@ -113,9 +113,9 @@ function getAgentSystemPrompt(hub: string, state: any, languageInstruction: stri
   const agentNames = identity.agentNames || {};
   const agentAliases = identity.agentAliases || {};
 
-  const cortanaName = agentNames.cortana || 'Cortana';
-  const jarvisName = agentNames.jarvis || 'Jarvis';
-  const shodanName = agentNames.shodan || 'SHODAN';
+  const cortanaName = agentNames.cortana || 'Agent 1';
+  const jarvisName = agentNames.jarvis || 'Agent 2';
+  const shodanName = agentNames.shodan || 'Agent 3';
 
   const fallbackName = identity.preferredName || identity.firstName || 'Operador';
   const cortanaAlias = agentAliases.cortana || fallbackName;
@@ -220,6 +220,11 @@ function getOfflineFallback(hub: string): string {
 export const ProactiveHUD: React.FC<ProactiveHUDProps> = ({ onApplySuggestion }) => {
   const store = useStore();
   const { t } = useLanguage();
+  const identity = useSelector((state: any) => state.userSettings || {});
+  const agentNames = identity.agentNames || {};
+  const cortanaName = agentNames.cortana || 'Agent 1';
+  const jarvisName = agentNames.jarvis || 'Agent 2';
+  const shodanName = agentNames.shodan || 'Agent 3';
   const { currentResponse, generateResponse, isGenerating } = usePersona();
   const latestIntercept = useSelector((state: any) => state.aiMemory?.interception?.latestActionable);
   const predictiveBuffer = useSelector((state: any) => state.aiMemory?.predictiveBuffer);
@@ -339,9 +344,9 @@ export const ProactiveHUD: React.FC<ProactiveHUDProps> = ({ onApplySuggestion })
 
   /* FIX UX-8 — mapear persona a info visible para el usuario */
   const AGENT_INFO: Record<string, { icon: string; name: string; role: string }> = {
-    cortana: { icon: '🧿', name: 'Cortana', role: t('Strategy & Work')   },
-    jarvis:  { icon: '🤖', name: 'Jarvis',  role: t('Finance & Control') },
-    shodan:  { icon: '👁️', name: 'SHODAN',  role: t('Health & Energy')   },
+    cortana: { icon: '🧿', name: cortanaName, role: t('Strategy & Work')   },
+    jarvis:  { icon: '🤖', name: jarvisName,  role: t('Finance & Control') },
+    shodan:  { icon: '👁️', name: shodanName,  role: t('Health & Energy')   },
     swarm:   { icon: '🎯', name: 'ATHENEA', role: t('System')            },
   };
   const agentInfo = AGENT_INFO[responder] ?? AGENT_INFO.cortana;

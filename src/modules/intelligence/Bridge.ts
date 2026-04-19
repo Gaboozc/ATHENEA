@@ -46,6 +46,7 @@ import { suggestionsEngine } from './inference/SuggestionsEngine';
 import { getPersonaEngine } from './personaEngine';
 import { getAgentOrchestrator } from './agents/AgentOrchestrator';
 import type { ChatMessage as LLMChatMessage } from '../../services/LLMClient';
+import { selectFinancialSnapshot } from '../../store/selectors/financialSelectors';
 
 /**
  * Inference layer enum
@@ -56,6 +57,85 @@ enum InferenceLayer {
   OPENCLAW_GATEWAY = 'OPENCLAW_GATEWAY',
   FALLBACK = 'FALLBACK'
 }
+
+const APP_COMMAND_PATTERNS: Record<string, RegExp[]> = {
+  spotify: [
+    /abre?\s+spotify/i,
+    /pon\s+spotify/i,
+    /inicia\s+spotify/i,
+    /quiero\s+m[úu]sica/i,
+  ],
+  youtube: [
+    /abre?\s+youtube/i,
+    /pon\s+youtube/i,
+  ],
+  chrome: [
+    /abre?\s+chrome/i,
+    /abre?\s+(el\s+)?navegador/i,
+  ],
+  explorer: [
+    /abre?\s+(el\s+)?(explorador|archivos)/i,
+    /abre?\s+file\s+explorer/i,
+  ],
+  calculator: [
+    /abre?\s+(la\s+)?calculadora/i,
+    /abre?\s+calculator/i,
+  ],
+  notepad: [
+    /abre?\s+(el\s+)?bloc\s+de\s+notas/i,
+    /abre?\s+notepad/i,
+  ],
+};
+
+const detectAppCommand = (text: string): string | null => {
+  for (const [app, patterns] of Object.entries(APP_COMMAND_PATTERNS)) {
+    if (patterns.some((pattern) => pattern.test(text))) {
+      return app;
+    }
+  }
+  return null;
+};
+
+const getAppOpenResponse = (
+  app: string,
+  agentPersona: string,
+  agentAlias: string
+): string => {
+  const responses: Record<string, Record<string, string>> = {
+    spotify: {
+      cortana: `Spotify activado, ${agentAlias}.`,
+      jarvis: `Abriendo Spotify, ${agentAlias}.`,
+      shodan: 'Iniciando flujo de audio.',
+    },
+    youtube: {
+      cortana: `YouTube listo, ${agentAlias}.`,
+      jarvis: `Abriendo YouTube, ${agentAlias}.`,
+      shodan: 'Acceso a video iniciado.',
+    },
+    chrome: {
+      cortana: `Navegador abierto, ${agentAlias}.`,
+      jarvis: `Chrome activo, ${agentAlias}.`,
+      shodan: 'Acceso web iniciado.',
+    },
+    explorer: {
+      cortana: `Explorador abierto, ${agentAlias}.`,
+      jarvis: `Explorador de archivos activo, ${agentAlias}.`,
+      shodan: 'Explorador del sistema iniciado.',
+    },
+    calculator: {
+      cortana: `Calculadora lista, ${agentAlias}.`,
+      jarvis: `Calculadora abierta, ${agentAlias}.`,
+      shodan: 'Módulo de cálculo iniciado.',
+    },
+    notepad: {
+      cortana: `Bloc de notas abierto, ${agentAlias}.`,
+      jarvis: `Notepad iniciado, ${agentAlias}.`,
+      shodan: 'Editor de texto iniciado.',
+    },
+  };
+
+  return responses[app]?.[agentPersona] || `${app} abierto.`;
+};
 
 /**
  * The Hybrid Intelligence Bridge
@@ -146,6 +226,121 @@ export class IntelligenceBridge {
     if (/\bjarvis\b/i.test(text)) return 'jarvis';
     return null;
   }
+
+  private detectMentionedAgent(text: string): 'cortana' | 'jarvis' | 'shodan' | null {
+    const lower = String(text || '').toLowerCase();
+    if (lower.includes('cortana')) return 'cortana';
+    if (lower.includes('jarvis')) return 'jarvis';
+    if (lower.includes('shodan')) return 'shodan';
+    return null;
+  }
+
+  private getAgentForHub(hub: 'WorkHub' | 'PersonalHub' | 'FinanceHub'): 'cortana' | 'jarvis' | 'shodan' {
+    if (hub === 'FinanceHub') return 'jarvis';
+    if (hub === 'PersonalHub') return 'shodan';
+    return 'cortana';
+  }
+
+  private isPureGreeting(text: string): boolean {
+    const PURE_GREETING_PATTERNS = [
+      /^(hola|hey|hi|buenas|buenos días|buenas tardes|buenas noches)[\s,.]*(cortana|jarvis|shodan)?[\s.!]*$/i,
+      /^(cortana|jarvis|shodan)[\s,.]*(hola|hey|hi|qué tal|qué hay|cómo estás|cómo vas)[\s.!]*$/i,
+      /^(qué tal|qué hay|cómo estás|cómo vas)[\s,.]*(cortana|jarvis|shodan)?[\s.!]*$/i,
+    ];
+
+    return PURE_GREETING_PATTERNS.some((p) => p.test(String(text || '').trim()));
+  }
+
+  private isSpendingMention(text: string): boolean {
+    const SPENDING_MENTION_PATTERNS = [
+      /^(gasté|pagué|compré|me costó|cobré|recibí)\s/i,
+      /^(spent|paid|bought|cost)\s/i,
+    ];
+
+    return SPENDING_MENTION_PATTERNS.some((p) => p.test(String(text || '').trim()));
+  }
+
+  private buildGreetingMessage(persona: 'cortana' | 'jarvis' | 'shodan'): string {
+    if (persona === 'jarvis') {
+      return 'Hola. ¿Qué necesitas que gestione ahora?';
+    }
+
+    if (persona === 'shodan') {
+      return 'Hola. ¿Qué quieres revisar o registrar ahora?';
+    }
+
+    return 'Hola. ¿En qué te ayudo hoy?';
+  }
+
+  private buildSpendingMessage(userText: string): string {
+    const amountMatch = userText.match(/\b(\d+(?:[\.,]\d+)?)\s*(pesos|mxn|\$)?\b/i);
+    const categoryMatch = userText.match(/\ben\s+([a-zA-ZáéíóúñÁÉÍÓÚÑ\s]{2,30})$/i);
+
+    const amount = amountMatch?.[1]?.replace(',', '.') || null;
+    const category = categoryMatch?.[1]?.trim() || null;
+
+    if (amount && category) {
+      return `Entendido: gastaste ${amount} pesos en ${category}. ¿Quieres que lo registre como gasto ahora?`;
+    }
+
+    if (amount) {
+      return `Entendido: registraste un gasto de ${amount} pesos. ¿Quieres que lo guarde ahora?`;
+    }
+
+    return 'Entendido. ¿Quieres que registre ese gasto ahora?';
+  }
+
+  private buildDirectConversationResponse(
+    request: IntelligenceRequest,
+    responderPersona: 'cortana' | 'jarvis' | 'shodan',
+    message: string,
+    confidence = 100
+  ): IntelligenceResponse {
+    const personaIcon = responderPersona === 'jarvis' ? '🤖' : responderPersona === 'shodan' ? '👁️' : '🧿';
+    const personaLabel = responderPersona === 'jarvis' ? 'Jarvis' : responderPersona === 'shodan' ? 'SHODAN' : 'Cortana';
+
+    return {
+      id: request.id || this.generateId(),
+      success: true,
+      reasoning: {
+        matchedSkill: null,
+        confidence,
+        reasoning: '[router-direct] deterministic conversational response',
+        responderPersona,
+        allRequiredParamsPresent: true,
+        missingParams: [],
+      },
+      artifact: {
+        type: 'text',
+        props: {
+          title: `${personaIcon} ${personaLabel} — ${this.tr('Response', 'Respuesta')}`,
+          description: message,
+          actionLabel: this.tr('Got it', 'Entendido'),
+          cancelLabel: this.tr('Close', 'Cerrar'),
+        },
+      },
+      userMessage: message,
+      timestamp: Date.now(),
+    };
+  }
+
+  private hasExplicitActionIntent(userPrompt: string): boolean {
+    const text = String(userPrompt || '').trim();
+    if (!text) return false;
+
+    const ACTION_INTENT_PATTERNS: RegExp[] = [
+      /^(create|add|new|start|open|set|update|edit|delete|remove|record|log|sync|move|complete|finish|cancel)\b/i,
+      /^(crear|agrega?r|nuevo|nueva|inicia|abre|configura|actualiza|edita?r|elimina|borra|registra|sincroniza|mueve|completa|finaliza|cancela)\b/i,
+      /\b(create|add|delete|remove|register|record|set|update|open|show|list|sync|complete|mark as done)\b/i,
+      /\b(crear|agregar|eliminar|borrar|registrar|configurar|actualizar|abrir|mostrar|listar|sincronizar|completar|marcar como)\b/i,
+      /\b(schedule|plan|program)\b/i,
+      /\b(agenda|programa)\b/i,
+      /\b(plan_week|PLAN_WEEK)\b/i,
+      /\b(weekly_retro|WEEKLY_RETRO|retrospectiva)\b/i,
+    ];
+
+    return ACTION_INTENT_PATTERNS.some((pattern) => pattern.test(text));
+  }
   
   constructor() {
     // Start ONNX initialization in background (lazy)
@@ -178,9 +373,72 @@ export class IntelligenceBridge {
     onToken?: (chunk: string) => void
   ): Promise<IntelligenceResponse> {
     this.conversationHistory.push(request);
+    const userText = String(request.userPrompt || '').trim();
     const keywordHub = this.detectHubFromKeywords(request.userPrompt);
     const effectiveHub = keywordHub || request.context.currentHub;
     const hub = (effectiveHub || 'WorkHub') as 'WorkHub' | 'PersonalHub' | 'FinanceHub';
+    const targetAgent = this.detectMentionedAgent(userText) || this.getAgentForHub(hub);
+
+    const emotionalMessagePatterns: RegExp[] = [
+      /\b(estoy|ando|me siento|siento)\b.*\b(cansad[oa]|agotad[oa]|estresad[oa]|triste|mal|ansios[oa])\b/i,
+      /\b(tengo|traigo)\b.*\b(sue[ñn]o|fatiga|estr[eé]s|ansiedad)\b/i,
+      /\b(i\s*(am|'m)|feel)\b.*\b(tired|exhausted|stressed|anxious|sad|overwhelmed)\b/i,
+      /\bneed\s+(a\s+)?break\b/i,
+    ];
+    const isEmotionalMessage = emotionalMessagePatterns.some((pattern) => pattern.test(userText));
+
+    // Solo redirigir a SHODAN si estamos en PersonalHub
+    // o si el usuario menciona a SHODAN
+    const emotionalAgentOverride =
+      isEmotionalMessage
+        ? hub === 'PersonalHub'
+          ? 'shodan'
+          : userText.toLowerCase().includes('shodan')
+            ? 'shodan'
+            : null
+        : null;
+
+    const resolvedTargetAgent = (emotionalAgentOverride || targetAgent) as 'cortana' | 'jarvis' | 'shodan';
+
+    // Comandos de sistema (apps): se evalúan antes del gate conversacional.
+    const appCommand = detectAppCommand(userText);
+    if (appCommand) {
+      void import('../../services/ElectronService').then(({ openApp }) => {
+        void openApp(appCommand);
+      });
+
+      const state = reduxGetState?.() || {};
+      const identity = state.userSettings || state.userIdentity || {};
+      const agentKey = this.getAgentForHub(hub);
+      const aliases = identity.agentAliases || {};
+      const userAlias = aliases[agentKey] || identity.preferredName || 'Operador';
+      const responseText = getAppOpenResponse(appCommand, agentKey, userAlias);
+
+      return this.buildDirectConversationResponse(
+        request,
+        agentKey,
+        responseText,
+        100
+      );
+    }
+
+    // PROBLEMA 1: pure greeting should always be conversational and brief.
+    if (this.isPureGreeting(userText)) {
+      return this.buildDirectConversationResponse(
+        request,
+        resolvedTargetAgent,
+        this.buildGreetingMessage(resolvedTargetAgent)
+      );
+    }
+
+    // PROBLEMA 3: spending mention is conversational and should be handled by Jarvis.
+    if (this.isSpendingMention(userText)) {
+      return this.buildDirectConversationResponse(
+        request,
+        'jarvis',
+        this.buildSpendingMessage(userText)
+      );
+    }
 
     // CONVERSATIONAL GATE (FIX-A + FIX-C): If the message is clearly conversational
     // (greeting, question, advice request, or starts with an agent name), bypass
@@ -188,16 +446,29 @@ export class IntelligenceBridge {
     if (this.isConversationalMessage(request.userPrompt, reduxGetState)) {
       try {
         return await this.handleConversationalQuestion(
-          request, hub, null, 100, InferenceLayer.FAST_PATH, reduxGetState, onToken
+          request, hub, null, 100, InferenceLayer.FAST_PATH, reduxGetState, onToken, resolvedTargetAgent
         );
       } catch (convErr) {
         console.warn('[Bridge] Conversational gate error:', convErr);
       }
     }
 
-    // FIX 2: Skill-first routing — try skill match BEFORE falling through to conversational.
-    // If a skill is matched with sufficient confidence, return it directly.
-    // The useIntelligence hook will auto-execute (threshold 95) or show Canvas.
+    // CAMBIO 3: only route to skills when command/action intent is explicit.
+    // Otherwise stay conversational.
+    if (!this.hasExplicitActionIntent(request.userPrompt)) {
+      return await this.handleConversationalQuestion(
+        request,
+        hub,
+        null,
+        100,
+        InferenceLayer.FALLBACK,
+        reduxGetState,
+        onToken,
+        resolvedTargetAgent
+      );
+    }
+
+    // Skill-first routing once explicit action intent is confirmed.
     try {
       const skillResult = await this.trySkillFirstRoute(request, hub, reduxGetState);
       if (skillResult) return skillResult;
@@ -214,7 +485,8 @@ export class IntelligenceBridge {
         100,
         InferenceLayer.FAST_PATH,
         reduxGetState,
-        onToken
+        onToken,
+        resolvedTargetAgent
       );
     } catch (error) {
       console.error('[Bridge] Error:', error);
@@ -267,8 +539,8 @@ export class IntelligenceBridge {
     const allRequired = requiredIds.every((id) => params[id] !== undefined && params[id] !== '' && params[id] !== null);
     const enhancedConfidence = this.calculateEnhancedConfidence(prompt, skill, params, allRequired, baseConfidence);
 
-    // FIX 2: Minimum threshold of 45 raw (post-enhancement usually reaches 70+)
-    if (enhancedConfidence < 45) return null;
+    // Stricter floor to reduce false positives.
+    if (enhancedConfidence < 60) return null;
 
     const state = reduxGetState();
     const missingParams = this.getMissingRequiredParams(skill, params);
@@ -519,8 +791,7 @@ export class IntelligenceBridge {
    * Generate a friendly message to show to the user
    */
   private generateUserMessage(skill: SkillManifest, params: Record<string, any>): string {
-    const title = params.title || params.text || params.description || 'item';
-    return `I'm ready to create a new ${skill.name.toLowerCase()}: "${title}". Please review and confirm!`;
+    return 'Listo para crear la tarea. Por favor revisa y confirma.';
   }
 
   /**
@@ -633,20 +904,22 @@ export class IntelligenceBridge {
   }
 
   /**
-   * CONVERSATIONAL GATE (FIX-A + FIX-C)
+  * CONVERSATIONAL GATE
    *
    * Returns true if the message is clearly conversational and should bypass
    * skill-first routing. Covers:
    *   - Greetings / saludos
    *   - Questions ending in "?"
    *   - Advisory requests (consejos, recomienda, explícame…)
-   *   - Messages starting with an agent name (FIX-C)
+  *   - Messages starting with an agent name
+  *   - Emotional/physical state messages
+  *   - Very short non-command messages
    */
   private isConversationalMessage(userPrompt: string, reduxGetState: () => any): boolean {
     const text = String(userPrompt || '').trim();
     if (!text) return false;
 
-    // FIX-C: if the message starts with an agent name, route conversationally
+    // If the message starts with an agent name, route conversationally.
     const AGENT_NAMES = ['jarvis', 'cortana', 'shodan'];
     try {
       const userSettings = reduxGetState()?.userSettings || {};
@@ -661,7 +934,12 @@ export class IntelligenceBridge {
       if (AGENT_NAMES.some(name => text.toLowerCase().startsWith(name))) return true;
     }
 
-    // FIX-A: explicit conversational patterns
+    const tokenCount = text.split(/\s+/).filter(Boolean).length;
+    if (tokenCount <= 4 && !this.hasExplicitActionIntent(text)) {
+      return true;
+    }
+
+    // Broad conversational patterns
     const CONVERSATIONAL_PATTERNS: RegExp[] = [
       /^hola\b/i,
       /^buenos\s+(d[íi]as|tardes|noches)/i,
@@ -678,6 +956,10 @@ export class IntelligenceBridge {
       /qu[eé]\s+piensas/i,
       /an[aá]lisis/i,
       /situaci[oó]n/i,
+      /\b(estoy|ando|me siento|siento)\b.*\b(cansad[oa]|agotad[oa]|estresad[oa]|triste|mal|ansios[oa])\b/i,
+      /\b(tengo|traigo)\b.*\b(sue[ñn]o|fatiga|estr[eé]s|ansiedad)\b/i,
+      /\b(i\s*(am|'m)|feel)\b.*\b(tired|exhausted|stressed|anxious|sad|overwhelmed)\b/i,
+      /\bneed\s+(a\s+)?break\b/i,
       /\?$/,
     ];
 
@@ -740,14 +1022,15 @@ export class IntelligenceBridge {
     confidence: number,
     inferenceLayer: InferenceLayer,
     reduxGetState: () => any,
-    onToken?: (chunk: string) => void
+    onToken?: (chunk: string) => void,
+    forcedPersona?: 'jarvis' | 'cortana' | 'shodan'
   ): Promise<IntelligenceResponse> {
     const state = reduxGetState();
     const lower = String(request.userPrompt || '').toLowerCase();
     const normalizedConversationHistory = this.buildConversationHistory(request.conversationHistory as any[]);
 
-    const explicitPersona = this.detectPersonaFromPrompt(request.userPrompt);
-    const persona = explicitPersona || (hub === 'FinanceHub' ? 'jarvis' : hub === 'PersonalHub' ? 'shodan' : 'cortana');
+    const explicitPersona = this.detectMentionedAgent(request.userPrompt);
+    const persona = forcedPersona || explicitPersona || this.getAgentForHub(hub);
     const personaLabel = persona === 'jarvis' ? 'Jarvis' : persona === 'shodan' ? 'SHODAN' : 'Cortana';
     const personaIcon = persona === 'jarvis' ? '🤖' : persona === 'shodan' ? '👁️' : '🧿';
 
@@ -802,9 +1085,7 @@ export class IntelligenceBridge {
           facts = { openTasks: openTasks.length, nextTask: { title: nextTask.title, priority: nextTask.priority, dueDate: nextTask.dueDate || null } };
         }
       } else {
-        fallbackAnswer = this.getLanguage() === 'es'
-          ? `${critical.length > 0 ? `${critical.length} tareas críticas pendientes.` : 'Sin tareas críticas.'} ${overdue.length > 0 ? `${overdue.length} vencidas.` : ''} Total abiertas: ${openTasks.length}.${critical.length > 0 ? ` → Prioriza: ${critical.slice(0, 2).map((t) => t.title || 'Sin título').join(', ')}.` : ''}`
-          : `${critical.length > 0 ? `${critical.length} critical tasks pending.` : 'No critical tasks.'} ${overdue.length > 0 ? `${overdue.length} overdue.` : ''} Total open: ${openTasks.length}.${critical.length > 0 ? ` → Priority: ${critical.slice(0, 2).map((t) => t.title || 'Untitled').join(', ')}.` : ''}`;
+        fallbackAnswer = `${critical.length > 0 ? `${critical.length} tareas críticas pendientes.` : 'Sin tareas críticas.'} ${overdue.length > 0 ? `${overdue.length} vencidas.` : ''} Total abiertas: ${openTasks.length}.${critical.length > 0 ? ` → Prioriza: ${critical.slice(0, 2).map((t) => t.title || 'Sin título').join(', ')}.` : ''}`;
         summary = `Open tasks: ${openTasks.length}. Overdue: ${overdue.length}. Critical: ${critical.length}.`;
         facts = { openTasks: openTasks.length, overdueTasks: overdue.length, criticalTasks: critical.length };
       }
@@ -847,9 +1128,7 @@ export class IntelligenceBridge {
           ? `Check-in del ${latestCheckin.date}: ${latestCheckin.energy}/5 energía, ${latestCheckin.sleepHours}h sueño.${energyTag} Rutinas: ${completedTodayRoutines}/${todayRoutines} completadas hoy.`
           : `Check-in ${latestCheckin.date}: ${latestCheckin.energy}/5 energy, ${latestCheckin.sleepHours}h sleep.${energyTag} Routines: ${completedTodayRoutines}/${todayRoutines} completed today.`;
       } else {
-        fallbackAnswer = this.getLanguage() === 'es'
-          ? `Sin datos de check-in. Registro tu estado para activar monitoreo. ${pendingTodos} todos pendientes${overdueTodos > 0 ? ` (${overdueTodos} vencidos)` : ''}.`
-          : `No check-in data. Log your status to activate monitoring. ${pendingTodos} pending todos${overdueTodos > 0 ? ` (${overdueTodos} overdue)` : ''}.`;
+        fallbackAnswer = `Sin datos de check-in recientes. Registra cómo estás para activar el monitoreo. ${pendingTodos} pendientes${overdueTodos > 0 ? ` (${overdueTodos} vencidos)` : ''}.`;
       }
       summary = `Pending todos: ${pendingTodos}. Overdue: ${overdueTodos}. Reminders: ${upcomingReminders}. Routines: ${completedTodayRoutines}/${todayRoutines}.`;
       facts = personalContext;
@@ -858,6 +1137,7 @@ export class IntelligenceBridge {
       const budgets: any[] = state.budget?.categories || [];
       const expenses: any[] = state.budget?.expenses || [];
       const payments: any[] = state.payments?.payments || [];
+      const snapshot = selectFinancialSnapshot(state);
       const totalBudget = budgets.reduce((sum, b) => sum + Number(b?.limit || 0), 0);
       const totalSpent = expenses.reduce((sum, e) => sum + Number(e?.amount || 0), 0);
       const available = totalBudget - totalSpent;
@@ -873,15 +1153,36 @@ export class IntelligenceBridge {
       fallbackAnswer = this.getLanguage() === 'es'
         ? `Saldo libre: $${available.toFixed(2)}. ${budgetStatus} Compromisos pendientes: $${committed.toFixed(2)}. Disponible real: $${realAvailable.toFixed(2)}.`
         : `Available: $${available.toFixed(2)}. ${budgetStatus} Pending commitments: $${committed.toFixed(2)}. Real available: $${realAvailable.toFixed(2)}.`;
-      summary = `Budget available: ${available.toFixed(2)}. Committed: ${committed.toFixed(2)}.`;
-      facts = { totalBudget, totalSpent, available, committed, realAvailable };
+      summary = `Budget available: ${available.toFixed(2)}. Committed: ${committed.toFixed(2)}. Avg monthly spending (3m): ${(snapshot.averageMonthlySpending || 0).toFixed(2)}.`;
+      facts = {
+        totalBudget,
+        totalSpent,
+        available,
+        committed,
+        realAvailable,
+        averageMonthlySpending: snapshot.averageMonthlySpending || 0,
+        spendingTrend: snapshot.spendingTrend || 0,
+        historySummary: snapshot.historySummary
+          ? {
+              months: (snapshot.historySummary.months || []).map((m: any) => ({
+                month: m.month,
+                total: Number(m.total || 0),
+                count: Number(m.count || 0),
+              })),
+              average: Number(snapshot.historySummary.average || 0),
+              trend: Number(snapshot.historySummary.trend || 0),
+            }
+          : null,
+      };
     }
 
     let answer = fallbackAnswer;
     let responderPersona: 'jarvis' | 'cortana' | 'shodan' | 'swarm' = persona;
 
-    // If the user explicitly calls an agent by name, that agent must answer.
-    if (!explicitPersona) {
+    const personaLocked = Boolean(forcedPersona || explicitPersona);
+
+    // If a specific persona is not locked, allow war-room orchestration.
+    if (!personaLocked) {
       try {
         const orchestrator = getAgentOrchestrator();
         const warRoomDecision = await orchestrator.orchestrate({
@@ -910,7 +1211,7 @@ export class IntelligenceBridge {
             },
             persona,
             {
-              isPersonaLocked: explicitPersona !== null,
+              isPersonaLocked: personaLocked,
               conversationHistory: normalizedConversationHistory,
               onToken,
             }
@@ -930,7 +1231,7 @@ export class IntelligenceBridge {
             },
             persona,
             {
-              isPersonaLocked: explicitPersona !== null,
+              isPersonaLocked: personaLocked,
               conversationHistory: normalizedConversationHistory,
               onToken,
             }
@@ -953,7 +1254,7 @@ export class IntelligenceBridge {
           },
           persona,
           {
-            isPersonaLocked: explicitPersona !== null,
+            isPersonaLocked: personaLocked,
               conversationHistory: normalizedConversationHistory,
             onToken,
           }

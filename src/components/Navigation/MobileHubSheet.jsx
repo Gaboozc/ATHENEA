@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { openOmnibarExternally } from '../Omnibar/useOmnibar';
+import { DailyBriefingService } from '../../services/DailyBriefingService';
 
 const HUB_ITEMS = {
   work: [
@@ -34,6 +35,11 @@ const HUB_ITEMS = {
     { label: 'Stats', path: '/stats' },
     { label: 'Identity', path: '/identity' },
     { label: 'Settings', path: '/settings' },
+    {
+      label: '☀️ Daily Briefing',
+      path: null,
+      action: 'openBriefing'
+    },
     { label: 'Asistente IA', path: null, action: 'openOmnibar' },
   ],
 };
@@ -49,6 +55,7 @@ export function MobileHubSheet({ hub, onClose }) {
   const navigate = useNavigate();
   const items = HUB_ITEMS[hub] || [];
   const color = HUB_COLORS[hub] || 'var(--accent)';
+  const briefingPending = DailyBriefingService.shouldShowBriefing();
 
   useEffect(() => {
     const handler = (e) => {
@@ -64,6 +71,12 @@ export function MobileHubSheet({ hub, onClose }) {
   };
 
   const handleAction = (action) => {
+    if (action === 'openBriefing') {
+      openOmnibarExternally('☀️ briefing');
+      onClose();
+      return;
+    }
+
     if (action === 'openOmnibar') {
       openOmnibarExternally();
       onClose();
@@ -138,7 +151,9 @@ export function MobileHubSheet({ hub, onClose }) {
               e.currentTarget.style.background = 'transparent';
             }}
           >
-            {item.label}
+            {item.action === 'openBriefing' && briefingPending
+              ? `${item.label} • pendiente`
+              : item.label}
           </button>
         ))}
       </div>

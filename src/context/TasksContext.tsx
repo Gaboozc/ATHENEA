@@ -6,6 +6,7 @@ import {
   updateTask as updateTaskInSlice,
   hydrateFromStorage,
 } from "../../store/slices/tasksSlice"; /* ARCH-FIX-1 */
+import { TASK_STATES, normalizeTaskState } from "../constants/taskStates";
 import { unlinkFromCalendar } from "../../store/slices/calendarSlice"; /* CAL-BUG-4 fix */
 import type { PriorityFactors, PriorityLevel } from "../utils/priorityEngine";
 
@@ -100,14 +101,15 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
   const updateTaskStatus = (id: string, status: string) => {
     setTasks((prev) =>
       prev.map((task) => {
+        const normalizedStatus = normalizeTaskState(status);
+        const previousNormalized = normalizeTaskState(task.status);
         if (task.id === id) {
           // Track achievement when task is completed
-          if ((status === 'Completed' || status === 'completed' || status === 'done') && 
-              task.status !== 'Completed' && task.status !== 'completed' && task.status !== 'done') {
+          if (normalizedStatus === TASK_STATES.COMPLETED && previousNormalized !== TASK_STATES.COMPLETED) {
             dispatch(taskCompleted());
             dispatch(updateStreak());
           }
-          return { ...task, status };
+          return { ...task, status: normalizedStatus };
         }
         return task;
       })
@@ -169,12 +171,16 @@ export const TasksProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const updateTask = (id: string, updates: Partial<GatekeeperTask>) => { /* W-FEAT-5 */
+    const normalizedUpdates = {
+      ...updates,
+      status: updates.status ? normalizeTaskState(updates.status) : updates.status,
+    };
     setTasks((prev) =>
       prev.map((task) =>
-        task.id === id ? { ...task, ...updates, updatedAt: new Date().toISOString() } : task
+        task.id === id ? { ...task, ...normalizedUpdates, updatedAt: new Date().toISOString() } : task
       )
     );
-    dispatch(updateTaskInSlice({ id, ...updates } as any)); /* ARCH-FIX-1: mirror to Redux */
+    dispatch(updateTaskInSlice({ id, ...normalizedUpdates } as any)); /* ARCH-FIX-1: mirror to Redux */
   };
 
   const scopedTasks = useMemo(() => {

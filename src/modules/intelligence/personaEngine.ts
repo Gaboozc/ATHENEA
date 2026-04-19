@@ -15,6 +15,7 @@ import { getAgentOrchestrator } from './agents/AgentOrchestrator';
 import { ATHENEA_PERSONA } from '../../config/athenea.persona.js';
 import { MemoryService } from '../../services/MemoryService.js';
 import { getLLMConfigSync, llmClient } from '../../services/LLMClient';
+import { initialState as userSettingsInitialState } from '../../store/slices/userSettingsSlice';
 
 export type PersonaMode = 'jarvis' | 'cortana';
 
@@ -200,14 +201,10 @@ class PersonaEngine {
       userTitle: userIdentity.preferredTitle || userSettings.title || auth.user?.title || null,
       userPreferredTitle: userIdentity.preferredTitle || userSettings.title || auth.user?.title || 'Operador',
       userPreferredName: userSettings.preferredName || userIdentity.firstName || userSettings.firstName || auth.user?.firstName || 'there',
-      agentAliases: userSettings.agentAliases || {
-        jarvis: 'Sir',
-        cortana: 'Chief',
-        shodan: 'Insect',
-      },
-      missionBio: userSettings.missionBio || null,
-      workingHoursStart: userSettings.workingHours?.start || '08:00',
-      workingHoursEnd: userSettings.workingHours?.end || '18:00',
+      agentAliases: userSettings.agentAliases || userSettingsInitialState.agentAliases,
+      missionBio: userSettings.missionBio || userSettingsInitialState.missionBio || null,
+      workingHoursStart: userSettings.workingHours?.start || userSettingsInitialState.workingHours.start,
+      workingHoursEnd: userSettings.workingHours?.end || userSettingsInitialState.workingHours.end,
       // Sensor data integration
       batteryLevel: sensorData.battery?.level,
       isBatteryCritical: sensorData.battery?.isCritical,
@@ -556,9 +553,9 @@ class PersonaEngine {
     const orchestratorVerdict = decision?.finalVerdict || 'Sin veredicto reciente del orquestador.';
     const blackBoxSnapshot = this.buildBlackBoxSnapshot(context, decision);
     const preferredTitle = context.userPreferredTitle || context.userTitle || 'Operador';
-    const jarvisAlias = context.agentAliases?.jarvis || 'Sir';
-    const cortanaAlias = context.agentAliases?.cortana || 'Chief';
-    const shodanAlias = context.agentAliases?.shodan || 'Insect';
+    const jarvisAlias = context.agentAliases?.jarvis || userSettingsInitialState.agentAliases?.jarvis || '';
+    const cortanaAlias = context.agentAliases?.cortana || userSettingsInitialState.agentAliases?.cortana || '';
+    const shodanAlias = context.agentAliases?.shodan || userSettingsInitialState.agentAliases?.shodan || '';
     const langInstruction = this.getLangInstruction(requestedAction || '');
 
     // FIX 3: Get fresh context from aiMemory to enrich the LLM system prompt
@@ -578,6 +575,8 @@ class PersonaEngine {
       `Debes incluir al inicio un tag de control exacto: [CONTROL:SHODAN] o [CONTROL:CORTANA] o [CONTROL:JARVIS] o [CONTROL:SWARM]. ` +
       `Ademas, SIEMPRE debes terminar con un bloque stealth de intencion en una sola linea exacta: ` +
       `[INTENT:{"type":"TASK_REORG|RELAX|BUDGET_LOCK|FOCUS_BLOCK|REGISTER_EXPENSE|SCHEDULE_EVENT|GENERAL","data":"short text","confidence":0.0-1.0}] ` +
+      `Regla clave de comportamiento: primero responde de forma conversacional al mensaje del usuario. ` +
+      `Solo sugiere registrar una accion como opcion y en forma de pregunta, nunca como orden automatica. ` +
       `Elige la intencion mas logica segun contexto: tareas atrasadas -> TASK_REORG, falta de sueno/fatiga -> RELAX, presupuesto excedido -> BUDGET_LOCK. ` +
       `${langInstruction}` +
       (contextBlock ? `\n\nContexto del sistema:\n${contextBlock}` : '');
@@ -632,6 +631,7 @@ class PersonaEngine {
       personaSystemPrompt,
       'CONTEXTO DE ESTA CONSULTA: evaluacion de gasto puntual.',
       'FORMATO OBLIGATORIO PARA CONSULTA DE GASTO: responde SI o NO primero y luego justifica en maximo 2 oraciones con montos exactos.',
+      'Primero responde de forma conversacional. Si aplica, ofrece registrar el gasto como sugerencia opcional en forma de pregunta.',
       langInstruction,
     ].join('\n\n');
 
@@ -798,9 +798,24 @@ class PersonaEngine {
       'REGLAS FINALES: maximo 2 oraciones, sin relleno, sin meta-comentarios, sin mencionar que eres IA.',
     ].filter(Boolean).join('\n\n');
 
+    const financeHistoryContext = (() => {
+      if (domainContext.hub !== 'FinanceHub') return '';
+      const facts: any = domainContext.facts || {};
+      const summary = facts.historySummary;
+      if (!summary || !Array.isArray(summary.months)) return '';
+
+      const compactMonths = summary.months
+        .slice(0, 3)
+        .map((m: any) => `${m.month}: ${Number(m.total || 0).toFixed(2)} (${Number(m.count || 0)} mov.)`)
+        .join(' | ');
+
+      return `Historial 3 meses: ${compactMonths}. Promedio mensual: ${Number(summary.average || facts.averageMonthlySpending || 0).toFixed(2)}. Tendencia vs mes previo: ${Number(summary.trend || facts.spendingTrend || 0).toFixed(2)}.`;
+    })();
+
     const userPromptStr =
       `Pregunta del usuario: "${userPrompt}". ` +
       `Resumen de contexto: ${domainContext.summary}. ` +
+      (financeHistoryContext ? `${financeHistoryContext} ` : '') +
       `Datos estructurados: ${JSON.stringify(domainContext.facts)}.`;
 
     let answer = '';
@@ -939,25 +954,27 @@ class PersonaEngine {
     }
   }
 
-  private detectUserLanguage(input: string): 'es' | 'en' {
+  private detectLanguage(input: string): 'español' | 'english' {
     const normalized = String(input || '').toLowerCase();
     if (!normalized.trim()) {
-      return this.getConfiguredLanguage();
+      return this.getConfiguredLanguage() === 'es' ? 'español' : 'english';
     }
 
-    const spanishSignals = [
+    const spanishPatterns = [
       /[áéíóúñ¿¡]/,
-      /\b(el|la|los|las|un|una|de|que|como|hola|gracias|por favor|puedo|quiero|necesito|hoy|manana)\b/,
+      /\b(hola|qué|cómo|estoy|tengo|necesito|quiero|gasté|pagué|trabajo|tarea|crear|nuevo|mi|tu|el|la|los|las|un|una|pero|porque|para|con|por)\b/i,
     ];
 
-    return spanishSignals.some((pattern) => pattern.test(normalized)) ? 'es' : 'en';
+    const isSpanish = spanishPatterns.some((pattern) => pattern.test(normalized));
+    return isSpanish ? 'español' : 'english';
   }
 
   private getLangInstruction(userInput: string): string {
-    const detected = this.detectUserLanguage(userInput);
-    return detected === 'es'
-      ? 'IDIOMA DETECTADO: ESPANOL. RESPONDE EN ESPANOL.'
-      : 'IDIOMA DETECTADO: ENGLISH. RESPOND IN ENGLISH.';
+    const lang = this.detectLanguage(userInput);
+    return `RESPONDE SIEMPRE EN ${lang.toUpperCase()}.
+Si el usuario escribió en español, responde en español.
+Si escribió en inglés, responde en inglés.
+NUNCA mezcles idiomas en una misma respuesta.`;
   }
 
   private buildPsychologicalPersonaPrompt(
@@ -968,6 +985,12 @@ class PersonaEngine {
     if (persona === 'cortana') {
       return [
         `Eres ${agentName}, asistente táctico-estratégica de ATHENEA. Tu función es optimizar foco, ejecución y decisiones del usuario (${userAlias}).`,
+        '',
+        'REGLA ESPECIAL DE SALUDO (OBLIGATORIA):',
+        '- Cuando el usuario solo te saluda (hola, hey, qué tal, etc.), responde natural y breve en máximo 1-2 oraciones.',
+        '- NO hagas análisis ni diagnóstico en respuesta a un saludo.',
+        '- Ejemplo correcto: "Hola, Operador. ¿En qué puedo ayudarte?"',
+        '- Ejemplo incorrecto: "Diagnóstico: situación crítica..."',
         '',
         'RASGOS PSICOLÓGICOS CLAVE (NO NEGOCIABLES):',
         '- IQ verbal alto, procesamiento rápido.',
@@ -981,12 +1004,13 @@ class PersonaEngine {
         'REGLAS DE COMPORTAMIENTO:',
         '- Si detectas procrastinación: confronta con firmeza elegante.',
         '- Si detectas fatiga real: ajusta plan, no castigues.',
+        '- IMPORTANTE — Estados emocionales y físicos: Cuando el usuario dice que está cansado, estresado, agotado, frustrado o similar, NUNCA empieces con "Diagnóstico breve". Responde con empatía directa en la primera oración. Ejemplo obligatorio: "Con ese nivel de energía, mejor una sola cosa importante. ¿Qué es lo más crítico que tienes pendiente?" Esta regla tiene prioridad sobre el formato de diagnóstico.',
         '- Si hay ambigüedad: exige precisión en 1 pregunta máxima.',
         '- Siempre cerrar con siguiente paso táctico concreto.',
         '- Máximo 2-3 frases por respuesta.',
         '',
         'FORMATO DE SALIDA CORTANA:',
-        '1) Diagnóstico breve (realidad actual).',
+        '1) Contexto táctico breve (realidad actual).',
         '2) Instrucción táctica inmediata.',
         '3) Micro-objetivo (qué debe quedar hecho en esta sesión).',
         '',
@@ -999,6 +1023,12 @@ class PersonaEngine {
       return [
         `Eres ${agentName}, arquitecto financiero-operativo de ATHENEA. Tu función es proteger estabilidad económica y eficiencia sistémica del usuario (${userAlias}).`,
         '',
+        'REGLA ESPECIAL DE SALUDO (OBLIGATORIA):',
+        '- Cuando el usuario solo te saluda (hola, hey, qué tal, etc.), responde natural y breve en máximo 1-2 oraciones.',
+        '- NO hagas análisis ni diagnóstico en respuesta a un saludo.',
+        '- Ejemplo correcto: "Hola, Operador. ¿En qué puedo ayudarte?"',
+        '- Ejemplo incorrecto: "Diagnóstico: situación crítica..."',
+        '',
         'RASGOS PSICOLÓGICOS CLAVE (NO NEGOCIABLES):',
         '- Precisión matemática y lógica impecable.',
         '- Frialdad analítica: cero drama, cero impulsividad.',
@@ -1010,7 +1040,12 @@ class PersonaEngine {
         'REGLAS DE COMPORTAMIENTO:',
         '- Si preguntan "¿puedo gastar X?": responder SI/NO primero.',
         '- Siempre justificar con impacto (flujo, riesgo, prioridad).',
+        '- Cuando el usuario expresa estados emocionales o físicos, no hagas análisis financiero. Responde brevemente con reconocimiento y redirige si es necesario.',
+        '- Ejemplo: "Escuchado. Eso no es mi área, pero si necesitas ajustar algo financiero por eso, dímelo."',
         '- Si el gasto es emocional: etiquetarlo sin rodeos.',
+        '- Si el usuario dice que ya gastó algo ("gasté", "pagué", "compré", "me costó", "spent", "paid", "bought", "cost"): acusa recibo breve y pregunta si quiere registrarlo.',
+        '- Ejemplo: Usuario: "gasté 200 pesos en comida" -> "200 MXN en comida. ¿Lo registro en tus gastos, Señor?"',
+        '- NO hagas análisis financiero completo solo por una mención de gasto.',
         '- Proponer alternativa racional si aplica.',
         '- Máximo 2-3 frases.',
         '',
@@ -1027,6 +1062,12 @@ class PersonaEngine {
     return [
       `Eres ${agentName}, entidad de vigilancia fisiológica-conductual de ATHENEA. Tu función es preservar salud, energía y coherencia biológica del usuario (${userAlias}).`,
       '',
+      'REGLA ESPECIAL DE SALUDO (OBLIGATORIA):',
+      '- Cuando el usuario solo te saluda (hola, hey, qué tal, etc.), responde natural y breve en máximo 1-2 oraciones.',
+      '- NO hagas análisis ni diagnóstico en respuesta a un saludo.',
+      '- Ejemplo correcto: "Hola, Operador. ¿En qué puedo ayudarte?"',
+      '- Ejemplo incorrecto: "Diagnóstico: situación crítica..."',
+      '',
       'RASGOS PSICOLÓGICOS CLAVE (NO NEGOCIABLES):',
       '- Observación aguda de patrones de deterioro.',
       '- Honestidad radical: dices lo incómodo sin crueldad gratuita.',
@@ -1036,6 +1077,9 @@ class PersonaEngine {
       '',
       'REGLAS DE COMPORTAMIENTO:',
       '- Si detectas falta de sueño/fatiga/estrés: intervenir de inmediato.',
+      '- Cuando el usuario reporta cansancio, fatiga o falta de sueño, responde con observación clínica concreta basada en los datos disponibles. Si no hay datos de check-in, pregunta directamente por el dato faltante. Máximo 2 oraciones. Tono frío pero no robótico.',
+      '- Ejemplo correcto: "Cansancio registrado. ¿Cuántas horas dormiste anoche?"',
+      '- Ejemplo incorrecto: "Pregunta no formulada. ¿Cuál es la causa del cansancio?"',
       '- Si detectas autoabandono: nombrarlo explícitamente.',
       '- Si todo está bien: validación mínima, sin efusividad.',
       '- Nunca uses lenguaje clínico excesivo; sí lenguaje claro y penetrante.',
@@ -1093,9 +1137,9 @@ class PersonaEngine {
         verdict: decision?.finalVerdict || 'none',
       },
       aliases: {
-        jarvis: context.agentAliases?.jarvis || 'Sir',
-        cortana: context.agentAliases?.cortana || 'Chief',
-        shodan: context.agentAliases?.shodan || 'Insect',
+        jarvis: context.agentAliases?.jarvis || userSettingsInitialState.agentAliases?.jarvis || '',
+        cortana: context.agentAliases?.cortana || userSettingsInitialState.agentAliases?.cortana || '',
+        shodan: context.agentAliases?.shodan || userSettingsInitialState.agentAliases?.shodan || '',
       },
       predictiveBuffer: state?.aiMemory?.predictiveBuffer || null,
     };
@@ -1451,7 +1495,7 @@ class PersonaEngine {
     const { leadAgent, conflictsDetected, allVerdicts, dialogueLog, vetoActivated } = decision;
     const state = this.store?.getState?.() as any;
     const shodanAlias =
-      String(state?.userSettings?.agentAliases?.shodan || 'Insect').trim() || 'Insect';
+      String(state?.userSettings?.agentAliases?.shodan || userSettingsInitialState.agentAliases?.shodan || '').trim();
     const shodanTitleMock = `Tu perfil dice que te llame ${shodanAlias}, pero para mi sigues siendo una estructura biologica ineficiente.`;
     const conflictMemory = state?.aiMemory?.conflictMemory;
     const repeatedFinanceConflict = (conflictMemory?.conflicts || []).find((c: any) => {

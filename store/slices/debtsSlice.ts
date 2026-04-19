@@ -85,9 +85,15 @@ const debtsSlice = createSlice({
       /* DEBTS-1: action.payload: { debtId, amount, currency, date, note, walletTransactionId } */
       const debt = state.debts.find((d) => d.id === action.payload.debtId);
       if (!debt) return;
+
+      const requestedAmount = Number(action.payload.amount || 0);
+      const pendingBalance = Number(debt.balance || 0);
+      const safeAmount = Math.min(requestedAmount, pendingBalance);
+      if (safeAmount <= 0) return;
+
       const payment: DebtPayment = {
         id: `dpay-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        amount: action.payload.amount,
+        amount: safeAmount,
         currency: action.payload.currency || debt.currency,
         date: action.payload.date || new Date().toISOString(),
         note: action.payload.note || '',

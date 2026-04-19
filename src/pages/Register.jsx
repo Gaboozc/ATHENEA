@@ -126,7 +126,7 @@ const PLAN_ICONS = {
 };
 
 const FREE_COMPANY_ALLOWLIST = [
-  'AlphaDev studios',
+  'Demo Company',
   'FenixGroup Agency'
 ];
 

@@ -6,6 +6,10 @@ import { updateProject, setProjectPhase, addMeetingNote, deleteMeetingNote } fro
 import { addIncomeUSD, addIncomeMXN } from '../../store/slices/walletsSlice';
 import { useLanguage } from '../context/LanguageContext';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { TASK_STATE_VALUES, TASK_STATES, normalizeTaskState } from '../constants/taskStates';
+import TaskList from '../components/Work/TaskList';
+import TaskKanban from '../components/Work/TaskKanban';
+import TaskTable from '../components/Work/TaskTable';
 import './ProjectDetails.css';
 
 const PROJECT_PHASES = ['Discovery', 'Setup', 'Desarrollo', 'Pruebas', 'Lanzamiento']; /* NEW-WORK-3 */
@@ -45,8 +49,9 @@ export const ProjectDetails = () => {
   const project = useSelector((state) =>
     state.projects.projects.find((item) => item.id === id)
   );
+  const expenses = useSelector((state) => state.budget?.expenses || []);
   const { workstreams } = useSelector((state) => state.organizations);
-  const { tasks, addTask, updateTaskStatus, deleteTask } = useTasks();
+  const { tasks, addTask, updateTaskStatus, updateTask, deleteTask } = useTasks();
   const { t } = useLanguage();
   const { user } = useCurrentUser();
   const [search, setSearch] = useState('');
@@ -83,6 +88,7 @@ export const ProjectDetails = () => {
   const projectWorkstream = workstreams.find(
     (stream) => stream.id === project?.workstreamId
   );
+  const [taskView, setTaskView] = useState('lista');
   const canManageProject = true; // Single-user mode: siempre permitido
 
   if (!project) {
@@ -135,10 +141,15 @@ export const ProjectDetails = () => {
     .map((task) => ({
       id: task.id,
       title: task.title,
-      status: task.status || 'Active',
+      status: normalizeTaskState(task.status || TASK_STATES.PENDING),
       level: task.level || 'Backlog',
       totalScore: typeof task.totalScore === 'number' ? task.totalScore : null,
       parentTaskId: task.parentTaskId || null,
+      projectId: task.projectId,
+      projectName: task.projectName || project.name,
+      startDate: task.startDate || null,
+      dueDate: task.dueDate || null,
+      archived: Boolean(task.archived),
       isLegacy: false
     }));
   // W-FEAT-3: collect time log entries across all project tasks
@@ -178,6 +189,9 @@ export const ProjectDetails = () => {
   const filteredTasks = activeTasks.filter((task) =>
     task.title.toLowerCase().includes(search.toLowerCase())
   );
+  const filteredProjectTasks = projectTasks.filter((task) =>
+    task.title.toLowerCase().includes(search.toLowerCase())
+  );
   const economic = project?.economic || {};
   const projectCurrency = project?.currency || economic?.currency || 'MXN';
   const currencySymbol = projectCurrency === 'USD' ? 'USD $' : 'MXN $';
@@ -189,6 +203,13 @@ export const ProjectDetails = () => {
     economic.subscriptionStartDate,
     economic.subscriptionAmount,
     12
+  );
+  const projectExpenses = expenses
+    .filter((expense) => expense.projectId === project.id)
+    .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+  const projectExpensesTotal = projectExpenses.reduce(
+    (sum, expense) => sum + Number(expense.amount || 0),
+    0
   );
   const completedTasksCount = activeTasks.filter(
     (task) => task.status === 'Completado' || task.status === 'Finalizado' || task.status === 'Completed' || task.status === 'completed'
@@ -713,6 +734,36 @@ export const ProjectDetails = () => {
         )}
       </section>
 
+      <section className="project-card project-expenses-section">
+        <div className="project-expenses-header">
+          <h2>{t('Project Expenses')}</h2>
+          <span className="project-expenses-total">
+            {currencySymbol}{projectExpensesTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        </div>
+        {projectExpenses.length === 0 ? (
+          <div className="tasks-empty">{t('No expenses linked to this project yet.')}</div>
+        ) : (
+          <ul className="project-expenses-list">
+            {projectExpenses.map((expense) => (
+              <li key={expense.id} className="project-expense-item">
+                <div>
+                  <strong>{expense.note || t('Expense')}</strong>
+                  <span>{expense.categoryId || t('No category')}</span>
+                </div>
+                <div className="project-expense-meta">
+                  <span>
+                    {(expense.currency || projectCurrency) === 'USD' ? 'USD $' : 'MXN $'}
+                    {Number(expense.amount || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                  <small>{expense.date ? new Date(expense.date).toLocaleDateString() : '—'}</small>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       <section className="project-card tasks-panel">
         <div className="tasks-header">
           <div>
@@ -737,6 +788,18 @@ export const ProjectDetails = () => {
             )}
           </div>
         </div>
+        <div className="project-task-view-switcher">
+          {['lista', 'kanban', 'tabla'].map((viewMode) => (
+            <button
+              key={viewMode}
+              type="button"
+              className={`project-task-view-btn${taskView === viewMode ? ' active' : ''}`}
+              onClick={() => setTaskView(viewMode)}
+            >
+              {viewMode === 'lista' ? t('List') : viewMode === 'kanban' ? t('Kanban') : t('Table')}
+            </button>
+          ))}
+        </div>
         {showNewTaskForm && (
           <div className="subtask-form" style={{ marginLeft: 0, marginBottom: '12px' }}>
             <input
@@ -759,138 +822,42 @@ export const ProjectDetails = () => {
             {t('Cancelled projects cannot receive new tasks.')}
           </div>
         )}
-        {rootFilteredTasks.length === 0 ? (
+        {filteredProjectTasks.length === 0 ? (
           <div className="tasks-empty">{t('No tasks found for this project.')}</div>
         ) : (
-          <ul className="tasks-list">
-            {rootFilteredTasks.map((task) => (
-              <li key={task.id} className="task-row">
-                <div className="task-main">
-                  <span className="task-title">
-                    {task.parentTaskId && !projectTaskIdSet.has(task.parentTaskId) && (
-                      <span className="task-orphan-badge" title={t('Subtask sin padre visible')}>↳</span>
-                    )}
-                    {task.title}
-                  </span>
-                  {!task.isLegacy ? (
-                    <select
-                      className={`task-status-select status-${slugStatus(task.status)}`}
-                      value={TASK_STATUSES.includes(task.status) ? task.status : 'Pendiente'}
-                      onChange={(e) => updateTaskStatus(task.id, e.target.value)}
-                    >
-                      {TASK_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                  ) : (
-                    <span className={`task-status status-${slugStatus(task.status)}`}>{task.status}</span>
-                  )}
-                  <div className="task-actions">
-                    {!task.isLegacy && (
-                      <button type="button" className="task-action task-subtask"
-                        onClick={() => { setSubtaskFormFor(task.id); setSubtaskTitle(''); }}>
-                        + {t('Subtask')}
-                      </button>
-                    )}
-                    {task.isLegacy && (
-                      <button type="button" className="task-action task-complete"
-                        onClick={() => markLegacyComplete(task.title)} disabled={isCancelled}>
-                        {t('Finalizar')}
-                      </button>
-                    )}
-                    <button type="button" className="task-action task-delete"
-                      onClick={() => handleDeleteTask(task)}>{t('Delete')}</button>
-                  </div>
-                </div>
-                <div className="task-metadata">
-                  {task.totalScore !== null && (
-                    <span className="task-score">PS: {task.totalScore}/14</span>
-                  )}
-                  <span className="task-priority" style={{ borderColor: getPriorityColor(task.level), color: getPriorityColor(task.level) }}>
-                    {task.level}
-                  </span>
-                </div>
-                {/* inline form para subtarea */}
-                {subtaskFormFor === task.id && (
-                  <div className="subtask-form">
-                    <span className="subtask-form-label">↳ {t('Subtask de')}: <strong>{task.title}</strong></span>
-                    <input autoFocus className="subtask-input"
-                      placeholder={t('Subtask title…')} value={subtaskTitle}
-                      onChange={(e) => setSubtaskTitle(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleAddSubtask(task.id);
-                        if (e.key === 'Escape') setSubtaskFormFor(null);
-                      }}
-                    />
-                    <button type="button" className="task-action task-complete" onClick={() => handleAddSubtask(task.id)}>{t('Add')}</button>
-                    <button type="button" className="task-action task-delete" onClick={() => setSubtaskFormFor(null)}>{t('Cancel')}</button>
-                  </div>
-                )}
-                {/* nivel 1: subtareas */}
-                {subtaskMap[task.id]?.length > 0 && (
-                  <ul className="subtasks-list">
-                    {subtaskMap[task.id].map((sub) => (
-                      <li key={sub.id} className="subtask-row">
-                        <span className="subtask-bullet">↳</span>
-                        <span className="task-title">{sub.title}</span>
-                        <select
-                          className={`task-status-select status-${slugStatus(sub.status)}`}
-                          value={TASK_STATUSES.includes(sub.status) ? sub.status : 'Pendiente'}
-                          onChange={(e) => updateTaskStatus(sub.id, e.target.value)}
-                        >
-                          {TASK_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                        <div className="task-actions">
-                          <button type="button" className="task-action task-subtask"
-                            onClick={() => { setSubtaskFormFor(sub.id); setSubtaskTitle(''); }}>
-                            + {t('Sub')}
-                          </button>
-                          <button type="button" className="task-action task-delete"
-                            onClick={() => handleDeleteTask(sub)}>{t('Delete')}</button>
-                        </div>
-                        {/* inline form para sub-subtarea */}
-                        {subtaskFormFor === sub.id && (
-                          <div className="subtask-form">
-                            <span className="subtask-form-label">↳↳ {t('Sub de')}: <strong>{sub.title}</strong></span>
-                            <input autoFocus className="subtask-input"
-                              placeholder={t('Sub-subtask title…')} value={subtaskTitle}
-                              onChange={(e) => setSubtaskTitle(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleAddSubtask(sub.id);
-                                if (e.key === 'Escape') setSubtaskFormFor(null);
-                              }}
-                            />
-                            <button type="button" className="task-action task-complete" onClick={() => handleAddSubtask(sub.id)}>{t('Add')}</button>
-                            <button type="button" className="task-action task-delete" onClick={() => setSubtaskFormFor(null)}>{t('Cancel')}</button>
-                          </div>
-                        )}
-                        {/* nivel 2: sub-subtareas */}
-                        {subtaskMap[sub.id]?.length > 0 && (
-                          <ul className="subtasks-list subtasks-list--l2">
-                            {subtaskMap[sub.id].map((subsub) => (
-                              <li key={subsub.id} className="subtask-row subtask-row--l2">
-                                <span className="subtask-bullet">↳</span>
-                                <span className="task-title">{subsub.title}</span>
-                                <select
-                                  className={`task-status-select status-${slugStatus(subsub.status)}`}
-                                  value={TASK_STATUSES.includes(subsub.status) ? subsub.status : 'Pendiente'}
-                                  onChange={(e) => updateTaskStatus(subsub.id, e.target.value)}
-                                >
-                                  {TASK_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                                </select>
-                                <div className="task-actions">
-                                  <button type="button" className="task-action task-delete"
-                                    onClick={() => handleDeleteTask(subsub)}>{t('Delete')}</button>
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            ))}
-          </ul>
+          <div>
+            {taskView === 'lista' && (
+              <TaskList
+                tasks={filteredProjectTasks}
+                t={t}
+                showProject={false}
+                onStatusChange={(taskId, status) => updateTaskStatus(taskId, normalizeTaskState(status))}
+                onArchiveToggle={(task) => updateTask(task.id, { archived: !task.archived })}
+                onDeleteTask={handleDeleteTask}
+              />
+            )}
+            {taskView === 'kanban' && (
+              <TaskKanban
+                tasks={filteredProjectTasks}
+                t={t}
+                onStatusChange={(taskId, status) => updateTaskStatus(taskId, normalizeTaskState(status))}
+                onArchiveToggle={(task) => updateTask(task.id, { archived: !task.archived })}
+                onDeleteTask={handleDeleteTask}
+              />
+            )}
+            {taskView === 'tabla' && (
+              <TaskTable
+                tasks={filteredProjectTasks}
+                projects={[{ id: project.id, name: project.name }]}
+                t={t}
+                lockProjectId={project.id}
+                onUpdateTask={updateTask}
+                onStatusChange={(taskId, status) => updateTaskStatus(taskId, normalizeTaskState(status))}
+                onArchiveToggle={(task) => updateTask(task.id, { archived: !task.archived })}
+                onDeleteTask={handleDeleteTask}
+              />
+            )}
+          </div>
         )}
         {showDeletedTasks && (
           <div className="deleted-tasks-panel">

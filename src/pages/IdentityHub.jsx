@@ -1,497 +1,260 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  setPreferredName,
-  setTitle,
-  setAgentAliases,
-  setAgentNames,
-  setMissionBio,
-  setWorkingHours,
-  setGeofencing,
-  setWeatherPreferences,
-  setTimezone,
-  setOccupation,
-  setMainGoal,
-  setFinancialContext,
-  setAdditionalContext,
-} from '../store/slices/userSettingsSlice';
+import athenaLogo from '../assets/img/Athena-logo.png';
+import { showToast } from '../components/Toast/Toast';
+import { updateUserSettings } from '../store/slices/userSettingsSlice';
 import { useLanguage } from '../context/LanguageContext';
 import './IdentityHub.css';
 
-const AGENTS = [
-  { key: 'cortana', defaultName: 'Cortana', role: 'Estratega de productividad', color: '#667eea', icon: '🧿' },
-  { key: 'jarvis',  defaultName: 'Jarvis',  role: 'Auditor financiero',         color: '#f3c54a', icon: '🤖' },
-  { key: 'shodan',  defaultName: 'SHODAN',  role: 'Monitor de bienestar',       color: '#41d467', icon: '👁️' },
+const AGENT_DEFAULTS = [
+  {
+    key: 'cortana',
+    defaultName: 'Cortana',
+    role: 'Estratega de productividad',
+    color: '#667eea',
+    icon: '🧿',
+    hub: 'Work',
+  },
+  {
+    key: 'jarvis',
+    defaultName: 'Jarvis',
+    role: 'Auditor financiero',
+    color: '#ffb700',
+    icon: '🤖',
+    hub: 'Finance',
+  },
+  {
+    key: 'shodan',
+    defaultName: 'SHODAN',
+    role: 'Monitor de bienestar',
+    color: '#00e5a0',
+    icon: '👁',
+    hub: 'Personal',
+  },
 ];
 
-const FINANCIAL_CONTEXTS = [
-  { value: '',          label: 'Prefiero no especificar' },
-  { value: 'growth',    label: 'En crecimiento — priorizando ingresos' },
-  { value: 'saving',    label: 'Ahorro agresivo — reduciendo gastos' },
-  { value: 'stable',    label: 'Estable — manteniendo balance' },
-  { value: 'recovery',  label: 'Recuperación financiera' },
-  { value: 'investing', label: 'Inversión — construyendo patrimonio' },
-];
+const ONBOARDING_KEY = 'athenea.onboarding.completed';
 
 export const IdentityHub = () => {
-  const dispatch  = useDispatch();
-  const { t, language, setLanguage } = useLanguage();
-  const s = useSelector((state) => state.userSettings);
-  const weatherPrefs = s.weatherPreferences || {};
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const settings = useSelector((s) => s.userSettings || {});
+  const { t, language: appLanguage, setLanguage: setAppLanguage } = useLanguage();
 
-  /* ── Local form state ── */
-  const [form, setForm] = useState({
-    preferredName:    s.preferredName    || '',
-    title:            s.title            || '',
-    timezone:         s.timezone         || 'America/Mexico_City',
-    occupation:       s.occupation       || '',
-    mainGoal:         s.mainGoal         || '',
-    financialContext: s.financialContext || '',
-    additionalContext: s.additionalContext || '',
-    missionBio:       s.missionBio       || '',
-    workStart:        s.workingHours?.start || '08:00',
-    workEnd:          s.workingHours?.end   || '18:00',
-    agentNames: {
-      cortana: s.agentNames?.cortana || '',
-      jarvis:  s.agentNames?.jarvis  || '',
-      shodan:  s.agentNames?.shodan  || '',
-    },
-    agentAliases: {
-      cortana: s.agentAliases?.cortana || 'Chief',
-      jarvis:  s.agentAliases?.jarvis  || 'Sir',
-      shodan:  s.agentAliases?.shodan  || 'Insect',
-    },
-    homeLatitude:  s.geofencing?.home?.latitude  ?? '',
-    homeLongitude: s.geofencing?.home?.longitude ?? '',
-    workLatitude:  s.geofencing?.work?.latitude  ?? '',
-    workLongitude: s.geofencing?.work?.longitude ?? '',
-  });
+  const [fullName, setFullName] = useState(settings.fullName || '');
+  const [preferredName, setPreferredName] = useState(settings.preferredName || '');
+  const [occupation, setOccupation] = useState(settings.occupation || '');
+  const [mainGoal, setMainGoal] = useState(settings.mainGoal || '');
+  const [language, setLanguage] = useState(settings.language || appLanguage || 'en');
+  const [agentNames, setAgentNames] = useState(settings.agentNames || {});
+  const [agentAliases, setAgentAliases] = useState(settings.agentAliases || {});
+  const [additionalContext, setAdditionalContext] = useState(settings.additionalContext || '');
 
-  const [saved, setSaved] = useState(false);
-  const [currentTime, setCurrentTime] = useState('');
-
-  /* ── Auto-detect timezone on mount ── */
-  useEffect(() => {
-    const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (detected) set('timezone', detected);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* ── Live clock ── */
-  useEffect(() => {
-    const fmt = () =>
-      new Date().toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: form.timezone || undefined,
-      });
-    setCurrentTime(fmt());
-    const iv = setInterval(() => setCurrentTime(fmt()), 30_000);
-    return () => clearInterval(iv);
-  }, [form.timezone]);
-
-  const set = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
-  const setAgentField = (group, agentKey, value) =>
-    setForm((prev) => ({ ...prev, [group]: { ...prev[group], [agentKey]: value } }));
-
-  /* ── Save ── */
   const handleSave = () => {
-    dispatch(setPreferredName(form.preferredName));
-    dispatch(setTitle(form.title));
-    dispatch(setTimezone(form.timezone));
-    dispatch(setOccupation(form.occupation));
-    dispatch(setMainGoal(form.mainGoal));
-    dispatch(setFinancialContext(form.financialContext));
-    dispatch(setAdditionalContext(form.additionalContext));
-    dispatch(setMissionBio(form.missionBio));
-    dispatch(setWorkingHours({ start: form.workStart, end: form.workEnd }));
-    dispatch(setAgentNames(form.agentNames));
-    dispatch(setAgentAliases(form.agentAliases));
-    dispatch(setGeofencing({
-      home: {
-        latitude:  form.homeLatitude  === '' ? null : Number(form.homeLatitude),
-        longitude: form.homeLongitude === '' ? null : Number(form.homeLongitude),
-      },
-      work: {
-        latitude:  form.workLatitude  === '' ? null : Number(form.workLatitude),
-        longitude: form.workLongitude === '' ? null : Number(form.workLongitude),
-      },
-    }));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    dispatch(
+      updateUserSettings({
+        fullName,
+        preferredName,
+        occupation,
+        mainGoal,
+        language,
+        agentNames,
+        agentAliases,
+        additionalContext,
+      })
+    );
+    localStorage.setItem(ONBOARDING_KEY, 'true');
+    setAppLanguage(language);
+    showToast(t('Identidad guardada'), 'success');
+    setTimeout(() => navigate('/'), 500);
   };
 
-  /* ── Dirty check ── */
-  const isDirty =
-    form.preferredName    !== (s.preferredName    || '') ||
-    form.title            !== (s.title            || '') ||
-    form.timezone         !== (s.timezone         || 'America/Mexico_City') ||
-    form.occupation       !== (s.occupation       || '') ||
-    form.mainGoal         !== (s.mainGoal         || '') ||
-    form.financialContext !== (s.financialContext || '') ||
-    form.additionalContext !== (s.additionalContext || '') ||
-    form.workStart        !== (s.workingHours?.start || '08:00') ||
-    form.workEnd          !== (s.workingHours?.end   || '18:00') ||
-    form.agentNames.cortana !== (s.agentNames?.cortana || '') ||
-    form.agentNames.jarvis  !== (s.agentNames?.jarvis  || '') ||
-    form.agentNames.shodan  !== (s.agentNames?.shodan  || '') ||
-    form.agentAliases.cortana !== (s.agentAliases?.cortana || 'Chief') ||
-    form.agentAliases.jarvis  !== (s.agentAliases?.jarvis  || 'Sir') ||
-    form.agentAliases.shodan  !== (s.agentAliases?.shodan  || 'Insect') ||
-    Number(form.homeLatitude  || 0) !== Number(s.geofencing?.home?.latitude  || 0) ||
-    Number(form.homeLongitude || 0) !== Number(s.geofencing?.home?.longitude || 0) ||
-    Number(form.workLatitude  || 0) !== Number(s.geofencing?.work?.latitude  || 0) ||
-    Number(form.workLongitude || 0) !== Number(s.geofencing?.work?.longitude || 0);
-
-  /* ── "Use my location" helper ── */
-  const useMyLocation = (zone) => {
-    if (!('geolocation' in navigator)) return;
-    navigator.geolocation.getCurrentPosition((pos) => {
-      const lat = pos.coords.latitude.toFixed(6);
-      const lng = pos.coords.longitude.toFixed(6);
-      if (zone === 'home') {
-        setForm((prev) => ({ ...prev, homeLatitude: lat, homeLongitude: lng }));
-      } else {
-        setForm((prev) => ({ ...prev, workLatitude: lat, workLongitude: lng }));
-      }
-    });
+  const handleLanguageChange = (nextLanguage) => {
+    setLanguage(nextLanguage);
+    setAppLanguage(nextLanguage);
   };
 
   return (
-    <div className="identity-hub">
-      <div className="identity-header">
-        <h1>{t('Identity Protocol')}</h1>
-        <p className="subtitle">{t('ATHENEA will learn who you are and how to address you')}</p>
-      </div>
+    <div className="identity-container">
+      <h1 className="identity-page-title">{t('Identity Protocol')}</h1>
+      <p className="identity-page-subtitle">
+        {t('ATHENEA aprendera como deben hablarte tus agentes.')}
+      </p>
 
-      <div className="identity-layout">
+      <div className="identity-section identity-personal">
+        <div className="identity-watermark" aria-hidden="true">
+          <img src={athenaLogo} alt="" />
+        </div>
 
-        {/* ══ SECCIÓN 1 — Identidad básica ══════════════════════════════════ */}
-        <section className="identity-section">
-          <h2>👤 {t('Basic Identity')}</h2>
+        <h2 className="identity-section-title">{t('Identidad del Operador')}</h2>
 
+        <div className="identity-fields-grid">
           <div className="identity-field">
-            <label>{t('How do you want ATHENEA to call you?')}</label>
-            <small>{t('All 3 agents use this name when addressing you')}</small>
+            <label>{t('Nombre completo')}</label>
             <input
               type="text"
-              placeholder="Ej: Alex, Jefe, Dr. García…"
-              value={form.preferredName}
-              onChange={(e) => set('preferredName', e.target.value)}
-              maxLength={30}
+              placeholder={t('Ej: Juan García')}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
             />
           </div>
 
           <div className="identity-field">
-            <label>{t('Title or rank')} <span className="identity-optional">({t('optional')})</span></label>
-            <small>{t('Appears in the dashboard greeting')}</small>
+            <label>{t('Como quieres que te llamen?')}</label>
+            <small>{t('Nombre que usan los 3 agentes')}</small>
             <input
               type="text"
-              placeholder="Ej: CEO, Freelancer, Estudiante, Comandante…"
-              value={form.title}
-              onChange={(e) => set('title', e.target.value)}
-              maxLength={40}
+              placeholder="Ej: Juan, Doc, Jefe..."
+              value={preferredName}
+              onChange={(e) => setPreferredName(e.target.value)}
             />
           </div>
 
           <div className="identity-field">
-            <label>
-              {t('Time zone')}
-              <span className="identity-optional">({t('auto-detected')})</span>
-            </label>
-            <div className="timezone-display">
-              <span className="timezone-clock">{currentTime}</span>
-              <span className="timezone-name">{form.timezone}</span>
-            </div>
-            <small>{t('Affects how agents interpret dates and times')}</small>
+            <label>{t('Ocupacion')}</label>
+            <input
+              type="text"
+              placeholder="Ej: Desarrollador, CEO..."
+              value={occupation}
+              onChange={(e) => setOccupation(e.target.value)}
+            />
           </div>
 
           <div className="identity-field">
-            <label>{t('Agent language')}</label>
-            <div className="identity-toggle-group">
+            <label>{t('Objetivo principal este mes')}</label>
+            <small>{t('Cortana prioriza tareas alineadas a esto')}</small>
+            <input
+              type="text"
+              placeholder="Ej: Lanzar mi primer producto..."
+              value={mainGoal}
+              onChange={(e) => setMainGoal(e.target.value)}
+            />
+          </div>
+
+          <div className="identity-field">
+            <label>{t('Idioma de los agentes')}</label>
+            <div className="identity-lang-toggle">
               <button
                 type="button"
                 className={language === 'es' ? 'active' : ''}
-                onClick={() => setLanguage('es')}
+                onClick={() => handleLanguageChange('es')}
               >
-                🇲🇽 Español
+                {t('Español')}
               </button>
               <button
                 type="button"
                 className={language === 'en' ? 'active' : ''}
-                onClick={() => setLanguage('en')}
+                onClick={() => handleLanguageChange('en')}
               >
-                🇺🇸 English
+                {t('English')}
               </button>
             </div>
           </div>
-        </section>
+        </div>
+      </div>
 
-        {/* ══ SECCIÓN 2 — Agentes ═══════════════════════════════════════════ */}
-        <section className="identity-section">
-          <h2>🤖 {t('Your agents')}</h2>
-          <p className="identity-section-desc">
-            {t('Customize the name of each agent and how they call you. Changes affect all system responses.')}
-          </p>
+      <div className="identity-section">
+        <h2 className="identity-section-title">{t('Tus agentes')}</h2>
+        <p className="identity-section-desc">
+          {t('Personaliza el nombre de cada agente y como te llaman. Los cambios afectan el Omnibar, el briefing y todos los sistemas.')}
+        </p>
 
-          {AGENTS.map((agent) => (
+        <div className="identity-agents-grid">
+          {AGENT_DEFAULTS.map((agent) => (
             <div
               key={agent.key}
               className="identity-agent-card"
-              style={{ borderLeft: `3px solid ${agent.color}` }}
+              style={{ borderTop: `2px solid ${agent.color}` }}
             >
-              <div className="agent-card-header">
-                <span className="agent-icon">{agent.icon}</span>
+              <div className="agent-card-top">
+                <div
+                  className="agent-card-icon-wrap"
+                  style={{ background: `${agent.color}15` }}
+                >
+                  <span className="agent-icon">{agent.icon}</span>
+                </div>
                 <div>
-                  <span className="agent-default-name">
-                  {form.agentNames[agent.key] || agent.defaultName}
-                </span>
-                  <span className="agent-role">{agent.role}</span>
+                  <span
+                    className="agent-hub-badge"
+                    style={{
+                      color: agent.color,
+                      background: `${agent.color}15`,
+                      border: `1px solid ${agent.color}30`,
+                    }}
+                  >
+                    {agent.hub}
+                  </span>
                 </div>
               </div>
-              <div className="agent-card-fields">
-                <div className="identity-field agent-field">
-                  <label>{t('Agent name')}</label>
+
+              <div className="agent-status">
+                <span className="athenea-status-dot live" />
+                <span className="agent-status-text">{t('Activo')}</span>
+              </div>
+
+              <p className="agent-role-text">{agent.role}</p>
+
+              <div className="agent-inline-fields">
+                <div className="agent-inline-field">
+                  <label>{t('Nombre del agente')}</label>
                   <input
                     type="text"
                     placeholder={agent.defaultName}
-                    value={form.agentNames[agent.key]}
-                    onChange={(e) => setAgentField('agentNames', agent.key, e.target.value)}
-                    maxLength={20}
+                    value={agentNames[agent.key] || ''}
+                    onChange={(e) =>
+                      setAgentNames({
+                        ...agentNames,
+                        [agent.key]: e.target.value,
+                      })
+                    }
                   />
-                  <small>{t('How you call it')}</small>
+                  <small>{t('Como tu lo llamas')}</small>
                 </div>
-                <div className="identity-field agent-field">
-                  <label>{t('Calls you')}</label>
+
+                <div className="agent-inline-field">
+                  <label>{t('Te llama a ti')}</label>
                   <input
                     type="text"
-                    placeholder="Ej: Jefe, Sir, Comandante…"
-                    value={form.agentAliases[agent.key]}
-                    onChange={(e) => setAgentField('agentAliases', agent.key, e.target.value)}
-                    maxLength={20}
+                    placeholder="Ej: Juan, Doc, Jefe..."
+                    value={agentAliases[agent.key] || ''}
+                    onChange={(e) =>
+                      setAgentAliases({
+                        ...agentAliases,
+                        [agent.key]: e.target.value,
+                      })
+                    }
                   />
-                  <small>{t('How the agent addresses you')}</small>
+                  <small>{t('Como el agente te habla')}</small>
                 </div>
               </div>
             </div>
           ))}
-        </section>
-
-        {/* ══ SECCIÓN 3 — Contexto personal ════════════════════════════════ */}
-        <section className="identity-section identity-context-section">
-          <h2>🧠 {t('Agent context')}</h2>
-          <p className="identity-section-desc">
-            {t('This information is injected into each agent\'s context. The more precise, the better the advice.')}
-          </p>
-
-          <div className="identity-field">
-            <label>{t('What do you do?')}</label>
-            <input
-              type="text"
-              placeholder="Ej: Desarrollador freelance, Gerente de ventas…"
-              value={form.occupation}
-              onChange={(e) => set('occupation', e.target.value)}
-              maxLength={80}
-            />
-          </div>
-
-          <div className="identity-field">
-            <label>{t('Main goal this month')}</label>
-            <input
-              type="text"
-              placeholder="Ej: Aumentar ingresos 20%, terminar proyecto X…"
-              value={form.mainGoal}
-              onChange={(e) => set('mainGoal', e.target.value)}
-              maxLength={120}
-            />
-            <small>{t('Cortana prioritizes tasks aligned to this goal')}</small>
-          </div>
-
-          <div className="identity-field">
-            <label>{t('Financial context')}</label>
-            <select
-              value={form.financialContext}
-              onChange={(e) => set('financialContext', e.target.value)}
-            >
-              {FINANCIAL_CONTEXTS.map((fc) => (
-                <option key={fc.value} value={fc.value}>{fc.label}</option>
-              ))}
-            </select>
-            <small>{t('Jarvis adjusts recommendations based on this')}</small>
-          </div>
-
-          <div className="identity-field">
-            <label>{t('Anything else agents should know?')}</label>
-            <textarea
-              placeholder={t('Additional context: frequent travel, family situation, specific restrictions, etc.')}
-              value={form.additionalContext}
-              onChange={(e) => set('additionalContext', e.target.value)}
-              maxLength={300}
-              rows={3}
-            />
-            <small className="identity-char-count">{form.additionalContext.length}/300</small>
-          </div>
-        </section>
-
-        {/* ══ SECCIÓN 4 — Horario de trabajo ═══════════════════════════════ */}
-        <section className="identity-section">
-          <h2>⏰ {t('Work schedule')}</h2>
-          <p className="identity-section-desc">
-            {t('Cortana won\'t disturb you outside this schedule with work alerts.')}
-          </p>
-          <div className="schedule-row">
-            <div className="schedule-field">
-              <label>{t('Start')}</label>
-              <input
-                type="time"
-                value={form.workStart}
-                onChange={(e) => set('workStart', e.target.value)}
-              />
-            </div>
-            <span className="schedule-separator">→</span>
-            <div className="schedule-field">
-              <label>{t('End')}</label>
-              <input
-                type="time"
-                value={form.workEnd}
-                onChange={(e) => set('workEnd', e.target.value)}
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* ══ SECCIÓN 5 — Geofencing (conectado a DeviceMonitor) ════════════ */}
-        <section className="identity-section">
-          <h2>📍 {t('Operation zones')}</h2>
-          <p className="identity-section-desc">
-            {t('ATHENEA detects if you\'re at home or at work. Cortana adjusts context based on your location.')}
-          </p>
-
-          {['home', 'work'].map((zone) => {
-            const latKey = zone === 'home' ? 'homeLatitude'  : 'workLatitude';
-            const lngKey = zone === 'home' ? 'homeLongitude' : 'workLongitude';
-            const label  = zone === 'home' ? t('Home zone') : t('Work zone');
-            return (
-              <div key={zone} className="geofencing-zone">
-                <div className="geofencing-zone-header">
-                  <h4>{label}</h4>
-                  <button
-                    type="button"
-                    className="geo-locate-btn"
-                    onClick={() => useMyLocation(zone)}
-                    title={t('Use my current location')}
-                  >
-                    🎯 {t('Use my location')}
-                  </button>
-                </div>
-                <div className="form-row-2">
-                  <div className="identity-field">
-                    <label>{t('Latitude')}</label>
-                    <input
-                      type="number"
-                      step="0.0001"
-                      placeholder="Ej: 19.4326"
-                      value={form[latKey]}
-                      onChange={(e) => set(latKey, e.target.value)}
-                    />
-                  </div>
-                  <div className="identity-field">
-                    <label>{t('Longitude')}</label>
-                    <input
-                      type="number"
-                      step="0.0001"
-                      placeholder="Ej: -99.1332"
-                      value={form[lngKey]}
-                      onChange={(e) => set(lngKey, e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </section>
-
-        {/* ══ Weather (mantener existente, full-width) ══════════════════════ */}
-        <section className="identity-section identity-weather-section">
-          <h2>🌤️ {t('Automatic Phone Weather')}</h2>
-          <p className="identity-section-desc">
-            {t('ATHENEA will use device location for weather automatically, no manual API key needed.')}
-          </p>
-          <div className="form-group">
-            <label className="identity-checkbox-label">
-              <input
-                type="checkbox"
-                checked={weatherPrefs.enableWeatherAlerts ?? true}
-                onChange={(e) =>
-                  dispatch(setWeatherPreferences({
-                    ...weatherPrefs,
-                    apiProvider: 'device-auto',
-                    apiKey: '',
-                    enableWeatherAlerts: e.target.checked,
-                  }))
-                }
-              />
-              {t('Enable automatic weather alerts')}
-            </label>
-          </div>
-          <div className="weather-alert-config">
-            <div className="form-row-3">
-              <div className="identity-field">
-                <label>{t('Rain (hours ahead)')}</label>
-                <input
-                  type="number" min="1" max="12"
-                  value={weatherPrefs.alertOn?.rainIn || 3}
-                  onChange={(e) =>
-                    dispatch(setWeatherPreferences({
-                      ...weatherPrefs,
-                      alertOn: { ...weatherPrefs.alertOn, rainIn: Number(e.target.value) },
-                    }))
-                  }
-                />
-              </div>
-              <div className="identity-field">
-                <label>{t('Critical wind (m/s)')}</label>
-                <input
-                  type="number" min="5" max="30"
-                  value={weatherPrefs.alertOn?.windSpeed || 15}
-                  onChange={(e) =>
-                    dispatch(setWeatherPreferences({
-                      ...weatherPrefs,
-                      alertOn: { ...weatherPrefs.alertOn, windSpeed: Number(e.target.value) },
-                    }))
-                  }
-                />
-              </div>
-              <div className="identity-field">
-                <label className="identity-checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={weatherPrefs.alertOn?.extremeTemp ?? true}
-                    onChange={(e) =>
-                      dispatch(setWeatherPreferences({
-                        ...weatherPrefs,
-                        alertOn: { ...weatherPrefs.alertOn, extremeTemp: e.target.checked },
-                      }))
-                    }
-                  />
-                  {t('Alert extreme temperatures')}
-                </label>
-              </div>
-            </div>
-          </div>
-        </section>
-
-      </div>{/* end identity-layout */}
-
-      {/* ── Save button ── */}
-      <div className="identity-footer">
-        <button
-          className={`btn-save${saved ? ' saved' : ''}${!isDirty ? ' disabled' : ''}`}
-          onClick={handleSave}
-          disabled={!isDirty}
-        >
-          {saved ? `✓ ${t('Identity Saved')}` : t('Save Identity')}
-        </button>
+        </div>
       </div>
+
+      <div className="identity-section">
+        <h2 className="identity-section-title">{t('Contexto para los agentes')}</h2>
+        <p className="identity-section-desc">
+          {t('Informacion adicional que los agentes usan para darte mejores consejos. Proyectos actuales, situacion personal, restricciones especificas.')}
+        </p>
+
+        <textarea
+          className="identity-context-textarea"
+          placeholder={
+            t('Ej: Tengo 2 proyectos freelance activos,\nun cliente dificil esta semana, y estoy en modo\nahorro agresivo este mes...')
+          }
+          value={additionalContext}
+          onChange={(e) => setAdditionalContext(e.target.value)}
+          maxLength={500}
+          rows={4}
+        />
+        <small className="identity-char-count">{additionalContext.length}/500</small>
+      </div>
+
+      <button className="identity-save-btn" onClick={handleSave}>
+        {t('Guardar identidad')}
+      </button>
     </div>
   );
 };

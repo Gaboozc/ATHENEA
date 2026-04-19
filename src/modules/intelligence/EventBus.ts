@@ -29,6 +29,8 @@ type Handler<T> = (data: T) => void;
 // ── EventBus class ────────────────────────────────────────────────────────────
 class EventBus {
   private listeners: Map<string, Handler<any>[]> = new Map();
+  private handlerIds: WeakMap<Handler<any>, string> = new WeakMap();
+  private nextHandlerId = 1;
 
   /**
    * Subscribe to an event. Returns an unsubscribe function.
@@ -38,6 +40,9 @@ class EventBus {
       this.listeners.set(event, []);
     }
     this.listeners.get(event)!.push(handler);
+    if (!this.handlerIds.has(handler as Handler<any>)) {
+      this.handlerIds.set(handler as Handler<any>, `${String(event)}#${this.nextHandlerId++}`);
+    }
     return () => {
       const list = this.listeners.get(event);
       if (!list) return;
@@ -55,7 +60,8 @@ class EventBus {
       try {
         handler(data);
       } catch (err) {
-        console.error(`[EventBus] Error in handler for "${event}":`, err);
+        const subscriberId = this.handlerIds.get(handler) || `${String(event)}#unknown`;
+        console.error(`[EventBus] Error in handler for "${event}" (subscriber: ${subscriberId}):`, err);
       }
     }
   }

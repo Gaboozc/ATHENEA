@@ -503,6 +503,19 @@ export class AgentOrchestrator {
         ingresos: financialSnapshot.ingresos,
         commitedGoalSavings: financialSnapshot.commitedGoalSavings,
         healthScore: financialSnapshot.healthScore,
+        averageMonthlySpending: financialSnapshot.averageMonthlySpending,
+        spendingTrend: financialSnapshot.spendingTrend,
+        historySummary: financialSnapshot.historySummary
+          ? {
+              months: (financialSnapshot.historySummary.months || []).map((m: any) => ({
+                month: m.month,
+                total: Number(m.total || 0),
+                count: Number(m.count || 0),
+              })),
+              average: Number(financialSnapshot.historySummary.average || 0),
+              trend: Number(financialSnapshot.historySummary.trend || 0),
+            }
+          : undefined,
         /* WALLETS-10: dual-currency wallet fields */
         walletUSD: financialSnapshot.walletUSD,
         walletMXN: financialSnapshot.walletMXN,

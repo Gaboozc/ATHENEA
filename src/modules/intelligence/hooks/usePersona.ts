@@ -7,6 +7,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useDispatch } from 'react-redux';
+import { showToast } from '../../../components/Toast';
 import PersonaEngine from '../personaEngine';
 import type {
   PersonaResponse,
@@ -39,9 +40,11 @@ export function usePersona() {
       .then((initialResponse) => {
         setCurrentResponse(initialResponse);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('[usePersona] Initial LLM greeting failed:', error);
         const fallback = engine.generateResponse();
         setCurrentResponse(fallback);
+        showToast('LLM no disponible, usando respuesta local', 'warning');
       });
 
     // Re-generate when API key is set/cleared
@@ -49,7 +52,11 @@ export function usePersona() {
       const eng = personaRef.current || getPersonaEngine();
       eng.generateResponseWithLLM()
         .then(setCurrentResponse)
-        .catch(() => setCurrentResponse(eng.generateResponse()));
+        .catch((error) => {
+          console.error('[usePersona] Key update refresh failed:', error);
+          setCurrentResponse(eng.generateResponse());
+          showToast('No se pudo refrescar con LLM, usando fallback local', 'warning');
+        });
     };
     window.addEventListener('athenea:neural-key-updated', onKeyUpdate);
 
@@ -69,6 +76,12 @@ export function usePersona() {
       const response = await engine.generateResponseWithLLM(requestContext, requestedAction);
       setCurrentResponse(response);
       return response;
+    } catch (error) {
+      console.error('[usePersona] generateResponse failed:', error);
+      const fallback = engine.generateResponse(requestContext, requestedAction);
+      setCurrentResponse(fallback);
+      showToast('Error al generar respuesta con LLM, usando fallback local', 'error');
+      return fallback;
     } finally {
       setIsGenerating(false);
     }
@@ -82,6 +95,12 @@ export function usePersona() {
       const response = await engine.sendConversationalInput(userInput);
       setCurrentResponse(response);
       return response;
+    } catch (error) {
+      console.error('[usePersona] sendMessage failed:', error);
+      const fallback = engine.generateResponse();
+      setCurrentResponse(fallback);
+      showToast('Error de conversación con LLM, usando fallback local', 'error');
+      return fallback;
     } finally {
       setIsGenerating(false);
     }

@@ -448,10 +448,10 @@ export const Calendar = () => {
       {!hasFilteredEvents && syncStatus !== 'loading' && (
         <EmptyState
           icon="🗓️"
-          title={t('No events in this view.')}
-          description={t('Create a new event or adjust your hub filter.')}
+          title={t('No tengo eventos en esta vista.')}
+          description={t('Crea un evento o cambia el filtro y actualizo este calendario.')}
           action={{
-            label: t('New Event'),
+            label: t('Nuevo evento'),
             icon: '+',
             onClick: () => handleOpenCreateForm(selectedDate || new Date()),
           }}

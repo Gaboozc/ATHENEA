@@ -6,7 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '../components/Skeleton/Skeleton';
 import { getLLMConfigSync } from '../services/LLMClient';
 import { DailyStandup } from '../components/DailyStandup/DailyStandup';
-import { EmptyState } from '../components';
+import { EmptyState, LoadingSpinner } from '../components';
+import { TASK_STATES, normalizeTaskState } from '../constants/taskStates';
 import './WorkHub.css';
 
 const openGatekeeper = () => window.dispatchEvent(new CustomEvent('athenea:gatekeeper:open'));
@@ -57,16 +58,19 @@ export const WorkHub = () => {
   );
 
   const completedTasks = useMemo(
-    () => (tasks || []).filter((task) => task?.status === 'Completed'),
+    () => (tasks || []).filter((task) => normalizeTaskState(task?.status) === TASK_STATES.COMPLETED),
     [tasks]
   );
   const inProgressTasks = useMemo(
-    () => (tasks || []).filter((task) => task?.status === 'In Progress'),
+    () => (tasks || []).filter((task) => normalizeTaskState(task?.status) === TASK_STATES.IN_PROGRESS),
     [tasks]
   );
   const pendingTasks = useMemo(
     () => (tasks || []).filter(
-      (task) => task?.status !== 'Completed' && task?.status !== 'In Progress'
+      (task) => {
+        const normalized = normalizeTaskState(task?.status);
+        return normalized !== TASK_STATES.COMPLETED && normalized !== TASK_STATES.IN_PROGRESS;
+      }
     ),
     [tasks]
   );
@@ -76,7 +80,7 @@ export const WorkHub = () => {
     () => (tasks || []).filter((t) => {
       const due = new Date(t?.dueDate || '').getTime();
       return !t?.completed &&
-        t?.status !== 'Completed' &&
+        normalizeTaskState(t?.status) !== TASK_STATES.COMPLETED &&
         Number.isFinite(due) && due > 0 && due < Date.now();
     }),
     [tasks]
@@ -88,7 +92,7 @@ export const WorkHub = () => {
       const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
       const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
       return !t?.completed &&
-        t?.status !== 'Completed' &&
+        normalizeTaskState(t?.status) !== TASK_STATES.COMPLETED &&
         due >= todayStart && due <= todayEnd;
     }),
     [tasks]
@@ -103,7 +107,7 @@ export const WorkHub = () => {
 
   const doneThisWeek = useMemo(
     () => (tasks || []).filter((t) => {
-      if (!(t?.status === 'Completed' || t?.completed === true)) return false;
+      if (!(normalizeTaskState(t?.status) === TASK_STATES.COMPLETED || t?.completed === true)) return false;
       const dateToCheck = t?.updatedAt || t?.createdAt;
       return dateToCheck && new Date(dateToCheck) >= startOfWeekForDone;
     }),
@@ -113,7 +117,7 @@ export const WorkHub = () => {
   /* Step 6.3 — Action List */
   const actionListTasks = useMemo(() => {
     const open = (tasks || []).filter(
-      (t) => !t?.completed && t?.status !== 'Completed'
+      (t) => !t?.completed && normalizeTaskState(t?.status) !== TASK_STATES.COMPLETED
     );
     return [...open]
       .sort((a, b) => {
@@ -160,7 +164,7 @@ export const WorkHub = () => {
     const map = {};
     (projects || []).forEach((proj) => {
       const open = (tasks || []).filter(
-        (t) => t?.projectId === proj.id && !t?.completed && t?.status !== 'Completed'
+        (t) => t?.projectId === proj.id && !t?.completed && normalizeTaskState(t?.status) !== TASK_STATES.COMPLETED
       );
       if (open.length === 0) { map[proj.id] = null; return; }
       open.sort((a, b) => {
@@ -175,6 +179,16 @@ export const WorkHub = () => {
     });
     return map;
   }, [projects, tasks]);
+
+  if (!isReady) {
+    return (
+      <div className="workhub-container">
+        <section className="page-loading-state">
+          <LoadingSpinner size="md" label="ATHENEA esta preparando tu Work Hub" />
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="workhub-container">
@@ -223,7 +237,16 @@ export const WorkHub = () => {
       <section className="workhub-card workhub-action-list">
         <h2>{t('Action List')}</h2>
         {actionListTasks.length === 0 ? (
-          <EmptyState icon="📋" message={t('No tasks yet.')} ctaLabel={`+ ${t('New task')}`} onCta={openGatekeeper} />
+          <EmptyState
+            icon="📋"
+            title={t('No tengo tareas para priorizar.')}
+            description={t('Cuando crees una tarea, la ordeno por urgencia aqui.')}
+            action={{
+              label: t('Crear tarea'),
+              icon: '+',
+              onClick: openGatekeeper,
+            }}
+          />
         ) : (
           <>
             <ul>
@@ -251,11 +274,11 @@ export const WorkHub = () => {
                     </span>
                     {dueText && <span className={`action-due${isOverdue ? ' action-due--overdue' : ''}`}>{dueText}</span>}
                     <div className="action-buttons">
-                      {task.status !== 'In Progress' && (
+                      {normalizeTaskState(task.status) !== TASK_STATES.IN_PROGRESS && (
                         <button
                           className="action-btn action-btn--start"
                           title={t('Start')}
-                          onClick={() => updateTaskCtx(task.id, { status: 'In Progress' })}
+                          onClick={() => updateTaskCtx(task.id, { status: TASK_STATES.IN_PROGRESS })}
                         >
                           ▶
                         </button>
@@ -263,7 +286,7 @@ export const WorkHub = () => {
                       <button
                         className="action-btn action-btn--done"
                         title={t('Complete')}
-                        onClick={() => updateTaskCtx(task.id, { status: 'Completed', completed: true })}
+                        onClick={() => updateTaskCtx(task.id, { status: TASK_STATES.COMPLETED, completed: true })}
                       >
                         ✓
                       </button>
@@ -283,10 +306,10 @@ export const WorkHub = () => {
         {activeProjects.length === 0 ? (
           <EmptyState
             icon="📁"
-            title={t('No active projects.')}
-            description={t('Start by creating a project to organize your workflow.')}
+            title={t('No tengo proyectos activos.')}
+            description={t('Si creas un proyecto, te muestro su siguiente tarea critica.')}
             action={{
-              label: t('Go to Projects'),
+              label: t('Ir a Proyectos'),
               icon: '→',
               onClick: () => navigate('/projects'),
             }}

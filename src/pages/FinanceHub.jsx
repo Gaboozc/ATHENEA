@@ -3,13 +3,13 @@ import { useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { useGlobalReducer } from '../hooks/useGlobalReducer'; /* F-FEAT-6 */
-import { addCategory, deleteExpense, deleteCategory, updateCategory } from '../../store/slices/budgetSlice'; /* F-FEAT-1 */
-import { registerExpense } from '../store/thunks/financeThunks';
+import { addCategory, deleteCategory, updateCategory } from '../../store/slices/budgetSlice'; /* F-FEAT-1 */
+import { registerExpense, deleteExpenseConsistent } from '../store/thunks/financeThunks';
 import { selectFinancialSnapshot, selectFinancialHealthScore } from '../store/selectors/financialSelectors'; /* F-FEAT-3 */
 import { Skeleton } from '../components/Skeleton/Skeleton';
 import { SpendingCharts } from '../components/SpendingCharts/SpendingCharts';
 import { CashFlowProjection } from '../components/CashFlowProjection/CashFlowProjection';
-import { EmptyState } from '../components';
+import { EmptyState, LoadingSpinner } from '../components';
 import './FinanceHub.css';
 
 export const FinanceHub = () => {
@@ -20,6 +20,7 @@ export const FinanceHub = () => {
   const payments = store?.payments?.payments || [];
   const budgetCategories = store?.budget?.categories || [];
   const expenses = store?.budget?.expenses || [];
+  const projects = store?.projects?.projects || [];
   /* WALLETS-5: wallet balances */
   const walletUSD = store?.wallets?.walletUSD || 0;
   const walletMXN = store?.wallets?.walletMXN || 0;
@@ -63,6 +64,8 @@ export const FinanceHub = () => {
   const [expenseAmount, setExpenseAmount] = useState('');
   const [expenseCategory, setExpenseCategory] = useState('');
   const [expenseNote, setExpenseNote] = useState('');
+  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().slice(0, 10));
+  const [linkedProject, setLinkedProject] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [expenseCurrency, setExpenseCurrency] = useState('MXN');
   const [categoryFormCurrency, setCategoryFormCurrency] = useState('MXN');
@@ -125,6 +128,11 @@ export const FinanceHub = () => {
     return expenses.filter((expense) => (expense.date || '').slice(0, 7) === monthKey);
   }, [expenses, monthKey]);
 
+  const activeProjects = useMemo(
+    () => projects.filter((project) => ['active', 'in-progress', 'planning', 'maintenance'].includes(project.status)),
+    [projects]
+  );
+
   const totalSpent = useMemo(() => {
     return monthlyExpenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
   }, [monthlyExpenses]);
@@ -154,12 +162,14 @@ export const FinanceHub = () => {
       amount: Number(expenseAmount),
       currency: expenseCurrency,
       categoryId: expenseCategory || null,
+      projectId: linkedProject || null,
       description: expenseNote || 'Gasto',
-      date: new Date().toISOString(),
+      date: new Date(`${expenseDate}T12:00:00`).toISOString(),
     }));
     setExpenseAmount('');
     setExpenseCategory('');
     setExpenseNote('');
+    setLinkedProject('');
   };
 
   /* F-FEAT-1: inline limit commit */
@@ -169,6 +179,16 @@ export const FinanceHub = () => {
     setEditingLimitId(null);
     setEditingLimitValue('');
   };
+
+  if (!isReady) {
+    return (
+      <div className="financehub-container">
+        <section className="page-loading-state">
+          <LoadingSpinner size="md" label="ATHENEA esta preparando tu Finance Hub" />
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="financehub-container">
@@ -362,11 +382,32 @@ export const FinanceHub = () => {
                   </option>
                 ))}
               </select>
+
+              {activeProjects.length > 0 && (
+                <select
+                  value={linkedProject}
+                  onChange={(e) => setLinkedProject(e.target.value)}
+                >
+                  <option value="">{t('No project linked')}</option>
+                  {activeProjects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
               <input
                 type="text"
                 value={expenseNote}
                 onChange={(e) => setExpenseNote(e.target.value)}
                 placeholder={t('Optional details')}
+              />
+              <input
+                type="date"
+                value={expenseDate}
+                onChange={(e) => setExpenseDate(e.target.value)}
+                aria-label={t('Expense date')}
               />
               <button type="submit">{t('Add')}</button>
             </form>
@@ -378,10 +419,10 @@ export const FinanceHub = () => {
           {budgetCategories.length === 0 ? (
             <EmptyState
               icon="🏷️"
-              title={t('No categories yet.')}
-              description={t('Create your first category to organize budget tracking.')}
+              title={t('No tengo categorias de presupuesto.')}
+              description={t('Si creas la primera categoria, empiezo a ordenar tus gastos.')}
               action={{
-                label: t('Add Category'),
+                label: t('Agregar categoria'),
                 icon: '+',
                 onClick: () => categoryNameInputRef.current?.focus(),
               }}
@@ -445,10 +486,10 @@ export const FinanceHub = () => {
           {monthHistory.length === 0 ? (
             <EmptyState
               icon="💸"
-              title={t('No expenses yet.')}
-              description={t('Register your first expense to start building monthly history.')}
+              title={t('No tengo historial mensual.')}
+              description={t('Registra un gasto y empiezo a construir el historial.')}
               action={{
-                label: t('Add Expense'),
+                label: t('Agregar gasto'),
                 icon: '+',
                 onClick: () => expenseAmountInputRef.current?.focus(),
               }}
@@ -470,10 +511,10 @@ export const FinanceHub = () => {
           {monthlyExpenses.length === 0 ? (
             <EmptyState
               icon="💸"
-              title={t('No expenses yet.')}
-              description={t('Add an expense to keep this month under control.')}
+              title={t('No tengo gastos este mes.')}
+              description={t('Registra un gasto para que pueda mostrarte el control mensual.')}
               action={{
-                label: t('Add Expense'),
+                label: t('Agregar gasto'),
                 icon: '+',
                 onClick: () => expenseAmountInputRef.current?.focus(),
               }}
@@ -487,7 +528,7 @@ export const FinanceHub = () => {
                   <button
                     type="button"
                     className="financehub-delete"
-                    onClick={() => dispatch(deleteExpense(expense.id))}
+                    onClick={() => dispatch(deleteExpenseConsistent(expense.id))}
                   >
                     {t('Delete')}
                   </button>
@@ -501,7 +542,16 @@ export const FinanceHub = () => {
       <section className="financehub-list">
         <h2>{t('Upcoming Payments')}</h2>
         {upcomingPayments.length === 0 ? (
-          <EmptyState icon="💳" message={t('No payments yet.')} ctaLabel={`+ ${t('Add Payment')}`} onCta={() => navigate('/payments')} />
+          <EmptyState
+            icon="💳"
+            title={t('No tengo pagos proximos.')}
+            description={t('Si agregas un pago recurrente, lo vigilo por ti aqui.')}
+            action={{
+              label: t('Agregar pago'),
+              icon: '+',
+              onClick: () => navigate('/payments'),
+            }}
+          />
         ) : (
           <ul>
             {upcomingPayments.map((payment) => (

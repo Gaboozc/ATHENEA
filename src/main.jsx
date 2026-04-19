@@ -22,19 +22,20 @@ if (new URLSearchParams(window.location.search).get('clear') === 'true') {
     window.location.href = window.location.pathname;
 }
 
-// Register Service Worker for offline support
+// Unregister stale service workers to avoid serving outdated cached assets.
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => { /* silent — SW not critical */ });
-  });
+    navigator.serviceWorker.getRegistrations().then((regs) => {
+        regs.forEach((reg) => reg.unregister());
+    });
 }
 
 // Ensure direct URLs (e.g. /finance/budgeting) work with hash-based routing.
 if (typeof window !== 'undefined') {
-    const { pathname, search, hash, origin } = window.location;
+    const { pathname, search, hash, origin, protocol } = window.location;
+    const isFileProtocol = protocol === 'file:';
     const hasHashRoute = typeof hash === 'string' && hash.startsWith('#/');
     const isDirectAppPath = pathname && pathname !== '/' && pathname !== '/index.html';
-    if (!hasHashRoute && isDirectAppPath) {
+    if (!isFileProtocol && !hasHashRoute && isDirectAppPath) {
         window.location.replace(`${origin}/#${pathname}${search || ''}`);
     }
 }

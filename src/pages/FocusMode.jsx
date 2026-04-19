@@ -283,9 +283,9 @@ export const FocusMode = () => {
       {sessions.length === 0 && (
         <EmptyState
           icon="🍅"
-          title={t('No focus sessions yet.')}
-          description={t('Start your first Pomodoro session to build momentum.')}
-          action={{ label: t('Start'), icon: '▶', onClick: start }}
+          title={t('No tengo sesiones de enfoque.')}
+          description={t('Inicia una sesion y registro tu progreso para mantener el ritmo.')}
+          action={{ label: t('Iniciar sesion'), icon: '▶', onClick: start }}
         />
       )}
 

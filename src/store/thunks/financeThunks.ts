@@ -3,8 +3,8 @@
  * NUNCA usar dispatch(addExpense(...)) directamente desde componentes.
  */
 import { addExpenseUSD, addExpenseMXN } from '../../../store/slices/walletsSlice';
-import { addExpense } from '../../../store/slices/budgetSlice';
-import { recordPayment } from '../../../store/slices/debtsSlice'; /* DEBTS-2 */
+import { addExpense, addCategory, deleteExpense } from '../../../store/slices/budgetSlice';
+import { recordPayment, deletePayment } from '../../../store/slices/debtsSlice'; /* DEBTS-2 */
 import { addEvent } from '../../../store/slices/calendarSlice'; /* DEBTS-2 */
 
 export interface RegisterExpensePayload {
@@ -12,6 +12,7 @@ export interface RegisterExpensePayload {
   amount: number;
   currency: 'MXN' | 'USD';
   categoryId: string | null;
+  projectId?: string | null;
   description: string;
   date: string;
 }
@@ -24,6 +25,7 @@ export const registerExpense = (payload: RegisterExpensePayload) => (dispatch: a
       amount: payload.amount,
       currency: payload.currency,
       categoryId: payload.categoryId,
+      projectId: payload.projectId || null,
       note: payload.description,
       date: payload.date,
     })
@@ -44,6 +46,36 @@ export const registerExpense = (payload: RegisterExpensePayload) => (dispatch: a
     dispatch(addExpenseMXN(walletPayload));
   }
 };
+
+/* BUG-1: Consistent delete across budget + wallet.
+ * Reverts wallet balance first, then removes the budget expense.
+ */
+export const deleteExpenseConsistent = (expenseId: string) =>
+  async (dispatch: any, getState: any) => {
+    const state = getState();
+    const expense = state.budget?.expenses?.find((e: any) => e.id === expenseId);
+
+    if (!expense) {
+      dispatch(deleteExpense(expenseId));
+      return;
+    }
+
+    const reversePayload = {
+      amount: Number(expense.amount || 0),
+      description: `Reversión: ${expense.note || expense.description || 'Gasto'}`,
+      date: new Date().toISOString(),
+      id: `rev-${expenseId}`,
+      category: expense.categoryId || null,
+    };
+
+    if ((expense.currency || 'MXN') === 'USD') {
+      dispatch(addIncomeUSD(reversePayload));
+    } else {
+      dispatch(addIncomeMXN(reversePayload));
+    }
+
+    dispatch(deleteExpense(expenseId));
+  };
 
 /* DEBTS-2: payDebt thunk — ÚNICO punto de entrada para registrar abonos.
  * Un abono siempre descuenta de walletsSlice. Nunca usar dispatch(recordPayment(...))
@@ -80,24 +112,32 @@ export const payDebt = (payload: PayDebtPayload) => (dispatch: any, getState: an
     dispatch(addExpenseMXN(walletPayload));
   }
 
-  // 2. Registrar en budgetSlice si existe categoría de deudas
-  const debtCategory = state.budget?.categories?.find(
-    (c: any) =>
-      c.name.toLowerCase().includes('deuda') ||
-      c.name.toLowerCase().includes('debt')
-  );
-  if (debtCategory) {
+  // 2. Registrar siempre en budgetSlice con categoría fija del sistema
+  const debtCategoryId = 'system-debts-category';
+  const debtCategoryExists = state.budget?.categories?.some((c: any) => c.id === debtCategoryId);
+
+  if (!debtCategoryExists) {
     dispatch(
-      addExpense({
-        id: `budget-debt-${Date.now()}`,
-        amount: payload.amount,
-        currency: payload.currency,
-        categoryId: debtCategory.id,
-        note: `Abono: ${debt.name}`,
-        date,
+      addCategory({
+        id: debtCategoryId,
+        name: 'Deudas',
+        limit: 0,
+        currency: 'MXN',
       })
     );
   }
+
+  dispatch(
+    addExpense({
+      id: `debt-pay-${Date.now()}`,
+      amount: payload.amount,
+      currency: payload.currency || 'MXN',
+      categoryId: debtCategoryId,
+      note: `Abono: ${debt.name}`,
+      date,
+      type: 'debt_payment',
+    })
+  );
 
   // 3. Registrar el abono en debtsSlice
   dispatch(
@@ -127,3 +167,32 @@ export const payDebt = (payload: PayDebtPayload) => (dispatch: any, getState: an
     );
   }
 };
+
+/* BUG-2: Consistent delete of debt payment across debts + wallet.
+ * Reverts funds to wallet before removing debt payment entry.
+ */
+export const deleteDebtPaymentConsistent =
+  (debtId: string, paymentId: string) =>
+  async (dispatch: any, getState: any) => {
+    const state = getState();
+    const debt = state.debts?.debts?.find((d: any) => d.id === debtId);
+    const payment = debt?.payments?.find((p: any) => p.id === paymentId);
+
+    if (payment) {
+      const reversalPayload = {
+        amount: Number(payment.amount || 0),
+        description: `Reversión abono: ${debt?.name || 'Deuda'}`,
+        date: new Date().toISOString(),
+        id: `rev-pay-${paymentId}`,
+        category: 'debt-payment-reversal',
+      };
+
+      if ((payment.currency || 'MXN') === 'USD') {
+        dispatch(addIncomeUSD(reversalPayload));
+      } else {
+        dispatch(addIncomeMXN(reversalPayload));
+      }
+    }
+
+    dispatch(deletePayment({ debtId, paymentId }));
+  };

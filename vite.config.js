@@ -14,7 +14,7 @@ const CSP_DIRECTIVES = [
     // Inline styles + CSS CDNs
     "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com",
     // External APIs + local Ollama + websocket endpoints
-    "connect-src 'self' http://localhost:11434 http://localhost:* https://api.openai.com https://api.groq.com https://oauth2.googleapis.com https://www.googleapis.com https://accounts.google.com ws://localhost:* wss://localhost:*",
+    "connect-src 'self' http://localhost:11434 http://localhost:8000 http://localhost:* https://api.openai.com https://api.groq.com https://oauth2.googleapis.com https://www.googleapis.com https://accounts.google.com ws://localhost:* wss://localhost:*",
     // Fonts
     "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com",
     // Images

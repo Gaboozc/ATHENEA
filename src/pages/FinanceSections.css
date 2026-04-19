@@ -202,6 +202,73 @@
   border-radius: 6px; margin-bottom: 10px;
 }
 
+/* HIST-2: month-by-month history cards */
+.finance-history-months {
+  display: grid;
+  gap: 12px;
+  margin: 4px 0 16px;
+}
+
+.finance-history-title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.finance-month-card {
+  border: 1px solid #3f3f46;
+  background: #18181b;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.finance-month-title {
+  margin: 0 0 8px;
+  text-transform: capitalize;
+  font-size: 0.98rem;
+}
+
+.finance-month-summary {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  font-size: 0.86rem;
+}
+
+.summary-income { color: #86efac; }
+.summary-expense { color: #fca5a5; }
+.summary-net.positive { color: #67e8f9; }
+.summary-net.negative { color: #f87171; }
+
+.finance-month-transactions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.finance-month-tx-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px dashed #3f3f46;
+  padding-top: 6px;
+}
+
+.finance-month-tx-item div {
+  display: grid;
+  gap: 2px;
+}
+
+.finance-month-tx-item small {
+  color: #a1a1aa;
+  font-size: 0.75rem;
+}
+
+.finance-month-tx-item .tx-income { color: #86efac; font-weight: 600; }
+.finance-month-tx-item .tx-expense { color: #fca5a5; font-weight: 600; }
+
 /* ── Budget Planning (Planeación tab) ───────────────────────────────────── */
 
 .bp-container { display: grid; gap: 18px; }

@@ -161,6 +161,29 @@
 }
 .wallets-rate-preview strong { color: var(--accent-cyan); }
 
+.wallets-conversion-direction {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.wallets-conversion-direction-btn {
+  padding: 8px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wallets-conversion-direction-btn.active {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  background: rgba(30, 201, 255, 0.12);
+}
+
 /* ── History ─────────────────────────────────────────────────────────────── */
 .wallets-history {
   margin-top: 8px;

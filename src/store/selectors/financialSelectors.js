@@ -22,6 +22,42 @@ const normalizeDate = (value) => {
   return date;
 };
 
+const getLast3MonthsSummary = (expenses = []) => {
+  const now = new Date();
+  const months = [];
+
+  for (let i = 0; i < 3; i += 1) {
+    const dt = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
+    months.push(key);
+  }
+
+  const summary = months.map((monthKey) => {
+    const monthExpenses = expenses.filter((expense) => String(expense?.date || '').slice(0, 7) === monthKey);
+    const total = monthExpenses.reduce((sum, expense) => sum + toNumber(expense?.amount), 0);
+    return {
+      month: monthKey,
+      total,
+      count: monthExpenses.length,
+      entries: monthExpenses,
+    };
+  });
+
+  const average = summary.length
+    ? summary.reduce((sum, month) => sum + month.total, 0) / summary.length
+    : 0;
+
+  const trend = summary.length >= 2
+    ? summary[0].total - summary[1].total
+    : 0;
+
+  return {
+    months: summary,
+    average,
+    trend,
+  };
+};
+
 export const selectFinancialSnapshot = createSelector(
   [
     (state) => state?.payments,
@@ -49,6 +85,7 @@ export const selectFinancialSnapshot = createSelector(
   now.setHours(0, 0, 0, 0);
 
   const currentMonthKey = now.toISOString().slice(0, 7);
+  const historySummary = getLast3MonthsSummary(expenses);
 
   const ingresos = payments
     .filter((payment) => (payment?.type || '').toLowerCase() === 'income')
@@ -172,6 +209,9 @@ export const selectFinancialSnapshot = createSelector(
     categoryBudget,
     committed,
     commitedGoalSavings,
+    historySummary,
+    averageMonthlySpending: historySummary.average,
+    spendingTrend: historySummary.trend,
     walletUSD,
     walletMXN,
     referenceRate,

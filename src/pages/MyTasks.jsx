@@ -1,19 +1,29 @@
-import { useMemo, useState, Fragment } from 'react';
-import { useSelector } from 'react-redux';
+import { useMemo, useState, Fragment, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, useDraggable, useDroppable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import { useTasks } from '../context/TasksContext';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useLanguage } from '../context/LanguageContext';
-import { EmptyState } from '../components';
+import { TASK_STATES, TASK_STATE_COLORS, normalizeTaskState } from '../constants/taskStates';
+import TaskList from '../components/Work/TaskList';
+import TaskKanban from '../components/Work/TaskKanban';
+import TaskTable from '../components/Work/TaskTable';
+import {
+  archiveTask as archiveTaskAction,
+  unarchiveTask as unarchiveTaskAction,
+  deleteTask as deleteTaskAction,
+} from '../../store/slices/tasksSlice';
+import { EmptyState, LoadingSpinner } from '../components';
 import './MyTasks.css';
 
-const TASK_STATUS_KEYS = ['Pending', 'In Progress', 'Near Completion', 'In Review', 'Completed'];
-const STATUS_COLORS = {
-  'Pending':          '#9aa3ad',
-  'In Progress':      '#facc15',
-  'Near Completion':  '#60a5fa',
-  'In Review':        '#f59e0b',
-  'Completed':        '#22c55e',
-};
+const TASK_STATUS_KEYS = [
+  TASK_STATES.PENDING,
+  TASK_STATES.IN_PROGRESS,
+  TASK_STATES.COMPLETED,
+  TASK_STATES.BLOCKED,
+  TASK_STATES.CANCELLED,
+];
 const slugStatus = (s) =>
   (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
 
@@ -98,6 +108,41 @@ function AssigneeSelect({ task, collaborators, updateTask, t }) {
   );
 }
 
+function DroppableKanbanColumn({ status, children }) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: `column-${status}`,
+    data: { status },
+  });
+
+  return (
+    <div ref={setNodeRef} className={`kanban-col-body${isOver ? ' is-over' : ''}`}>
+      {children}
+    </div>
+  );
+}
+
+function DraggableKanbanCard({ taskId, children }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useDraggable({
+    id: `task-${taskId}`,
+    data: { taskId },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Translate.toString(transform),
+        transition,
+      }}
+      className={`kanban-draggable${isDragging ? ' is-dragging' : ''}`}
+      {...attributes}
+      {...listeners}
+    >
+      {children}
+    </div>
+  );
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────
    TaskCard — defined OUTSIDE MyTasks to prevent unmount/remount loop
 ───────────────────────────────────────────────────────────────────────────── */
@@ -105,7 +150,8 @@ function TaskCard({
   task, indent = 0,
   t,
   editingId, editValue, onStartEdit, onEditChange, onCommitEdit, onCancelEdit,
-  updateTaskStatus, updateTask,
+  onStatusChange, updateTask,
+  onArchiveToggle, onDelete,
   subtaskFormFor, onOpenSubtaskForm,
   subtaskTitle, onSubtaskTitleChange,
   subtaskDescription, onSubtaskDescriptionChange,
@@ -138,8 +184,8 @@ function TaskCard({
           {task.projectName && indent === 0 && <span className="mytasks-project">{task.projectName}</span>}
           {task.dueDate && <span className="mytasks-due">📅 {fmtDate(task.dueDate)}</span>}
         </div>
-        <span className="mytasks-status" style={{ color: STATUS_COLORS[task.status] || '#9aa3ad' }}>
-          {task.status || t('Active')}
+        <span className="mytasks-status" style={{ color: TASK_STATE_COLORS[normalizeTaskState(task.status)] || '#9aa3ad' }}>
+          {normalizeTaskState(task.status) || t('Active')}
         </span>
       </div>
       {task.description && <p className="mytasks-desc">{task.description}</p>}
@@ -154,13 +200,19 @@ function TaskCard({
       )}
       <div className="mytasks-actions">
         <select
-          className={`mytasks-status-select status-${slugStatus(task.status)}`}
-          value={TASK_STATUS_KEYS.includes(task.status) ? task.status : 'Pending'}
-          onChange={(e) => updateTaskStatus(task.id, e.target.value)}
+          className={`mytasks-status-select status-${slugStatus(normalizeTaskState(task.status))}`}
+          value={TASK_STATUS_KEYS.includes(normalizeTaskState(task.status)) ? normalizeTaskState(task.status) : TASK_STATES.PENDING}
+          onChange={(e) => onStatusChange(task.id, e.target.value)}
         >
-          {TASK_STATUS_KEYS.map((s) => <option key={s} value={s}>{t(s)}</option>)}
+          {TASK_STATUS_KEYS.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
         <AssigneeSelect task={task} collaborators={collaborators} updateTask={updateTask} t={t} />
+        <button type="button" className="mytasks-subtask-btn" onClick={() => onArchiveToggle(task)}>
+          {task.archived ? t('Unarchive') : t('Archive')}
+        </button>
+        <button type="button" className="mytasks-subtask-btn mytasks-subtask-btn-danger" onClick={() => onDelete(task)}>
+          {t('Delete')}
+        </button>
         {indent < 2 && (
           <button type="button" className="mytasks-subtask-btn"
             onClick={() => onOpenSubtaskForm(task.id)}>
@@ -185,12 +237,20 @@ function TaskCard({
    MyTasks — main component
 ═══════════════════════════════════════════════════════════════════════════ */
 export const MyTasks = () => {
-  const { tasks, addTask, updateTaskStatus, updateTask } = useTasks();
+  const { tasks, addTask, updateTaskStatus, updateTask, deleteTask } = useTasks();
   const { user } = useCurrentUser();
   const { t } = useLanguage();
+  const dispatch = useDispatch();
   const collaborators = useSelector((s) => s.collaborators?.collaborators || []);
+  const projects = useSelector((s) => s.projects?.projects || []);
 
   const [view, setView] = useState('lista');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setIsLoading(false));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   // Inline edit state
   const [editingId, setEditingId]   = useState(null);
@@ -204,11 +264,23 @@ export const MyTasks = () => {
 
   // Kanban expanded subtask rows
   const [expandedKanbanIds, setExpandedKanbanIds] = useState(new Set());
+  const [showArchived, setShowArchived] = useState(false);
+  const [toast, setToast] = useState('');
+
+  const pushToast = (message) => {
+    setToast(message);
+    window.setTimeout(() => setToast(''), 2200);
+  };
 
   // ── Derived data ──────────────────────────────────────────────────────────
   const myTasks = useMemo(
-    () => tasks.filter((task) => task.assigneeId === user?.id && task.status !== 'pending_approval'),
-    [tasks, user?.id]
+    () => tasks.filter((task) => {
+      if (task.assigneeId !== user?.id) return false;
+      if (task.status === 'pending_approval') return false;
+      if (!showArchived && task.archived) return false;
+      return true;
+    }),
+    [tasks, user?.id, showArchived]
   );
   const myTaskIdSet = useMemo(() => new Set(myTasks.map((t) => t.id)), [myTasks]);
 
@@ -254,7 +326,7 @@ export const MyTasks = () => {
       projectId:   parentTask.projectId || null,
       projectName: parentTask.projectName || null,
       parentTaskId: parentTask.id,
-      status:      'Pending',
+      status:      TASK_STATES.PENDING,
       level:       parentTask.level || 'Backlog',
       assigneeId:  user?.id,
       createdAt:   new Date().toISOString(),
@@ -262,340 +334,99 @@ export const MyTasks = () => {
     cancelSubtaskForm();
   };
 
-  const toggleKanbanExpand = (id) => setExpandedKanbanIds((prev) => {
-    const next = new Set(prev);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    return next;
-  });
+  const handleStatusChange = (taskId, status) => {
+    const normalized = normalizeTaskState(status);
+    const isCompleted = normalized === TASK_STATES.COMPLETED;
+    updateTaskStatus(taskId, normalized);
+    updateTask(taskId, { status: normalized, completed: isCompleted });
+  };
 
-  // Shared props object passed to every TaskCard
-  const cardProps = {
-    t, editingId, editValue,
-    onStartEdit: startEdit,
-    onEditChange: setEditValue,
-    onCommitEdit: commitEdit,
-    onCancelEdit: cancelEdit,
-    updateTaskStatus, updateTask,
-    subtaskFormFor,
-    onOpenSubtaskForm: openSubtaskForm,
-    subtaskTitle,       onSubtaskTitleChange: setSubtaskTitle,
-    subtaskDescription, onSubtaskDescriptionChange: setSubtaskDescription,
-    subtaskDueDate,     onSubtaskDueDateChange: setSubtaskDueDate,
-    onAddSubtask: handleAddSubtask,
-    onCancelSubtaskForm: cancelSubtaskForm,
-    collaborators,
+  const handleArchiveToggle = (task) => {
+    if (task.archived) {
+      updateTask(task.id, { archived: false });
+      dispatch(unarchiveTaskAction(task.id));
+      pushToast(t('Task unarchived'));
+      return;
+    }
+
+    updateTask(task.id, { archived: true });
+    dispatch(archiveTaskAction(task.id));
+    pushToast(t('Task archived'));
+  };
+
+  const handleDeleteTask = (task) => {
+    if (!window.confirm(t('Do you want to permanently delete this task?'))) return;
+    deleteTask(task.id);
+    dispatch(deleteTaskAction(task.id));
+    pushToast(t('Task deleted'));
   };
 
   // ── VISTA: LISTA (render function, not component) ─────────────────────────
-  const renderListView = () => (
-    <section className="mytasks-list">
-      {rootTasks.length === 0 ? (
+  const renderListView = () => {
+    if (rootTasks.length === 0) {
+      return (
         <EmptyState
           icon="📋"
-          title={t('No tasks assigned.')}
-          message={t('Create your first task through the Gatekeeper questionnaire.')}
-          ctaLabel={`+ ${t('New Task')}`}
-          onCta={openGatekeeper}
+          title={t('No tengo tareas asignadas.')}
+          description={t('Si creas una tarea desde Gatekeeper, la organizo aqui para ti.')}
+          action={{
+            label: t('Crear tarea'),
+            icon: '+',
+            onClick: openGatekeeper,
+          }}
         />
-      ) : (
-        rootTasks.map((task) => (
-          <div key={task.id} className="mytasks-task-group">
-            <TaskCard task={task} indent={0} {...cardProps} />
-            {(subtaskMap[task.id] || []).map((sub) => (
-              <div key={sub.id} className="mytasks-subtask-group">
-                <TaskCard task={sub} indent={1} {...cardProps} />
-                {(subtaskMap[sub.id] || []).map((subsub) => (
-                  <TaskCard key={subsub.id} task={subsub} indent={2} {...cardProps} />
-                ))}
-              </div>
-            ))}
-          </div>
-        ))
-      )}
-    </section>
-  );
+      );
+    }
+
+    return (
+      <TaskList
+        tasks={myTasks}
+        t={t}
+        onStatusChange={handleStatusChange}
+        onArchiveToggle={handleArchiveToggle}
+        onDeleteTask={handleDeleteTask}
+      />
+    );
+  };
 
   // ── VISTA: KANBAN (render function) ───────────────────────────────────────
   const renderKanbanView = () => (
-    <section className="mytasks-kanban">
-      {TASK_STATUS_KEYS.map((status) => {
-        const col = rootTasks.filter((t) => (t.status || 'Pending') === status);
-        return (
-          <div key={status} className="kanban-col">
-            <div className="kanban-col-header" style={{ borderTopColor: STATUS_COLORS[status] }}>
-              <span className="kanban-col-title" style={{ color: STATUS_COLORS[status] }}>{t(status)}</span>
-              <span className="kanban-col-count">{col.length}</span>
-            </div>
-            <div className="kanban-col-body">
-              {col.length === 0 && <div className="kanban-empty">—</div>}
-              {col.map((task) => {
-                const subs = subtaskMap[task.id] || [];
-                const isExpanded = expandedKanbanIds.has(task.id);
-                return (
-                  <div key={task.id} className="kanban-card">
-                    {editingId === task.id ? (
-                      <input className="mytasks-title-input" value={editValue} autoFocus
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onBlur={() => commitEdit(task.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') commitEdit(task.id);
-                          if (e.key === 'Escape') cancelEdit();
-                        }}
-                      />
-                    ) : (
-                      <p className="kanban-card-title" onClick={() => startEdit(task)} title={t('Click to edit')}>
-                        {task.title}
-                      </p>
-                    )}
-                    {task.description && <p className="kanban-card-desc">{task.description}</p>}
-                    {task.projectName && <span className="kanban-card-project">{task.projectName}</span>}
-                    <div className="kanban-card-footer">
-                      {/* Level is read-only */}
-                      <span className="kanban-card-level" style={{ color: STATUS_COLORS[task.status] || '#9aa3ad' }}>
-                        {task.level || 'Backlog'}
-                      </span>
-                      {task.dueDate && <span className="kanban-card-due">📅 {fmtDate(task.dueDate)}</span>}
-                    </div>
-                    <select
-                      className={`mytasks-status-select status-${slugStatus(task.status)}`}
-                      value={TASK_STATUS_KEYS.includes(task.status) ? task.status : 'Pending'}
-                      onChange={(e) => updateTaskStatus(task.id, e.target.value)}
-                    >
-                      {TASK_STATUS_KEYS.map((s) => <option key={s} value={s}>{t(s)}</option>)}
-                    </select>
-                    <AssigneeSelect task={task} collaborators={collaborators} updateTask={updateTask} t={t} />
-
-                    {subs.length > 0 && (
-                      <button type="button" className="kanban-subtasks-toggle"
-                        onClick={() => toggleKanbanExpand(task.id)}>
-                        {isExpanded ? '▲' : '▼'} {subs.length} {t('subtask')}{subs.length !== 1 ? 's' : ''}
-                      </button>
-                    )}
-
-                    {isExpanded && (
-                      <div className="kanban-subtask-list">
-                        {subs.map((sub) => {
-                          const subsubs = subtaskMap[sub.id] || [];
-                          return (
-                            <div key={sub.id} className="kanban-subtask-item">
-                              <div className="kanban-sub-row">
-                                <span className="kanban-sub-bullet">↳</span>
-                                {editingId === sub.id ? (
-                                  <input className="mytasks-title-input" value={editValue} autoFocus
-                                    onChange={(e) => setEditValue(e.target.value)}
-                                    onBlur={() => commitEdit(sub.id)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') commitEdit(sub.id);
-                                      if (e.key === 'Escape') cancelEdit();
-                                    }}
-                                  />
-                                ) : (
-                                  <span className="kanban-sub-title" onClick={() => startEdit(sub)}>{sub.title}</span>
-                                )}
-                              </div>
-                              {sub.description && <p className="kanban-sub-desc">{sub.description}</p>}
-                              <div className="kanban-sub-meta">
-                                {sub.dueDate && <span className="kanban-card-due">📅 {fmtDate(sub.dueDate)}</span>}
-                                <select
-                                  className={`mytasks-status-select kanban-sub-select status-${slugStatus(sub.status)}`}
-                                  value={TASK_STATUS_KEYS.includes(sub.status) ? sub.status : 'Pending'}
-                                  onChange={(e) => updateTaskStatus(sub.id, e.target.value)}
-                                >
-                                  {TASK_STATUS_KEYS.map((s) => <option key={s} value={s}>{t(s)}</option>)}
-                                </select>
-                                <AssigneeSelect task={sub} collaborators={collaborators} updateTask={updateTask} t={t} />
-                                <button type="button" className="mytasks-subtask-btn kanban-sub-addbtn"
-                                  onClick={() => openSubtaskForm(sub.id)}>
-                                  + {t('Sub')}
-                                </button>
-                              </div>
-                              {subtaskFormFor === sub.id && (
-                                <SubtaskForm
-                                  parentTask={sub} t={t}
-                                  title={subtaskTitle} onTitleChange={setSubtaskTitle}
-                                  description={subtaskDescription} onDescriptionChange={setSubtaskDescription}
-                                  dueDate={subtaskDueDate} onDueDateChange={setSubtaskDueDate}
-                                  onAdd={handleAddSubtask} onCancel={cancelSubtaskForm}
-                                />
-                              )}
-                              {subsubs.map((subsub) => (
-                                <div key={subsub.id} className="kanban-subsub-item">
-                                  <div className="kanban-sub-row">
-                                    <span className="kanban-sub-bullet">↳↳</span>
-                                    {editingId === subsub.id ? (
-                                      <input className="mytasks-title-input" value={editValue} autoFocus
-                                        onChange={(e) => setEditValue(e.target.value)}
-                                        onBlur={() => commitEdit(subsub.id)}
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter') commitEdit(subsub.id);
-                                          if (e.key === 'Escape') cancelEdit();
-                                        }}
-                                      />
-                                    ) : (
-                                      <span className="kanban-sub-title" onClick={() => startEdit(subsub)}>{subsub.title}</span>
-                                    )}
-                                  </div>
-                                  {subsub.description && <p className="kanban-sub-desc">{subsub.description}</p>}
-                                  <div className="kanban-sub-meta">
-                                    {subsub.dueDate && <span className="kanban-card-due">📅 {fmtDate(subsub.dueDate)}</span>}
-                                    <select
-                                      className={`mytasks-status-select kanban-sub-select status-${slugStatus(subsub.status)}`}
-                                      value={TASK_STATUS_KEYS.includes(subsub.status) ? subsub.status : 'Pending'}
-                                      onChange={(e) => updateTaskStatus(subsub.id, e.target.value)}
-                                    >
-                                      {TASK_STATUS_KEYS.map((s) => <option key={s} value={s}>{t(s)}</option>)}
-                                    </select>
-                                    <AssigneeSelect task={subsub} collaborators={collaborators} updateTask={updateTask} t={t} />
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {subtaskFormFor === task.id ? (
-                      <SubtaskForm
-                        parentTask={task} t={t}
-                        title={subtaskTitle} onTitleChange={setSubtaskTitle}
-                        description={subtaskDescription} onDescriptionChange={setSubtaskDescription}
-                        dueDate={subtaskDueDate} onDueDateChange={setSubtaskDueDate}
-                        onAdd={handleAddSubtask} onCancel={cancelSubtaskForm}
-                      />
-                    ) : (
-                      <button type="button" className="mytasks-subtask-btn"
-                        onClick={() => openSubtaskForm(task.id)}>
-                        + {t('Subtask')}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-    </section>
+    <TaskKanban
+      tasks={myTasks}
+      t={t}
+      onStatusChange={handleStatusChange}
+      onArchiveToggle={handleArchiveToggle}
+      onDeleteTask={handleDeleteTask}
+    />
   );
 
   // ── VISTA: TABLA (render function) ────────────────────────────────────────
   const renderTablaView = () => {
-    const grouped = (() => {
-      const map = {};
-      rootTasks.forEach((task) => {
-        const key = task.projectName || task.workstreamId || t('Sin módulo');
-        if (!map[key]) map[key] = [];
-        map[key].push(task);
-      });
-      return Object.entries(map).sort(([a], [b]) => a.localeCompare(b));
-    })();
-
-    // Plain functions (not components) — called directly to avoid React identity change on re-render
-    const editableCell = (task) => editingId === task.id ? (
-      <input className="mytasks-title-input" value={editValue} autoFocus
-        onChange={(e) => setEditValue(e.target.value)}
-        onBlur={() => commitEdit(task.id)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') commitEdit(task.id);
-          if (e.key === 'Escape') cancelEdit();
-        }}
-      />
-    ) : (
-      <span onClick={() => startEdit(task)} title={t('Click to edit')}>{task.title}</span>
-    );
-
-    const statusCell = (task) => (
-      <select
-        className={`mytasks-status-select status-${slugStatus(task.status)}`}
-        value={TASK_STATUS_KEYS.includes(task.status) ? task.status : 'Pending'}
-        onChange={(e) => updateTaskStatus(task.id, e.target.value)}
-      >
-        {TASK_STATUS_KEYS.map((s) => <option key={s} value={s}>{t(s)}</option>)}
-      </select>
-    );
+    if (myTasks.length === 0) {
+      return (
+        <EmptyState
+          icon="⊞"
+          title={t('No tengo tareas asignadas.')}
+          description={t('Crea una tarea y la muestro en esta tabla por modulo.')}
+          action={{
+            label: t('Crear tarea'),
+            icon: '+',
+            onClick: openGatekeeper,
+          }}
+        />
+      );
+    }
 
     return (
-      <section className="mytasks-tabla">
-        {grouped.length === 0 && (
-          <EmptyState
-            icon="⊞"
-            title={t('No tasks assigned.')}
-            ctaLabel={`+ ${t('New Task')}`}
-            onCta={openGatekeeper}
-          />
-        )}
-        {grouped.map(([module, moduleTasks]) => (
-          <div key={module} className="tabla-group">
-            <div className="tabla-group-header">
-              <span className="tabla-module-name">{module}</span>
-              <span className="tabla-module-count">{moduleTasks.length} {t('task(s)')}</span>
-            </div>
-            <table className="tabla-table">
-              <thead>
-                <tr>
-                  <th>{t('Task')}</th>
-                  <th>{t('Status')}</th>
-                  <th>{t('Priority')}</th>
-                  <th>{t('Assignee')}</th>
-                  <th>{t('Start')}</th>
-                  <th>{t('Due')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {moduleTasks.map((task) => (
-                  <Fragment key={task.id}>
-                    <tr>
-                      <td className="tabla-title">
-                        {editableCell(task)}
-                        {subtaskMap[task.id]?.length > 0 && (
-                          <span className="tabla-sub-badge">+{subtaskMap[task.id].length}</span>
-                        )}
-                      </td>
-                      <td>{statusCell(task)}</td>
-                      {/* Level is read-only */}
-                      <td><span className="mytasks-pill mytasks-level-badge">{task.level || 'Backlog'}</span></td>
-                      <td><AssigneeSelect task={task} collaborators={collaborators} updateTask={updateTask} t={t} /></td>
-                      <td className="tabla-date">{fmtDate(task.startDate)}</td>
-                      <td className="tabla-date">{fmtDate(task.dueDate)}</td>
-                    </tr>
-                    {(subtaskMap[task.id] || []).map((sub) => (
-                      <Fragment key={sub.id}>
-                        <tr className="tabla-subtask-row">
-                          <td className="tabla-title tabla-sub-indent">
-                            <span className="tabla-sub-bullet">↳</span>
-                            {editableCell(sub)}
-                            {sub.description && <span className="tabla-sub-desc">{sub.description}</span>}
-                          </td>
-                          <td>{statusCell(sub)}</td>
-                          <td className="tabla-date-dim">—</td>
-                          <td><AssigneeSelect task={sub} collaborators={collaborators} updateTask={updateTask} t={t} /></td>
-                          <td className="tabla-date">{fmtDate(sub.startDate)}</td>
-                          <td className="tabla-date">{fmtDate(sub.dueDate)}</td>
-                        </tr>
-                        {(subtaskMap[sub.id] || []).map((subsub) => (
-                          <tr key={subsub.id} className="tabla-subtask-row tabla-subsub-row">
-                            <td className="tabla-title tabla-subsub-indent">
-                              <span className="tabla-sub-bullet">↳↳</span>
-                              {editableCell(subsub)}
-                              {subsub.description && <span className="tabla-sub-desc">{subsub.description}</span>}
-                            </td>
-                            <td>{statusCell(subsub)}</td>
-                            <td className="tabla-date-dim">—</td>
-                            <td><AssigneeSelect task={subsub} collaborators={collaborators} updateTask={updateTask} t={t} /></td>
-                            <td className="tabla-date">{fmtDate(subsub.startDate)}</td>
-                            <td className="tabla-date">{fmtDate(subsub.dueDate)}</td>
-                          </tr>
-                        ))}
-                      </Fragment>
-                    ))}
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ))}
-      </section>
+      <TaskTable
+        tasks={myTasks}
+        projects={projects}
+        t={t}
+        onUpdateTask={updateTask}
+        onStatusChange={handleStatusChange}
+        onArchiveToggle={handleArchiveToggle}
+        onDeleteTask={handleDeleteTask}
+      />
     );
   };
 
@@ -640,10 +471,13 @@ export const MyTasks = () => {
         {allRows.length === 0 && (
           <EmptyState
             icon="▬"
-            title={t('No tasks with dates.')}
-            message={t('Add a start or due date to any task to see it here.')}
-            ctaLabel={`+ ${t('New Task')}`}
-            onCta={openGatekeeper}
+            title={t('No tengo tareas con fechas.')}
+            description={t('Agrega fecha de inicio o vencimiento y la muestro en el gantt.')}
+            action={{
+              label: t('Crear tarea'),
+              icon: '+',
+              onClick: openGatekeeper,
+            }}
           />
         )}
         {allRows.length > 0 && (
@@ -666,15 +500,15 @@ export const MyTasks = () => {
                   style={{ paddingLeft: `${8 + depth * 18}px` }}>
                   {depth > 0 && <span className="gantt-sub-bullet">{'↳'.repeat(depth)}</span>}
                   <span className="gantt-task-title">{task.title}</span>
-                  <span className="gantt-task-status" style={{ color: STATUS_COLORS[task.status] || '#9aa3ad' }}>
-                    {task.status}
+                  <span className="gantt-task-status" style={{ color: TASK_STATE_COLORS[normalizeTaskState(task.status)] || '#9aa3ad' }}>
+                    {normalizeTaskState(task.status)}
                   </span>
                 </div>
                 <div className="gantt-timeline-col">
                   <div className="gantt-today-line" style={{ left: `${(todayOff / totalDays) * 100}%` }} />
                   {(task.startDate || task.dueDate) && (
                     <div
-                      className={`gantt-bar status-${slugStatus(task.status)}${depth > 0 ? ' gantt-bar--sub' : ''}`}
+                      className={`gantt-bar status-${slugStatus(normalizeTaskState(task.status))}${depth > 0 ? ' gantt-bar--sub' : ''}`}
                       style={{
                         left:  barLeft(task.startDate || task.dueDate),
                         width: barWidth(task.startDate, task.dueDate),
@@ -696,6 +530,14 @@ export const MyTasks = () => {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="mytasks-container">
+      {isLoading && (
+        <section className="page-loading-state">
+          <LoadingSpinner size="md" label="ATHENEA esta preparando tus tareas" />
+        </section>
+      )}
+
+      {!isLoading && (
+      <>
       <header className="mytasks-header">
         <div>
           <h1>{t('My Tasks')}</h1>
@@ -711,6 +553,13 @@ export const MyTasks = () => {
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            className={`mytasks-subtask-btn${showArchived ? ' is-active' : ''}`}
+            onClick={() => setShowArchived((prev) => !prev)}
+          >
+            {showArchived ? t('Hide archived') : t('Show archived')}
+          </button>
           <span className="mytasks-count">{myTasks.length}</span>
           <button type="button" className="mytasks-btn-nueva" onClick={openGatekeeper}>
             + {t('New task')}
@@ -718,10 +567,14 @@ export const MyTasks = () => {
         </div>
       </header>
 
+      {toast && <div className="mytasks-toast">{toast}</div>}
+
       {view === 'lista'  && renderListView()}
       {view === 'kanban' && renderKanbanView()}
       {view === 'tabla'  && renderTablaView()}
       {view === 'gantt'  && renderGanttView()}
+      </>
+      )}
     </div>
   );
 };

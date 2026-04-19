@@ -144,6 +144,26 @@ export const workHubSkills: SkillManifest[] = [
     keywords: ['standup', 'daily standup', 'qué hice ayer', 'qué haré hoy', 'standup diario', 'check-in trabajo'],
     action: 'navigation/openStandup',
     paramSchema: {}
+  },
+  {
+    id: 'plan_week',
+    name: 'Plan Week',
+    description: 'Open weekly planning flow',
+    icon: '🗓️',
+    hub: 'WorkHub',
+    keywords: ['plan week', 'plan_week', 'weekly plan', 'planificar semana', 'plan semanal', 'PLAN_WEEK'],
+    action: 'navigation/openWeeklyReview',
+    paramSchema: {}
+  },
+  {
+    id: 'weekly_retro',
+    name: 'Weekly Retro',
+    description: 'Open weekly retrospective flow',
+    icon: '🔁',
+    hub: 'WorkHub',
+    keywords: ['weekly retro', 'weekly retrospective', 'weekly_retro', 'retrospectiva', 'retrospectiva semanal', 'WEEKLY_RETRO'],
+    action: 'navigation/openWeeklyReview',
+    paramSchema: {}
   }
 ];
 

@@ -26,7 +26,8 @@ const budgetSlice = createSlice({
         amount: Number(action.payload?.amount || 0),
         currency: action.payload?.currency || 'MXN',  // BUDGET-DUAL: 'MXN' | 'USD'
         categoryId: action.payload?.categoryId || null,
-        note: action.payload?.note || '',
+          note: action.payload?.note || '',
+          projectId: action.payload?.projectId || null,
         date: action.payload?.date || new Date().toISOString()
       });
       state.balance -= Number(action.payload?.amount || 0);
@@ -41,7 +42,8 @@ const budgetSlice = createSlice({
       expense.amount = Number(payload.amount ?? expense.amount ?? 0);
       expense.currency = payload.currency ?? expense.currency ?? 'MXN';
       expense.categoryId = payload.categoryId ?? expense.categoryId ?? null;
-      expense.note = payload.note ?? expense.note ?? '';
+        expense.note = payload.note ?? expense.note ?? '';
+        if (payload.projectId !== undefined) expense.projectId = payload.projectId;
       expense.date = payload.date || expense.date || new Date().toISOString();
     },
     deleteExpense: (state, action) => {

@@ -134,6 +134,54 @@ export const FinanceHistory = () => {
     [allEntries, monthKey]
   );
 
+  /* HIST-2: Month-by-month grouped history (latest first) */
+  const monthlyGroupedHistory = useMemo(() => {
+    const map = new Map();
+
+    allEntries
+      .filter((entry) => entry.kind === 'income' || entry.kind === 'expense')
+      .forEach((entry) => {
+        const rawDate = entry.date ? new Date(entry.date) : new Date();
+        if (Number.isNaN(rawDate.getTime())) return;
+        const monthKeyLocal = `${rawDate.getFullYear()}-${String(rawDate.getMonth() + 1).padStart(2, '0')}`;
+
+        if (!map.has(monthKeyLocal)) {
+          map.set(monthKeyLocal, {
+            month: monthKeyLocal,
+            income: 0,
+            expense: 0,
+            txs: [],
+          });
+        }
+
+        const bucket = map.get(monthKeyLocal);
+        const amount = Number(entry.amount || 0);
+        if (entry.kind === 'income') {
+          bucket.income += amount;
+        } else {
+          bucket.expense += amount;
+        }
+
+        bucket.txs.push({
+          id: entry._key,
+          date: entry.date,
+          description: entry.description || (entry.kind === 'income' ? 'Ingreso' : 'Gasto'),
+          amount,
+          type: entry.kind,
+          currency: entry.currency || 'MXN',
+        });
+      });
+
+    return Array.from(map.values())
+      .sort((a, b) => b.month.localeCompare(a.month))
+      .slice(0, 12)
+      .map((item) => ({
+        ...item,
+        balance: item.income - item.expense,
+        txs: item.txs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+      }));
+  }, [allEntries]);
+
   // Apply filter
   const filtered = useMemo(() => {
     let list = allEntries;
@@ -312,6 +360,45 @@ export const FinanceHistory = () => {
           </button>
         ))}
       </div>
+
+      {/* HIST-2: Historial por mes */}
+      <section className="finance-history-months">
+        <h2 className="finance-history-title">Historial mensual</h2>
+        {monthlyGroupedHistory.length === 0 ? (
+          <div className="finance-empty">Aún no hay movimientos para mostrar por mes.</div>
+        ) : (
+          monthlyGroupedHistory.map((monthData) => (
+            <div key={monthData.month} className="finance-month-card">
+              <h3 className="finance-month-title">
+                {new Date(`${monthData.month}-01T00:00:00`).toLocaleDateString('es-MX', {
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              </h3>
+              <div className="finance-month-summary">
+                <span className="summary-income">Ingresos: +${monthData.income.toFixed(2)}</span>
+                <span className="summary-expense">Gastos: -${monthData.expense.toFixed(2)}</span>
+                <span className={`summary-net ${monthData.balance >= 0 ? 'positive' : 'negative'}`}>
+                  Balance: ${monthData.balance.toFixed(2)}
+                </span>
+              </div>
+              <ul className="finance-month-transactions">
+                {monthData.txs.map((tx) => (
+                  <li key={tx.id} className="finance-month-tx-item">
+                    <div>
+                      <strong>{tx.description}</strong>
+                      <small>{new Date(tx.date).toLocaleDateString('es-MX')}</small>
+                    </div>
+                    <span className={`tx-${tx.type}`}>
+                      {tx.type === 'income' ? '+' : '-'}${tx.amount.toFixed(2)} {tx.currency}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        )}
+      </section>
 
       {/* Filter tabs */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>

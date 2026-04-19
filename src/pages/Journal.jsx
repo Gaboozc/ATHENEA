@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addEntry, updateEntry, deleteEntry } from '../../store/slices/journalSlice';
 import { useLanguage } from '../context/LanguageContext';
-import { EmptyState } from '../components';
+import { EmptyState, LoadingSpinner } from '../components';
 import './Journal.css';
 
 const MOOD_LABELS = ['', '😞', '😕', '😐', '🙂', '😊'];
@@ -19,7 +19,13 @@ export const Journal = () => {
   const [mood, setMood] = useState(null);
   const [dirty, setDirty] = useState(false);
   const [search, setSearch] = useState(''); /* FIX-C */
+  const [isLoading, setIsLoading] = useState(true);
   const autosaveTimer = useRef(null);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setIsLoading(false));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   const filteredEntries = useMemo(() => { /* FIX-C */
     if (!search.trim()) return entries;
@@ -99,6 +105,16 @@ export const Journal = () => {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  if (isLoading) {
+    return (
+      <div className="journal-container">
+        <section className="page-loading-state">
+          <LoadingSpinner size="md" label="ATHENEA esta preparando tu Journal" />
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="journal-container">
       <div className="journal-sidebar">
@@ -141,11 +157,15 @@ export const Journal = () => {
             <li className="journal-empty">
               <EmptyState
                 icon={search ? '🔎' : '📔'}
-                title={search ? t('No entries match your search.') : t('No entries yet.')}
-                description={search ? t('Try another search term.') : t('Create your first entry to start your journal.')}
+                title={search ? t('No encontre entradas.') : t('No tengo entradas aun.')}
+                description={
+                  search
+                    ? t('Prueba otro termino y vuelvo a buscar.')
+                    : t('Crea la primera entrada y la guardo por ti.')
+                }
                 action={search
-                  ? { label: t('Clear search'), icon: '✕', onClick: () => setSearch('') }
-                  : { label: t('New Entry'), icon: '+', onClick: handleNewEntry }}
+                  ? { label: t('Limpiar busqueda'), icon: '✕', onClick: () => setSearch('') }
+                  : { label: t('Nueva entrada'), icon: '+', onClick: handleNewEntry }}
               />
             </li>
           )}
@@ -194,10 +214,13 @@ export const Journal = () => {
         ) : (
           <EmptyState
             icon="📔"
-            title={t('No entry selected')}
-            message={t('Select an entry or create today\'s entry to start writing.')}
-            ctaLabel={`+ ${t('New Entry')}`}
-            onCta={handleNewEntry}
+            title={t('No tengo una entrada seleccionada.')}
+            description={t('Elige una entrada o crea una nueva para empezar a escribir.')}
+            action={{
+              label: t('Nueva entrada'),
+              icon: '+',
+              onClick: handleNewEntry,
+            }}
           />
         )}
       </div>

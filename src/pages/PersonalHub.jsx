@@ -113,7 +113,16 @@ export const PersonalHub = () => {
         <div className="personalhub-card">
           <h2>{t('Recent Notes')}</h2>
           {recentNotes.length === 0 ? (
-            <EmptyState icon="📝" message={t('No notes yet.')} ctaLabel={`+ ${t('Go to Notes')}`} onCta={() => navigate('/notes')} />
+            <EmptyState
+              icon="📝"
+              title={t('No tengo notas recientes.')}
+              description={t('Cuando guardes una nota, la voy a mostrar aqui.')}
+              action={{
+                label: t('Ir a Notas'),
+                icon: '📝',
+                onClick: () => navigate('/notes'),
+              }}
+            />
           ) : (
             <ul>
               {recentNotes.map((note) => (
@@ -133,7 +142,16 @@ export const PersonalHub = () => {
         <div className="personalhub-card">
           <h2>{t('Pending Todos')}</h2>
           {pendingTodos.length === 0 ? (
-            <EmptyState icon="✅" message={t('No todos yet.')} ctaLabel={`+ ${t('Go to Todos')}`} onCta={() => navigate('/todos')} />
+            <EmptyState
+              icon="✅"
+              title={t('No tengo pendientes.')}
+              description={t('Crea un todo y te ayudo a mantener el foco diario.')}
+              action={{
+                label: t('Ir a Todos'),
+                icon: '✅',
+                onClick: () => navigate('/todos'),
+              }}
+            />
           ) : (
             <ul>
               {pendingTodos.map((todo) => (
@@ -147,10 +165,10 @@ export const PersonalHub = () => {
           {upcomingReminders.length === 0 ? (
             <EmptyState
               icon="🔔"
-              title={t('No upcoming reminders.')}
-              description={t('You can create reminders from notes, todos, or calendar events.')}
+              title={t('No tengo recordatorios proximos.')}
+              description={t('Puedo ayudarte con recordatorios de notas, todos y eventos.')}
               action={{
-                label: t('Go to Calendar'),
+                label: t('Abrir Calendario'),
                 icon: '📅',
                 onClick: () => navigate('/calendar'),
               }}
@@ -202,10 +220,10 @@ export const PersonalHub = () => {
           {routinesToday.length === 0 ? (
             <EmptyState
               icon="🔁"
-              title={t('No routines today.')}
-              description={t('Create a routine and assign it to today to keep momentum.')}
+              title={t('No tengo rutinas para hoy.')}
+              description={t('Si agregas una rutina, te ayudo a sostener el ritmo.')}
               action={{
-                label: t('Add Routine'),
+                label: t('Agregar rutina'),
                 icon: '+',
                 onClick: () => routineInputRef.current?.focus(),
               }}

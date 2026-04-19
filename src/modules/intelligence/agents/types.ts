@@ -92,6 +92,17 @@ export interface AgentContext {
     ingresos: number;
     commitedGoalSavings: number;
     healthScore: number;
+    averageMonthlySpending?: number;
+    spendingTrend?: number;
+    historySummary?: {
+      months: Array<{
+        month: string;
+        total: number;
+        count: number;
+      }>;
+      average: number;
+      trend: number;
+    };
     queryAmount?: number; // F-FIX-5: optional amount for budget queries
     /* WALLETS-10: dual-currency wallet fields */
     walletUSD?: number;

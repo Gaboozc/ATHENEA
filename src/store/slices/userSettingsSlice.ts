@@ -35,6 +35,7 @@ export interface WeatherPreferences {
 }
 
 export interface UserSettingsState {
+  fullName: string;
   firstName: string;
   lastName: string;
   preferredName: string;
@@ -55,6 +56,7 @@ export interface UserSettingsState {
   timezone: string;          // Affects how agents interpret dates/times
   occupation: string;        // User profession — Cortana & Jarvis use this
   mainGoal: string;          // Monthly objective — Cortana prioritizes against this
+  language: 'es' | 'en';
   financialContext: string;  // Financial situation — Jarvis adjusts recommendations
   additionalContext: string; // Free-form context for all agents
   workingHours: WorkingHours;
@@ -79,15 +81,21 @@ export interface UserSettingsState {
   advancedMode: boolean;
 }
 
-const initialState: UserSettingsState = {
+/**
+ * Canonical source of truth for identity/profile contract fields.
+ * The defaults for agentAliases, timezone, missionBio, and workingHours
+ * must be consumed from this slice to avoid duplicated hardcoded values.
+ */
+export const initialState: UserSettingsState = {
+  fullName: '',
   firstName: '',
   lastName: '',
   preferredName: '',
-  title: 'Señor',
+  title: '',
   agentAliases: {
-    jarvis: 'Sir',
-    cortana: 'Chief',
-    shodan: 'Insect'
+    jarvis: '',
+    cortana: '',
+    shodan: '',
   },
   agentNames: {
     cortana: '',
@@ -98,10 +106,11 @@ const initialState: UserSettingsState = {
   timezone: 'America/Mexico_City',
   occupation: '',
   mainGoal: '',
+  language: 'es',
   financialContext: '',
   additionalContext: '',
   workingHours: {
-    start: '08:00',
+    start: '09:00',
     end: '18:00'
   },
   geofencing: {
@@ -116,7 +125,7 @@ const initialState: UserSettingsState = {
       radiusKm: 0.5,
     },
   },
-  knownCommerceKeywords: ['oxxo', 'walmart', 'costco', 'starbucks', 'amazon'],
+  knownCommerceKeywords: [],
   voiceTone: 'jarvis',
   // FIX 6.2: Default to 'auto' — resolves from navigator.language at runtime
   voiceLanguage: 'auto',

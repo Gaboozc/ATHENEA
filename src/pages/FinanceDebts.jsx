@@ -3,9 +3,10 @@ import { useState, useMemo, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-import { addDebt, updateDebt, deleteDebt, deletePayment } from '../../store/slices/debtsSlice';
-import { payDebt } from '../store/thunks/financeThunks'; /* DEBTS-2 */
+import { addDebt, updateDebt, deleteDebt } from '../../store/slices/debtsSlice';
+import { payDebt, deleteDebtPaymentConsistent } from '../store/thunks/financeThunks'; /* DEBTS-2 */
 import { addEvent, unlinkFromCalendar } from '../../store/slices/calendarSlice';
+import { showToast } from '../components/Toast';
 import { EmptyState } from '../components';
 import './FinanceDebts.css';
 
@@ -177,7 +178,7 @@ export const FinanceDebts = () => {
 
   const handleDeletePayment = (debtId, paymentId) => {
     if (!window.confirm('¿Eliminar este abono? El saldo de la deuda se ajustará.')) return;
-    dispatch(deletePayment({ debtId, paymentId }));
+    dispatch(deleteDebtPaymentConsistent(debtId, paymentId));
   };
 
   // ── Pay modal ─────────────────────────────────────────────────────────────
@@ -193,9 +194,22 @@ export const FinanceDebts = () => {
 
   const handleRegisterPayment = useCallback(() => {
     if (!payModal || !payForm.amount) return;
+    const requestedAmount = Number(payForm.amount || 0);
+    const maxAllowed = Number(payModal.balance || 0);
+
+    if (requestedAmount <= 0) {
+      showToast('El monto debe ser mayor a 0.', 'warning');
+      return;
+    }
+
+    if (requestedAmount > maxAllowed) {
+      showToast('El abono no puede superar el saldo pendiente.', 'warning');
+      return;
+    }
+
     dispatch(payDebt({
       debtId: payModal.debtId,
-      amount: Number(payForm.amount),
+      amount: requestedAmount,
       currency: payForm.currency,
       note: payForm.note,
       date: payForm.date ? new Date(payForm.date).toISOString() : undefined,
@@ -440,17 +454,17 @@ export const FinanceDebts = () => {
           icon="💳"
           title={
             filter === 'all'
-              ? 'No tienes deudas registradas. ¡Bien hecho!'
-              : `Sin deudas en estado "${STATUS_LABELS[filter] || filter}".`
+              ? 'No tengo deudas registradas.'
+              : 'No tengo deudas en este estado.'
           }
           description={
             filter === 'all'
-              ? 'Puedes registrar una deuda para controlar pagos y vencimientos.'
-              : 'Cambia el filtro o registra una nueva deuda.'
+              ? 'Si agregas una deuda, te ayudo a seguir pagos y vencimientos.'
+              : 'Cambia el filtro o registra una deuda nueva para continuar.'
           }
           action={
             filter === 'all'
-              ? { label: 'Registrar primera deuda', icon: '+', onClick: () => setShowForm(true) }
+              ? { label: 'Registrar deuda', icon: '+', onClick: () => setShowForm(true) }
               : { label: 'Ver todas', icon: '↺', onClick: () => setFilter('all') }
           }
         />

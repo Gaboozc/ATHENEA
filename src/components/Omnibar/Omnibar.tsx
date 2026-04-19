@@ -34,6 +34,13 @@ import { WarRoomView } from './WarRoomView';
 import { isOnboardingCompleted, markOnboardingCompleted } from '../../modules/intelligence/proactive/welcomeOnboarding';
 import { playSuccessSound, playErrorSound } from '../../modules/intelligence/utils/audioFeedback';
 import { llmClient } from '../../services/LLMClient';
+import {
+  speak,
+  stopSpeaking,
+  cleanTextForTTS,
+  isVoiceboxAvailable,
+  getIsSpeaking,
+} from '../../services/VoiceboxService';
 import { showToast } from '../../components/Toast'; /* OMNI-FIX-8: sistema global de toasts */
 import { LoadingSpinner } from '..';
 import athenaLogo from '../../assets/img/Athena-logo.png';
@@ -67,10 +74,19 @@ interface ChatMessage {
   timestamp: number;
 }
 
+const resolveVoiceAgent = (msg: ChatMessage): 'cortana' | 'jarvis' | 'shodan' => {
+  const raw = `${(msg as any)?.agent || ''} ${(msg as any)?.responderPersona || ''} ${msg.agentName || ''}`
+    .toLowerCase();
+  if (raw.includes('jarvis')) return 'jarvis';
+  if (raw.includes('shodan')) return 'shodan';
+  return 'cortana';
+};
+
 interface HubShortcut {
   id: string;
   label: string;
-  prompt: string;
+  prompt?: string;
+  action?: 'openBriefing';
 }
 
 /* OMNI-FIX-5: render básico de Markdown sin dependencias externas */
@@ -86,6 +102,38 @@ const renderMarkdown = (text: string): string => {
     .replace(/_(.+?)_/g, '<em>$1</em>')
     .replace(/`(.+?)`/g, '<code>$1</code>');
 };
+const SKILL_NAME_ES: Record<string, string> = {
+  'Create Project': 'Crear proyecto',
+  'Add Task': 'Nueva tarea',
+  'Log Work Time': 'Registrar tiempo',
+  'Open Task Creator': 'Crear tarea prioritaria',
+  'Create Note': 'Nueva nota',
+  'Set Reminder': 'Crear recordatorio',
+  'Add Todo Item': 'Nuevo pendiente',
+  'Mark Routine Done': 'Completar rutina',
+  'Record USD Income': 'Registrar ingreso USD',
+  'Record MXN Income': 'Registrar ingreso MXN',
+  'Record Currency Conversion': 'Convertir divisa',
+  'Record USD Expense': 'Registrar gasto USD',
+  'Record MXN Expense': 'Registrar gasto MXN',
+  'View Budget': 'Ver presupuesto',
+};
+
+const SKILL_DESC_ES: Record<string, string> = {
+  'Create a new work project...': 'Crea un nuevo proyecto de trabajo',
+  'Add a new task to your work...': 'Agrega una tarea a tu trabajo',
+  'Record time spent on a task': 'Registra tiempo en una tarea',
+  'Open the priority task creation modal': 'Abre el creador de tareas prioritarias',
+  'Create a new personal note...': 'Crea una nota personal',
+  'Set a reminder for later': 'Crea un recordatorio',
+  'Add to your personal todo list': 'Agrega un pendiente',
+  'Mark a routine as done': 'Marca una rutina como completada',
+  'Log income received in USD': 'Registra un ingreso en USD',
+  'Log income received in MXN': 'Registra un ingreso en MXN',
+  'Convert currency between USD and MXN': 'Convierte entre USD y MXN',
+  'Log an expense in USD': 'Registra un gasto en USD',
+  'Log an expense in MXN': 'Registra un gasto en MXN',
+};
 
 export const Omnibar: React.FC<OmnibarProps> = ({
   defaultHub = 'WorkHub',
@@ -94,6 +142,18 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   const dispatch = useDispatch();
   const { t, language } = useLanguage();
   const { isOpen, closeOmnibar, prompt, requestVoice, clearPrompt } = useOmnibar();
+  const identity = useSelector((s: any) => s.userSettings || s.userIdentity || {});
+  const agentNames = identity?.agentNames || {};
+  const cortanaName = agentNames.cortana || 'Agent 1';
+  const jarvisName = agentNames.jarvis || 'Agent 2';
+  const shodanName = agentNames.shodan || 'Agent 3';
+
+  const getAgentForHub = (hub?: 'WorkHub' | 'PersonalHub' | 'FinanceHub') => {
+    if (hub === 'WorkHub') return 'cortana';
+    if (hub === 'PersonalHub') return 'shodan';
+    if (hub === 'FinanceHub') return 'jarvis';
+    return 'cortana';
+  };
 
   // Domain-based routing with explicit prompt override:
   // mention wins ("cortana", "shodan", "jarvis").
@@ -102,13 +162,14 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     promptText?: string
   ) => {
     const lower = String(promptText || '').toLowerCase();
-    if (/\bcortana\b/i.test(lower)) return { name: 'Cortana', icon: '🧿' };
-    if (/\bshodan\b/i.test(lower)) return { name: 'SHODAN', icon: '👁️' };
-    if (/\bjarvis\b/i.test(lower)) return { name: 'Jarvis', icon: '🤖' };
+    if (/\bcortana\b/i.test(lower)) return { name: cortanaName, icon: '🧿' };
+    if (/\bshodan\b/i.test(lower)) return { name: shodanName, icon: '👁️' };
+    if (/\bjarvis\b/i.test(lower)) return { name: jarvisName, icon: '🤖' };
 
-    if (hub === 'FinanceHub') return { name: 'Jarvis', icon: '🤖' };
-    if (hub === 'PersonalHub') return { name: 'SHODAN', icon: '👁️' };
-    return { name: 'Cortana', icon: '🧿' };
+    const agentKey = getAgentForHub(hub);
+    if (agentKey === 'jarvis') return { name: jarvisName, icon: '🤖' };
+    if (agentKey === 'shodan') return { name: shodanName, icon: '👁️' };
+    return { name: cortanaName, icon: '🧿' };
   };
 
   const getAgentInfoFromPersona = (
@@ -116,9 +177,9 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     fallbackHub?: 'WorkHub' | 'PersonalHub' | 'FinanceHub',
     promptText?: string
   ) => {
-    if (persona === 'jarvis') return { name: 'Jarvis', icon: '🤖' };
-    if (persona === 'shodan') return { name: 'SHODAN', icon: '👁️' };
-    if (persona === 'cortana') return { name: 'Cortana', icon: '🧿' };
+    if (persona === 'jarvis') return { name: jarvisName, icon: '🤖' };
+    if (persona === 'shodan') return { name: shodanName, icon: '👁️' };
+    if (persona === 'cortana') return { name: cortanaName, icon: '🧿' };
     if (persona === 'swarm') return { name: 'ATHENEA', icon: '🎯' };
     return getAgentInfo(fallbackHub, promptText);
   };
@@ -154,6 +215,8 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   const chatMessagesRef = useRef<ChatMessage[]>([]); /* FIX-6: ref para evitar stale closure en efecto de cierre */
   useEffect(() => { chatMessagesRef.current = chatMessages; }, [chatMessages]);
   const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
+  const [voiceboxActive, setVoiceboxActive] = useState(false);
+  const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [selectedHub, setSelectedHub] = useState<'WorkHub' | 'PersonalHub' | 'FinanceHub'>(defaultHub);
   const [activeInsight, setActiveInsight] = useState<DynamicInsight | null>(null);
@@ -201,7 +264,6 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   }, []);
 
   // OMNI-FIX-2: acceder al historial guardado en Redux
-  const savedChatHistory = useSelector((s: any) => s.aiMemory?.omnibarChatHistory || []);
   /* INTERCEPT: intercepción de notificaciones desde Redux */
   const latestIntercept = useSelector((s: any) => s.aiMemory?.interception?.latestActionable ?? null);
 
@@ -227,10 +289,8 @@ export const Omnibar: React.FC<OmnibarProps> = ({
       setTimeout(() => inputRef.current?.focus(), 100);
     }
     if (isOpen) {
-      /* OMNI-FIX-2: restaurar historial — excluir mensajes con artifact (formularios de una sola vez) */
-      if (chatMessagesRef.current.length === 0 && savedChatHistory.length > 0) {
-        setChatMessages(savedChatHistory.filter((m: any) => !m.artifact));
-      }
+      /* FIX-DESKTOP-SHORTCUTS: abrir limpio para mostrar shortcuts/chips desde el inicio */
+      setChatMessages([]);
       /* Limpiar cualquier artifact/insight activo de la sesión anterior */
       setActiveInsight(null);
       setActiveInsightArtifact(null);
@@ -383,9 +443,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
           if (m.id === agentBubbleId && (!m.text || m.text.trim() === '')) {
             return {
               ...m,
-              text: language === 'es'
-                ? 'El agente tardo demasiado en responder. Verifica que Ollama esta corriendo.'
-                : 'The agent took too long to respond. Check that Ollama is running.',
+              text: 'El agente tardó demasiado en responder. Verifica que Ollama esté corriendo.',
             };
           }
           return m;
@@ -415,7 +473,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
       setChatMessages((prev) =>
         prev.map((m) =>
           m.id === agentBubbleId
-            ? { ...m, text: language === 'es' ? 'Error al conectar con el agente.' : 'Failed to reach the agent.' }
+            ? { ...m, text: 'Error al conectar con el agente.' }
             : m
         )
       );
@@ -435,7 +493,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
 
     if (result.executed) {
       // Skill auto-executed — replace placeholder with confirmation text
-      const skillName = result.response?.reasoning.matchedSkill?.name || t('Action');
+      const skillName = result.response?.reasoning.matchedSkill?.name || 'Acción';
       const params = result.response?.reduxAction?.payload;
       const detail = params?.title || params?.text || params?.description || '';
       setChatMessages((prev) =>
@@ -445,9 +503,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
                 ...m,
                 agentName: agent.name,
                 agentIcon: agent.icon,
-                text: language === 'es'
-                  ? `✅ **${skillName}** ejecutado${detail ? `: _${detail}_` : ''}.`
-                  : `✅ **${skillName}** executed${detail ? `: _${detail}_` : ''}.`,
+                text: `✅ **${skillName}** ejecutado${detail ? `: _${detail}_` : ''}.`,
               }
             : m
         )
@@ -457,7 +513,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         hub: selectedHub,
         actionType: skillName,
         reduxActionType: result.response?.reduxAction?.type || '',
-        description: `Auto-executed: ${skillName}`,
+        description: `Autoejecutado: ${skillName}`,
         payload: params,
         success: true,
       });
@@ -493,7 +549,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
                   agentName: agent.name,
                   agentIcon: agent.icon,
                   text: result.response?.userMessage ||
-                    `${t('I need some details for')} **${result.response?.reasoning.matchedSkill?.name}**.`,
+                    `Necesito algunos datos para **${result.response?.reasoning.matchedSkill?.name}**.`,
                   artifact,
                 }
               : m
@@ -509,7 +565,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
                 ...m,
                 agentName: agent.name,
                 agentIcon: agent.icon,
-                text: result.response?.userMessage || t('Something went wrong.'),
+                text: result.response?.userMessage || 'Algo salió mal.',
               }
             : m
         )
@@ -521,12 +577,12 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     if (insight.artifact && insight.action && !insight.skillId) {
       setActiveInsight(insight);
       setActiveInsightArtifact(insight.artifact);
-      showToast('Complete this form to execute the insight', 'info');
+      showToast('Completa este formulario para ejecutar el insight', 'info');
       return;
     }
 
     if (!insight.suggestedPrompt?.trim()) {
-      showToast('This insight has no executable prompt yet', 'info');
+      showToast('Este insight aún no tiene un prompt ejecutable', 'info');
       return;
     }
 
@@ -551,7 +607,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
       return;
     }
 
-    showToast(result.response?.userMessage || 'Could not run this insight', 'error');
+    showToast(result.response?.userMessage || 'No se pudo ejecutar este insight', 'error');
   };
 
   /**
@@ -587,14 +643,14 @@ export const Omnibar: React.FC<OmnibarProps> = ({
           hub: selectedHub,
           actionType: activeInsight.title,
           reduxActionType: activeInsight.action.type,
-          description: `Executed insight: ${activeInsight.title}`,
+          description: `Insight ejecutado: ${activeInsight.title}`,
           payload: mergedPayload,
           success: true
         });
 
         onActionExecuted?.({
           success: true,
-          message: `Insight executed: ${activeInsight.title}`,
+          message: `Insight ejecutado: ${activeInsight.title}`,
           actionType: activeInsight.action.type,
           hub: selectedHub
         });
@@ -606,23 +662,23 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         };
 
         await dispatch(syncExternalEvents(mergedPayload) as any);
-        actionDescription = 'Sync Calendar';
+        actionDescription = 'Sincronizar calendario';
         reduxActionType = 'calendar/syncExternalEvents';
         markOnboardingCompleted();
 
         actionHistoryStore.recordAction({
           type: 'user-command',
           hub: selectedHub,
-          actionType: 'Sync Calendar',
+          actionType: 'Sincronizar calendario',
           reduxActionType: 'calendar/syncExternalEvents',
-          description: 'Executed: Sync Calendar',
+          description: 'Ejecutado: Sincronizar calendario',
           payload: mergedPayload,
           success: true
         });
 
         onActionExecuted?.({
           success: true,
-          message: 'Calendar sync completed',
+          message: 'Sincronización de calendario completada',
           actionType: 'calendar/syncExternalEvents',
           hub: selectedHub
         });
@@ -639,14 +695,14 @@ export const Omnibar: React.FC<OmnibarProps> = ({
             hub: selectedHub,
             actionType: currentResponse.reasoning.matchedSkill.name,
             reduxActionType: currentResponse.reduxAction?.type,
-            description: `Executed: ${currentResponse.reasoning.matchedSkill.name}`,
+            description: `Ejecutado: ${currentResponse.reasoning.matchedSkill.name}`,
             payload: formData,
             success: true
           });
 
           onActionExecuted?.({
             success: true,
-            message: `Executed: ${currentResponse.reasoning.matchedSkill.name}`,
+            message: `Ejecutado: ${currentResponse.reasoning.matchedSkill.name}`,
             actionType: currentResponse.reduxAction?.type,
             hub: selectedHub
           });
@@ -674,7 +730,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
 
       onActionExecuted?.({
         success: false,
-        message: 'Could not execute action',
+        message: 'No se pudo ejecutar la acción',
         hub: selectedHub
       });
     }
@@ -708,8 +764,8 @@ export const Omnibar: React.FC<OmnibarProps> = ({
       actionHistoryStore.recordAction({
         type: 'voice-command',
         hub: selectedHub,
-        actionType: 'Voice Input',
-        description: `Voice command: "${normalizedTranscript}"`,
+        actionType: 'Entrada de voz',
+        description: `Comando de voz: "${normalizedTranscript}"`,
         payload: { transcript: normalizedTranscript },
         success: true
       });
@@ -720,10 +776,10 @@ export const Omnibar: React.FC<OmnibarProps> = ({
       });
 
       if (result.executed) {
-        const skillName = result.response?.reasoning.matchedSkill?.name || 'Action';
+        const skillName = result.response?.reasoning.matchedSkill?.name || 'Acción';
         const params = result.response?.reduxAction?.payload;
         const title = params?.title || params?.text || params?.description || '';
-        const time = params?.dueDate || params?.date ? ` for ${new Date(params.dueDate || params.date).toLocaleString()}` : '';
+        const time = params?.dueDate || params?.date ? ` para ${new Date(params.dueDate || params.date).toLocaleString()}` : '';
 
         showToast(`✅ ${skillName}: ${title}${time}`, 'success');
 
@@ -736,17 +792,17 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         if (missingParams.length > 0) {
           if ('speechSynthesis' in window) {
             const utterance = new SpeechSynthesisUtterance(
-              `I need more information: ${missingParams.join(', ')}`
+              `Necesito más información: ${missingParams.join(', ')}`
             );
             utterance.rate = 1.0;
             utterance.pitch = 1.0;
             window.speechSynthesis.speak(utterance);
           }
-          showToast(`ℹ️ Please provide: ${missingParams.join(', ')}`, 'info');
+          showToast(`ℹ️ Por favor completa: ${missingParams.join(', ')}`, 'info');
         }
       } else {
         playErrorSound();
-        showToast('Could not process voice command', 'error');
+        showToast('No se pudo procesar el comando de voz', 'error');
       }
     };
 
@@ -778,7 +834,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         const permission = await SpeechRecognition.requestPermissions();
         const granted = permission?.speechRecognition === 'granted';
         if (!granted) {
-          await cleanupAndReset('error', 'Microphone permission denied');
+          await cleanupAndReset('error', 'Permiso de micrófono denegado');
           return;
         }
 
@@ -799,7 +855,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
             if (transcript) {
               await processTranscript(transcript);
             } else {
-              await cleanupAndReset('error', t('No voice input detected'));
+              await cleanupAndReset('error', 'No se detectó entrada de voz');
             }
           }, 1500);
         };
@@ -827,7 +883,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
             if (transcript) {
               await processTranscript(transcript);
             } else {
-              await cleanupAndReset('error', t('No voice input detected'));
+              await cleanupAndReset('error', 'No se detectó entrada de voz');
             }
           }
         });
@@ -845,13 +901,13 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         voiceTimeoutRef.current = setTimeout(async () => {
           const transcript = capturedTranscriptRef.current.trim();
           await cleanupAndReset(transcript ? 'processing' : 'error',
-            transcript ? '' : t('No voice input detected'));
+            transcript ? '' : 'No se detectó entrada de voz');
           if (transcript) await processTranscript(transcript);
         }, 10000);
 
         return;
       } catch (nativeError) {
-        await cleanupAndReset('error', 'Native microphone failed to start');
+        await cleanupAndReset('error', 'No se pudo iniciar el micrófono nativo');
         console.error('Native voice flow failed:', nativeError);
         return;
       }
@@ -860,10 +916,10 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      showToast('Voice input is not available in this environment', 'error');
+      showToast('La entrada por voz no está disponible en este entorno', 'error');
       onActionExecuted?.({
         success: false,
-        message: 'Voice input is not available in this browser',
+        message: 'La entrada por voz no está disponible en este navegador',
         hub: selectedHub
       });
       return;
@@ -877,7 +933,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     try {
       await navigator.mediaDevices?.getUserMedia?.({ audio: true });
     } catch {
-      showToast('Microphone permission denied', 'error');
+      showToast('Permiso de micrófono denegado', 'error');
       playErrorSound();
       return;
     }
@@ -899,7 +955,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
           processTranscript(normalizedTranscript).catch((err) => {
             console.error('Voice processing failed:', err);
             playErrorSound();
-            showToast('Could not process voice command', 'error');
+            showToast('No se pudo procesar el comando de voz', 'error');
           });
         }, 250);
       }
@@ -907,7 +963,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
 
     recognition.onerror = (event: any) => {
       setVoiceState('error');
-      setVoiceError(`Voice recognition failed${event?.error ? `: ${event.error}` : ''}`);
+      setVoiceError(`Reconocimiento de voz falló${event?.error ? `: ${event.error}` : ''}`);
       playErrorSound();
     };
 
@@ -920,7 +976,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
       recognition.start();
     } catch (error) {
       setVoiceState('error');
-      setVoiceError('Could not start microphone');
+      setVoiceError('No se pudo iniciar el micrófono');
       playErrorSound();
       console.error('Speech recognition start failed:', error);
     }
@@ -939,11 +995,11 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     if (latestIntercept.actionType === 'register-expense') {
       setSelectedHub('FinanceHub');
       const amount = latestIntercept.amount ? ` $${latestIntercept.amount}` : '';
-      const merchant = latestIntercept.merchant ? ` at ${latestIntercept.merchant}` : '';
-      setInputValue(`record expense${amount}${merchant}`.trim());
+      const merchant = latestIntercept.merchant ? ` en ${latestIntercept.merchant}` : '';
+      setInputValue(`registrar gasto${amount}${merchant}`.trim());
     } else if (latestIntercept.actionType === 'schedule-event') {
       setSelectedHub('PersonalHub');
-      setInputValue(`create event ${latestIntercept.summary || ''}`.trim());
+      setInputValue(`crear evento ${latestIntercept.summary || ''}`.trim());
     }
     dispatch(clearLatestActionableIntercept());
     setTimeout(() => inputRef.current?.focus(), 50);
@@ -953,19 +1009,15 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     dispatch(clearLatestActionableIntercept());
   }, [dispatch]);
 
-  const userIdentity = useSelector((s: any) => s.userIdentity || null);
-
   const getInputPlaceholder = useCallback((hub: 'WorkHub' | 'PersonalHub' | 'FinanceHub') => {
-    if (hub === 'WorkHub') return 'Habla con Cortana...';
-    if (hub === 'PersonalHub') return 'Habla con SHODAN...';
-    if (hub === 'FinanceHub') return 'Habla con Jarvis...';
+    if (hub === 'WorkHub') return `Habla con ${cortanaName}...`;
+    if (hub === 'PersonalHub') return `Habla con ${shodanName}...`;
+    if (hub === 'FinanceHub') return `Habla con ${jarvisName}...`;
     return 'Escribe un comando...';
-  }, []);
+  }, [cortanaName, jarvisName, shodanName]);
 
   const getAgentKey = useCallback((hub: 'WorkHub' | 'PersonalHub' | 'FinanceHub') => {
-    if (hub === 'WorkHub') return 'cortana';
-    if (hub === 'PersonalHub') return 'shodan';
-    return 'jarvis';
+    return getAgentForHub(hub);
   }, []);
 
   const getAgentIcon = useCallback((hub: 'WorkHub' | 'PersonalHub' | 'FinanceHub') => {
@@ -975,10 +1027,11 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   }, []);
 
   const getAgentDisplayName = useCallback((hub: 'WorkHub' | 'PersonalHub' | 'FinanceHub') => {
-    if (hub === 'WorkHub') return userIdentity?.agentNames?.cortana || 'CORTANA';
-    if (hub === 'PersonalHub') return userIdentity?.agentNames?.shodan || 'SHODAN';
-    return userIdentity?.agentNames?.jarvis || 'JARVIS';
-  }, [userIdentity]);
+    const agentKey = getAgentForHub(hub);
+    if (agentKey === 'cortana') return cortanaName;
+    if (agentKey === 'shodan') return shodanName;
+    return jarvisName;
+  }, [cortanaName, jarvisName, shodanName]);
 
   const getAgentRole = useCallback((hub: 'WorkHub' | 'PersonalHub' | 'FinanceHub') => {
     if (hub === 'WorkHub') return 'Estrategia & trabajo';
@@ -1024,6 +1077,10 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     formRef.current?.requestSubmit();
   }, []);
 
+  const openBriefing = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('athenea:openBriefing'));
+  }, []);
+
   /* OMNI-FIX-9: memoizar para evitar doble cálculo */
   const agentInfo = useMemo(
     () => getAgentInfo(selectedHub, inputValue),
@@ -1060,30 +1117,69 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     };
   }, []);
 
-  /* FIX-2: useMemo para evitar re-crear el objeto en cada keystroke
-   * MUST be before the early return — hooks cannot come after a conditional return */
-  const shortcutsByHub = useMemo<Record<'WorkHub' | 'PersonalHub' | 'FinanceHub', HubShortcut[]>>(() => ({
+  useEffect(() => {
+    if (isOpen) {
+      isVoiceboxAvailable().then(setVoiceboxActive).catch(() => setVoiceboxActive(false));
+    } else {
+      setVoiceboxActive(false);
+      setSpeakingMsgId(null);
+      stopSpeaking();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!speakingMsgId) return;
+    const timer = window.setInterval(() => {
+      if (!getIsSpeaking()) {
+        setSpeakingMsgId(null);
+      }
+    }, 300);
+    return () => window.clearInterval(timer);
+  }, [speakingMsgId]);
+
+  const handleSpeak = useCallback(async (msg: ChatMessage) => {
+    if (speakingMsgId === msg.id) {
+      stopSpeaking();
+      setSpeakingMsgId(null);
+      return;
+    }
+
+    setSpeakingMsgId(msg.id);
+    const text = cleanTextForTTS(msg.text || (msg as any).content || '');
+    const agent = resolveVoiceAgent(msg);
+    const success = await speak(text, agent);
+    if (!success) setSpeakingMsgId(null);
+  }, [speakingMsgId]);
+
+  const HUB_SHORTCUTS: Record<'WorkHub' | 'PersonalHub' | 'FinanceHub', HubShortcut[]> = {
     WorkHub: [
-      { id: 'work-create-collaborator', label: t('Create collaborator'), prompt: 'create collaborator' },
-      { id: 'work-create-project', label: t('Create project'), prompt: 'create project' },
-      { id: 'work-create-task', label: t('Create task'), prompt: 'create task' },
+      { id: 'work-new-task', label: '+ Nueva tarea', prompt: 'crear tarea ' },
+      { id: 'work-new-project', label: '+ Nuevo proyecto', prompt: 'crear proyecto ' },
+      { id: 'work-focus-25', label: '⏱ Focus 25min', prompt: 'iniciar foco 25 minutos' },
+      { id: 'work-open-spotify', label: '🎵 Spotify', prompt: 'abre spotify' },
+      { id: 'work-my-tasks', label: '📋 Mis tareas', prompt: 'cortana resumen de mis tareas' },
+      { id: 'work-standup', label: '📊 Daily Standup', prompt: 'cortana resumen del día' },
     ],
     PersonalHub: [
-      { id: 'personal-create-routine', label: t('Create routine'), prompt: 'create daily routine' },
-      { id: 'personal-create-reminder', label: t('Create reminder'), prompt: 'create reminder' },
-      { id: 'personal-create-note', label: t('Create note'), prompt: 'create note' },
+      { id: 'personal-checkin', label: '+ Check-in', prompt: 'registrar check-in' },
+      { id: 'personal-journal', label: '✏ Diario', prompt: 'abrir diario' },
+      { id: 'personal-quick-note', label: '+ Nota rápida', prompt: 'crear nota ' },
+      { id: 'personal-routines', label: '🔄 Rutinas hoy', prompt: 'shodan rutinas de hoy' },
+      { id: 'personal-status', label: '¿Cómo estoy?', prompt: 'shodan cómo estoy hoy' },
     ],
     FinanceHub: [
-      { id: 'finance-add-expense', label: t('Record expense'), prompt: 'record expense' },
-      { id: 'finance-add-income', label: t('Record income'), prompt: 'record income' },
-      { id: 'finance-view-budget', label: t('View budget'), prompt: 'show budget status' },
+      { id: 'finance-expense', label: '+ Gasto', prompt: 'registrar gasto ' },
+      { id: 'finance-income', label: '+ Ingreso', prompt: 'registrar ingreso ' },
+      { id: 'finance-balance', label: '💰 ¿Cuánto tengo?', prompt: 'jarvis cuánto tengo disponible' },
+      { id: 'finance-save', label: '📈 Ahorrar', prompt: 'transferir a ahorros ' },
+      { id: 'finance-debts', label: '📋 Deudas', prompt: 'jarvis resumen de deudas' },
     ],
-  }), [language]); /* FIX-2: solo se re-crea si cambia el idioma */
+  };
 
   // Only render if open — early return MUST come after all hooks
   if (!isOpen) return null;
 
-  const activeShortcuts = shortcutsByHub[selectedHub] || [];
+  const activeShortcuts = HUB_SHORTCUTS[selectedHub] || [];
   const suggestedSkills = getSkillsByHub(selectedHub).slice(0, 4);
   const artifactToRender = activeInsightArtifact || currentArtifact;
   const showInlineOnboardingHint =
@@ -1094,8 +1190,9 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     !lastError;
 
   return (
-    <div className="omnibar-overlay">
-      <div className="omnibar-container" ref={modalRef} role="dialog" aria-modal="true" aria-label="ATHENEA Assistant"> {/* OMNI-A11Y-1 */}
+    <>
+      <div className="omnibar-overlay">
+      <div className="omnibar-container" ref={modalRef} role="dialog" aria-modal="true" aria-label="Asistente ATHENEA"> {/* OMNI-A11Y-1 */}
         <div className={`omnibar-top-strip ${selectedHub === 'WorkHub' ? 'work' : selectedHub === 'PersonalHub' ? 'personal' : 'finance'}`} />
 
         {/* 1) HEADER */}
@@ -1114,7 +1211,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
                 setChatMessages([]);
               }}
             >
-              Work
+              Trabajo
             </button>
             <button
               className={`omnibar-hub-tab ${selectedHub === 'PersonalHub' ? 'active personal' : ''}`}
@@ -1134,7 +1231,13 @@ export const Omnibar: React.FC<OmnibarProps> = ({
                 setChatMessages([]);
               }}
             >
-              Finance
+              Finanzas
+            </button>
+            <button
+              className="omnibar-hub-tab"
+              onClick={openBriefing}
+            >
+              ☀️ Briefing
             </button>
           </div>
 
@@ -1142,7 +1245,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
             type="button"
             className="omnibar-close-btn"
             onClick={closeOmnibar}
-            aria-label="Close assistant"
+            aria-label="Cerrar asistente"
           >
             ✕
           </button>
@@ -1165,7 +1268,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
                 }
               }}
               disabled={isLoading}
-              aria-label={t('What do you want to do?')}
+              aria-label={getInputPlaceholder(selectedHub)}
             />
             {chatMessages.length > 0 && (
               <span
@@ -1180,8 +1283,8 @@ export const Omnibar: React.FC<OmnibarProps> = ({
               className={`omnibar-voice-btn ${voiceState}`}
               onClick={handleVoiceInput}
               disabled={isLoading || voiceState === 'processing'}
-              aria-label={voiceState === 'listening' ? 'Stop voice input' : 'Start voice input'}
-              title={voiceState === 'listening' ? 'Tap to stop' : 'Voice input'}
+              aria-label={voiceState === 'listening' ? 'Detener voz' : 'Iniciar voz'}
+              title={voiceState === 'listening' ? 'Toca para detener' : 'Entrada por voz'}
             >
               {voiceState === 'listening' ? '⏹' : '🎙'}
             </button>
@@ -1190,7 +1293,8 @@ export const Omnibar: React.FC<OmnibarProps> = ({
               className="omnibar-send-btn"
               disabled={isLoading || !inputValue.trim()}
               onClick={handleSubmit}
-              title="Send"
+              title="Enviar"
+              aria-label="Enviar"
             >
               {isLoading ? (
                 <span className="omnibar-spinner" />
@@ -1204,9 +1308,15 @@ export const Omnibar: React.FC<OmnibarProps> = ({
           </form>
           {voiceState !== 'idle' && (
             <div className={`omnibar-voice-status${voiceState === 'error' ? ' omnibar-voice-status--error' : ''}`} aria-live="assertive" aria-atomic="true">
-              {voiceState === 'listening' && `🎙 ${t('Listening')}…`}
-              {voiceState === 'processing' && `⏳ ${t('Processing')}…`}
-              {voiceState === 'error' && `⚠️ ${voiceError || t('Voice error')}`}
+              {voiceState === 'listening' && '🎙 Escuchando…'}
+              {voiceState === 'processing' && '⏳ Procesando…'}
+              {voiceState === 'error' && `⚠️ ${voiceError || 'Error de voz'}`}
+            </div>
+          )}
+          {isLoading && (
+            <div className="omnibar-inline-loading" aria-live="polite">
+              <LoadingSpinner size="sm" label="ATHENEA está pensando" />
+              <span>ATHENEA está pensando...</span>
             </div>
           )}
         </div>
@@ -1246,6 +1356,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
                     key={action.id}
                     className="agent-quick-action"
                     onClick={() => {
+                      if (!action.prompt) return;
                       setInputValue(action.prompt);
                       setTimeout(() => inputRef.current?.focus(), 50);
                     }}
@@ -1275,9 +1386,33 @@ export const Omnibar: React.FC<OmnibarProps> = ({
 
           {/* 4) SKILLS CHIPS */}
           {chatMessages.length === 0 && !inputValue && !lastError && (
+            <div className="omnibar-shortcuts-section">
+              <div className="omnibar-shortcuts-grid">
+                {activeShortcuts.map((s, i) => (
+                  <button
+                    key={s.id || i}
+                    className="omnibar-shortcut-chip"
+                    onClick={() => {
+                      if (!s.prompt) return;
+                      setInputValue(s.prompt);
+                      setTimeout(() => inputRef.current?.focus(), 50);
+                    }}
+                    type="button"
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {chatMessages.length === 0 && !inputValue && !lastError && (
             <div className="omnibar-skills-section">
               <div className="omnibar-skills-grid">
-                {getSkillsByHub(selectedHub).slice(0, 4).map((skill) => (
+                {getSkillsByHub(selectedHub).slice(0, 4).map((skill) => {
+                  const skillName = SKILL_NAME_ES[skill.name] || skill.name;
+                  const skillDesc = SKILL_DESC_ES[skill.description] || skill.description;
+                  return (
                   <button
                     key={skill.id}
                     className="omnibar-skill-chip"
@@ -1286,11 +1421,12 @@ export const Omnibar: React.FC<OmnibarProps> = ({
                   >
                     <span className="skill-chip-icon" style={{ fontSize: '16px' }}>{skill.icon}</span>
                     <div className="skill-chip-text">
-                      <span className="skill-chip-name">{skill.name}</span>
-                      <span className="skill-chip-desc">{skill.description}</span>
+                      <span className="skill-chip-name">{skillName}</span>
+                      <span className="skill-chip-desc">{skillDesc}</span>
                     </div>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1319,6 +1455,16 @@ export const Omnibar: React.FC<OmnibarProps> = ({
                           : ''),
                     }}
                   />
+                  {voiceboxActive && msg.role === 'agent' && (
+                    <button
+                      className={`omnibar-speak-btn ${speakingMsgId === msg.id ? 'speaking' : ''}`}
+                      onClick={() => handleSpeak(msg)}
+                      title={speakingMsgId === msg.id ? 'Detener' : 'Escuchar'}
+                      type="button"
+                    >
+                      {speakingMsgId === msg.id ? '⏹' : '🔊'}
+                    </button>
+                  )}
                   {/* OMNI-FIX-5 */}
                   {msg.artifact && (
                     <div className="chat-artifact">
@@ -1335,6 +1481,8 @@ export const Omnibar: React.FC<OmnibarProps> = ({
               {isLoading && !streamingMsgId && (
                 <div className="chat-bubble chat-bubble--agent chat-bubble--typing">
                   <span className="chat-agent-icon">{agentInfo.icon /* OMNI-FIX-9 */}</span>
+                  <LoadingSpinner size="sm" label="Procesando comando" />
+                  <span className="chat-bubble-loading-text">{t('Procesando comando...')}</span>
                   <span className="chat-typing-dots"><span/><span/><span/></span>
                 </div>
               )}
@@ -1361,7 +1509,8 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         </div>
       </div>
 
-    </div>
+      </div>
+    </>
   );
 };
 

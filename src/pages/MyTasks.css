@@ -238,9 +238,12 @@
 }
 .mytasks-status-select.status-pendiente     { color: #9aa3ad; border-color: #9aa3ad; }
 .mytasks-status-select.status-en-curso      { color: #facc15; border-color: #facc15; }
+.mytasks-status-select.status-en-progreso   { color: #facc15; border-color: #facc15; }
 .mytasks-status-select.status-por-terminar { color: #60a5fa; border-color: #60a5fa; }
 .mytasks-status-select.status-en-revision   { color: var(--color-warning); border-color: var(--color-warning); }
 .mytasks-status-select.status-completado    { color: var(--color-success); border-color: var(--color-success); }
+.mytasks-status-select.status-bloqueado     { color: var(--color-danger); border-color: var(--color-danger); }
+.mytasks-status-select.status-cancelado     { color: #9aa3ad; border-color: #9aa3ad; }
 .mytasks-status-select option { background: var(--bg-surface); color: var(--text-primary); }
 
 /* ── Assignee selector ── */
@@ -377,6 +380,13 @@
   cursor: pointer;
 }
 .mytasks-subtask-btn:hover { background: rgba(23, 184, 224, 0.08); }
+.mytasks-subtask-btn-danger {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+.mytasks-subtask-btn-danger:hover {
+  background: color-mix(in srgb, var(--color-danger) 15%, transparent);
+}
 
 /* ════════════════════════════════════════════
    VIEW SWITCHER
@@ -440,7 +450,12 @@
   color: var(--text-secondary);
 }
 .kanban-col-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 60px; }
+.kanban-col-body.is-over {
+  background: color-mix(in srgb, var(--accent-cyan) 10%, transparent);
+}
 .kanban-empty { color: var(--text-secondary); font-size: 0.8rem; text-align: center; padding: 12px 0; }
+.kanban-draggable { touch-action: none; }
+.kanban-draggable.is-dragging { opacity: 0.7; }
 .kanban-card {
   background: var(--bg-elevated);
   border: 1px solid var(--border-default);
@@ -464,6 +479,12 @@
 .kanban-card-level { font-size: 0.7rem; font-weight: 600; }
 .kanban-card-due { font-size: 0.7rem; color: var(--text-secondary); }
 .kanban-subtask-count { font-size: 0.7rem; color: var(--text-secondary); }
+.kanban-task-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
 
 /* ════════════════════════════════════════════
    TABLA
@@ -590,10 +611,13 @@
   min-width: 4px;
 }
 .gantt-bar.status-en-curso     { background: #facc15; }
+.gantt-bar.status-en-progreso  { background: #facc15; }
 .gantt-bar.status-por-terminar { background: #60a5fa; }
 .gantt-bar.status-en-revision  { background: var(--color-warning); }
 .gantt-bar.status-completado   { background: var(--color-success); }
 .gantt-bar.status-pendiente    { background: #9aa3ad; }
+.gantt-bar.status-bloqueado    { background: var(--color-danger); }
+.gantt-bar.status-cancelado    { background: #7a7f86; }
 .gantt-bar-label {
   font-size: 0.6rem;
   color: var(--bg-base);
@@ -691,6 +715,11 @@
   font-style: italic;
 }
 .tabla-date-dim { color: var(--text-secondary); text-align: center; }
+.tabla-actions-cell {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
 
 /* ── Gantt — subtask / sub-subtask rows ── */
 .gantt-row--d1 { background: rgba(255,255,255,0.015); }
@@ -707,6 +736,18 @@
   border-radius: 3px;
   top: 50%;
   transform: translateY(-50%);
+}
+
+.mytasks-toast {
+  position: sticky;
+  top: 12px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--accent-cyan);
+  background: color-mix(in srgb, var(--accent-cyan) 14%, var(--bg-surface));
+  color: var(--text-primary);
+  z-index: 10;
 }
 
 @media (max-width: 600px) {

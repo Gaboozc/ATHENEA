@@ -6,6 +6,7 @@ import { addNote, updateNote, deleteNote, togglePinNote, addTag } from '../../st
 import { linkNoteToCalendar, unlinkFromCalendar } from '../../store/slices/calendarSlice';
 import { clearGhostWriteDraft, setGhostWriteDraft } from '../modules/intelligence';
 import { useLanguage } from '../context/LanguageContext';
+import { EmptyState } from '../components';
 import './Notes.css';
 
 const NOTE_COLORS = [
@@ -221,11 +222,27 @@ export const Notes = () => {
 
       <div className="notes-grid">
         {filteredNotes.length === 0 ? (
-          <div className="notes-empty">
-            {searchQuery || filterTag !== 'all'
-              ? t('No notes found.')
-              : t('No notes yet. Create your first note!')}
-          </div>
+          <EmptyState
+            icon={searchQuery || filterTag !== 'all' ? '🔎' : '📝'}
+            title={searchQuery || filterTag !== 'all' ? t('No encontre notas.') : t('No tengo notas aun.')}
+            description={
+              searchQuery || filterTag !== 'all'
+                ? t('Ajusta la busqueda o los filtros y vuelvo a intentarlo.')
+                : t('Crea tu primera nota y la organizo aqui para ti.')
+            }
+            action={{
+              label: searchQuery || filterTag !== 'all' ? t('Limpiar filtros') : t('Nueva nota'),
+              icon: searchQuery || filterTag !== 'all' ? '✕' : '+',
+              onClick: () => {
+                if (searchQuery || filterTag !== 'all') {
+                  setSearchQuery('');
+                  setFilterTag('all');
+                } else {
+                  handleOpenModal();
+                }
+              },
+            }}
+          />
         ) : (
           filteredNotes.map((note) => {
             const isReminder = Boolean(note.reminderDate);

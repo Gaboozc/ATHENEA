@@ -375,6 +375,99 @@
   box-shadow: 0 0 0 1px rgba(217, 64, 64, 0.4);
 }
 
+.template-selector {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: rgba(13, 26, 43, 0.5);
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.template-selector h3 {
+  margin: 0 0 6px;
+  color: var(--accent-gold);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.template-selector p {
+  margin: 0 0 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.template-card {
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  padding: 10px;
+  text-align: left;
+  display: grid;
+  gap: 6px;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.template-card:hover {
+  border-color: var(--accent-cyan);
+  transform: translateY(-1px);
+}
+
+.template-card.selected {
+  border-color: var(--accent-cyan);
+  background: rgba(30, 201, 255, 0.09);
+}
+
+.template-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.template-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.template-description {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.template-duration,
+.template-tasks-count {
+  font-size: 11px;
+  color: var(--accent-cyan);
+}
+
+.template-skip {
+  margin-top: 10px;
+  border: 1px solid var(--accent-cyan);
+  background: transparent;
+  color: var(--accent-cyan);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.template-selected-indicator {
+  border: 1px solid var(--accent-cyan);
+  background: rgba(30, 201, 255, 0.12);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--accent-cyan);
+}
+
 .projects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

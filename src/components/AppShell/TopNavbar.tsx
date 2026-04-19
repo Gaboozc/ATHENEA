@@ -85,7 +85,7 @@ export function TopNavbar() {
 				{ label: t('Work Hub'), path: '/work' },
 				{ label: t('Projects'), path: '/projects' },
 				{ label: t('My Tasks'), path: '/my-tasks' },
-					{ label: t('Collaborators'), path: '/fleet' },
+				{ label: t('Collaborators'), path: '/fleet' },
 				{ label: t('Intelligence'), path: '/intelligence' },
 				{ label: t('Focus'), path: '/focus' },
 			],
@@ -109,11 +109,11 @@ export function TopNavbar() {
 			items: [
 				{ label: t('Finance Hub'), path: '/finance' },
 				{ label: t('Payments'), path: '/payments' },
-				{ label: t('Billeteras'), path: '/finance/wallets' }, /* WALLETS-12 */
+				{ label: t('Billeteras'), path: '/finance/wallets' },
 				{ label: t('Historial'), path: '/finance/history' },
 				{ label: t('Metas'), path: '/finance/goals' },
 				{ label: t('Budgeting'), path: '/finance/budgeting' },
-				{ label: t('Deudas'), path: '/finance/debts' }, /* DEBTS-9 */
+				{ label: t('Deudas'), path: '/finance/debts' },
 			],
 		},
 	];
@@ -200,7 +200,7 @@ export function TopNavbar() {
 							</button>
 							<Link
 								to="/notifications"
-								className={`navbar-icon-button${currentPath.startsWith('/notifications') ? ' is-active' : ''}`}
+								className={`navbar-icon-button nav-icon-btn${currentPath.startsWith('/notifications') ? ' is-active' : ''}`}
 								aria-label={t('Notifications')}
 							>
 								{reminderCount > 0 && (
@@ -209,45 +209,49 @@ export function TopNavbar() {
 								<svg viewBox="0 0 24 24" aria-hidden="true">
 									<path d="M12 2a6 6 0 0 1 6 6v4.3l1.4 2.8A1 1 0 0 1 18.5 17h-13a1 1 0 0 1-.9-1.4L6 12.3V8a6 6 0 0 1 6-6zm0 20a2.5 2.5 0 0 0 2.4-2h-4.8A2.5 2.5 0 0 0 12 22z" />
 								</svg>
-							</Link>						{/* FIX UI-6: System icons — Settings, Stats, Identity */}
-						<Link
-							to="/settings"
-						className={`navbar-icon-button system-icon${currentPath.startsWith('/settings') ? ' is-active' : ''}`}
-							title={t('Settings')}
-						>
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
-								<circle cx="12" cy="12" r="3" />
-								<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-							</svg>
-						</Link>
-						<Link
-							to="/stats"
-							className={`navbar-icon-button system-icon${currentPath.startsWith('/stats') ? ' is-active' : ''}`}
-							aria-label={t('Statistics')}
-							title={t('Statistics')}
-						>
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
-								<line x1="18" y1="20" x2="18" y2="10" />
-								<line x1="12" y1="20" x2="12" y2="4" />
-								<line x1="6" y1="20" x2="6" y2="14" />
-							</svg>
-						</Link>
-						<Link
-							to="/identity"
-							className={`navbar-icon-button system-icon${currentPath.startsWith('/identity') ? ' is-active' : ''}`}
-							title={t('Identity')}
-						>
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
-								<rect x="3" y="4" width="18" height="16" rx="2" />
-								<circle cx="9" cy="10" r="2" />
-								<path d="M15 8h2M15 12h2M7 16h10" />
-							</svg>
-						</Link>						</div>
+								<span className="nav-icon-label">Alertas</span>
+							</Link>
+							<Link
+								to="/settings"
+								className={`navbar-icon-button system-icon nav-icon-btn${currentPath.startsWith('/settings') ? ' is-active' : ''}`}
+								title={t('Settings')}
+							>
+								<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+									<circle cx="12" cy="12" r="3" />
+									<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+								</svg>
+								<span className="nav-icon-label">Config</span>
+							</Link>
+							<Link
+								to="/stats"
+								className={`navbar-icon-button system-icon nav-icon-btn${currentPath.startsWith('/stats') ? ' is-active' : ''}`}
+								aria-label={t('Statistics')}
+								title={t('Statistics')}
+							>
+								<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+									<line x1="18" y1="20" x2="18" y2="10" />
+									<line x1="12" y1="20" x2="12" y2="4" />
+									<line x1="6" y1="20" x2="6" y2="14" />
+								</svg>
+								<span className="nav-icon-label">Stats</span>
+							</Link>
+							<Link
+								to="/identity"
+								className={`navbar-icon-button system-icon nav-icon-btn${currentPath.startsWith('/identity') ? ' is-active' : ''}`}
+								title={t('Identity')}
+							>
+								<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+									<rect x="3" y="4" width="18" height="16" rx="2" />
+									<circle cx="9" cy="10" r="2" />
+									<path d="M15 8h2M15 12h2M7 16h10" />
+								</svg>
+								<span className="nav-icon-label">Identidad</span>
+							</Link>
+						</div>
 					</div>
 				</div>
 			</nav>
 
-			{/* FIX UX-10 — Always-mounted portal; CSS transition controls visibility */}
 			{createPortal(
 				<div className={`navbar-mobile-menu${isMobileMenuOpen ? ' is-open' : ''}`}>
 					<div className="navbar-mobile-content">
@@ -274,7 +278,7 @@ export function TopNavbar() {
 									{isExpanded && (
 										<div className="navbar-mobile-group-items">
 											{group.items.map((item) => {
-													const isActive = currentPath.startsWith(item.path);
+												const isActive = currentPath.startsWith(item.path);
 												return (
 													<Link
 														key={item.path}
@@ -325,7 +329,6 @@ export function TopNavbar() {
 							>
 								{t('Identity')}
 							</Link>
-							{/* FIX UX-5 — Stats en menú mobile */}
 							<Link
 								to="/stats"
 								onClick={() => {
@@ -337,7 +340,7 @@ export function TopNavbar() {
 								📊 {t('Estadísticas')}
 							</Link>
 						</div>
-				<div className="navbar-mobile-group" style={{ borderTop: '1px solid var(--border-default)', paddingTop: '12px', marginTop: '12px' }}>
+						<div className="navbar-mobile-group" style={{ borderTop: '1px solid var(--border-default)', paddingTop: '12px', marginTop: '12px' }}>
 							<button
 								onClick={() => {
 									toggleLanguage();

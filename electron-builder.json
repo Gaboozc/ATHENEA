@@ -12,14 +12,14 @@
   },
   "win": {
     "target": "nsis",
-  "icon": "src/assets/img/logo.ico"
+  "icon": "src/assets/img/athenea.ico"
   },
   "nsis": {
     "oneClick": false,
     "perMachine": true,
     "allowToChangeInstallationDirectory": true,
-  "installerIcon": "src/assets/img/logo.ico",
-  "uninstallerIcon": "src/assets/img/logo.ico",
+  "installerIcon": "src/assets/img/athenea.ico",
+  "uninstallerIcon": "src/assets/img/athenea.ico",
     "license": "LICENSE",
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,

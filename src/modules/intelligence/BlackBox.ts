@@ -162,6 +162,22 @@ function safeParse(json: string | null): BlackBoxDatabase {
   }
 }
 
+function readDbFromStorage(): BlackBoxDatabase {
+  if (typeof globalThis === 'undefined' || !('localStorage' in globalThis) || !globalThis.localStorage) {
+    return emptyDb();
+  }
+
+  try {
+    const raw = globalThis.localStorage.getItem(STORAGE_KEY);
+    if (typeof raw !== 'string' || raw.trim().length === 0) {
+      return emptyDb();
+    }
+    return safeParse(raw);
+  } catch {
+    return emptyDb();
+  }
+}
+
 function incrementHistogram(map: Record<string, HourHistogram>, day: string, hour: number): void {
   if (!map[day]) map[day] = {};
   const hourKey = String(hour);
@@ -195,7 +211,7 @@ class BlackBox {
   initialize(store: Store): void {
     if (this.unsubscribe) return;
     this.store = store;
-    this.db = safeParse(localStorage.getItem(STORAGE_KEY));
+    this.db = readDbFromStorage();
 
     const state: any = store.getState();
     this.lastHub = state.aiMemory?.context?.lastHubVisited || 'Unknown';
@@ -563,8 +579,11 @@ class BlackBox {
   }
 
   private persist(): void {
+    if (typeof globalThis === 'undefined' || !('localStorage' in globalThis) || !globalThis.localStorage) {
+      return;
+    }
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.db));
+      globalThis.localStorage.setItem(STORAGE_KEY, JSON.stringify(this.db));
     } catch {
       // Ignore storage quota failures and continue runtime logging.
     }
