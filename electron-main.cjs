@@ -1,8 +1,24 @@
 const { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage } = require('electron');
 const path = require('path');
+const http = require('http');
+const os = require('os');
 
 let mainWindow = null;
 let tray = null;
+let syncServer = null;
+let syncData = null;
+
+function getLocalIP() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name] || []) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+}
 
 // Auto-inicio con Windows
 function setupAutoLaunch() {
@@ -170,6 +186,46 @@ ipcMain.handle('get-auto-launch', async () => {
   return app.getLoginItemSettings().openAtLogin;
 });
 
+ipcMain.handle('start-sync-server', async (event, data) => {
+  if (syncServer) {
+    syncServer.close();
+    syncServer = null;
+  }
+
+  syncData = data;
+  const port = 7432;
+  const ip = getLocalIP();
+
+  syncServer = http.createServer((req, res) => {
+    if (req.url === '/sync') {
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      });
+      res.end(syncData || '{}');
+      return;
+    }
+
+    res.writeHead(404);
+    res.end('Not found');
+  });
+
+  await new Promise((resolve) => {
+    syncServer.listen(port, '0.0.0.0', resolve);
+  });
+
+  return { ip, port, url: `http://${ip}:${port}/sync` };
+});
+
+ipcMain.handle('stop-sync-server', async () => {
+  if (syncServer) {
+    await new Promise((resolve) => syncServer.close(resolve));
+    syncServer = null;
+    syncData = null;
+  }
+  return true;
+});
+
 app.whenReady().then(() => {
   createWindow();
   createTray();
@@ -189,5 +245,10 @@ app.on('activate', () => {
 });
 
 app.on('before-quit', () => {
+  if (syncServer) {
+    syncServer.close();
+    syncServer = null;
+    syncData = null;
+  }
   app.isQuitting = true;
 });

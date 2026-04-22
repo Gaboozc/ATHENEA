@@ -14,19 +14,6 @@
   gap: 16px;
 }
 
-.projects-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.projects-header-hint {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
 .projects-header h1 {
   font-size: 32px;
   font-weight: 700;
@@ -74,19 +61,50 @@
   box-shadow: none;
 }
 
-.project-create-button {
-  width: 170px;
-  min-width: 170px;
+/* Card de nuevo proyecto */
+.project-card-new {
+  background: var(--bg-panel);
+  border: 1.5px dashed var(--border-default);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  width: 100%;
+  padding: 0;
 }
 
-.project-task-button {
-  width: 170px;
-  min-width: 170px;
+.project-card-new:hover {
+  border-color: var(--accent);
+  background: var(--bg-panel-alt);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
 }
 
-.project-create-button[disabled] {
-  opacity: 0.5;
-  cursor: not-allowed;
+.project-card-new-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.project-card-new-icon {
+  font-size: 24px;
+  color: var(--accent);
+  line-height: 1;
+  font-weight: 300;
+}
+
+.project-card-new-label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+}
+
+.project-card-new:hover .project-card-new-label {
+  color: var(--accent);
 }
 .workstream-filter {
   display: flex;
@@ -114,62 +132,6 @@
   color: var(--text-primary);
   font-size: 14px;
   font-family: inherit;
-}
-
-.project-create-button .task-button-text {
-  transform: translateX(20px);
-  white-space: nowrap;
-}
-
-.project-task-button .task-button-text {
-  transform: translateX(24px);
-  white-space: nowrap;
-}
-
-.project-create-button .task-button-icon {
-  transform: translateX(129px);
-}
-
-.project-task-button .task-button-icon {
-  transform: translateX(129px);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .project-create-button:hover .task-button-text {
-    color: transparent;
-  }
-
-  .project-task-button:hover .task-button-text {
-    color: transparent;
-  }
-
-  .project-create-button:hover .task-button-icon {
-    width: 168px;
-    transform: translateX(0);
-  }
-
-  .project-task-button:hover .task-button-icon {
-    width: 168px;
-    transform: translateX(0);
-  }
-}
-
-@media (hover: none), (pointer: coarse) {
-  .project-create-button .task-button-text {
-    color: var(--text-primary);
-  }
-
-  .project-task-button .task-button-text {
-    color: var(--text-primary);
-  }
-
-  .project-create-button .task-button-icon {
-    width: 39px;
-  }
-
-  .project-task-button .task-button-icon {
-    width: 39px;
-  }
 }
 
 .project-cancelled-date {
@@ -729,6 +691,16 @@
   font-size: 18px;
   color: var(--text-primary);
   margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .project-card-new {
+    min-height: 100px;
+  }
+
+  .project-card-new-icon {
+    font-size: 20px;
+  }
 }
 
 @media (max-width: 768px) {

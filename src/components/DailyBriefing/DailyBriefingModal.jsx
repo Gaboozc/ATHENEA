@@ -109,7 +109,7 @@ export function DailyBriefingModal({ isOpen, onClose }) {
         inset: 0,
         background: 'rgba(5, 8, 16, 0.90)',
         backdropFilter: 'blur(4px)',
-        zIndex: 1100,
+        zIndex: 13000,
         display: 'grid',
         placeItems: 'center',
         padding: '16px',

@@ -386,10 +386,13 @@ export const Projects = () => {
   };
   const filteredActiveProjects = activeProjects.filter(matchesProjectTypeFilter);
   const filteredCancelledProjects = cancelledProjects.filter(matchesProjectTypeFilter);
-  const canCreateTask = activeProjects.length > 0;
 
-  const handleOpenTaskModal = () => {
-    window.dispatchEvent(new CustomEvent('athenea:gatekeeper:open'));
+  const setShowForm = (isVisible) => {
+    if (isVisible) {
+      openCreateModal();
+      return;
+    }
+    setShowCreateModal(false);
   };
 
   return (
@@ -399,60 +402,11 @@ export const Projects = () => {
           <h1>{t('Projects')}</h1>
           <p>{t('Operational programs aligned to ATHENEA build objectives.')}</p>
         </div>
-        <div className="projects-header-actions">
-          <button
-            type="button"
-            className={`navbar-task-button project-task-button${canCreateTask ? '' : ' is-disabled'}`}
-            onClick={handleOpenTaskModal}
-            disabled={!canCreateTask}
-          >
-            <span className="task-button-text">{t('New Task')}</span>
-            <span className="task-button-icon" aria-hidden="true">
-              <svg
-                className="task-button-svg"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                stroke="currentColor"
-                fill="none"
-              >
-                <line y2={19} y1={5} x2={12} x1={12} />
-                <line y2={12} y1={12} x2={19} x1={5} />
-              </svg>
-            </span>
-          </button>
-          <button
-            type="button"
-            className="navbar-task-button project-create-button"
-            onClick={openCreateModal}
-            disabled={!canCreateProject}
-          >
-            <span className="task-button-text">{t('New Project')}</span>
-            <span className="task-button-icon" aria-hidden="true">
-              <svg
-                className="task-button-svg"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                stroke="currentColor"
-                fill="none"
-              >
-                <line y2={19} y1={5} x2={12} x1={12} />
-                <line y2={12} y1={12} x2={19} x1={5} />
-              </svg>
-            </span>
-          </button>
-          {!canCreateTask && (
-            <span className="projects-header-hint">{t('Create a project to log tasks.')}</span>
-          )}
-        </div>
       </div>
 
       <div className="workstream-filter">
         <div>
-          <div className="workstream-filter-label">{t('Project Type')}</div>
+          <div className="workstream-filter-label">{t('Project type')}</div>
           <select
             value={projectTypeFilter}
             onChange={(event) => setProjectTypeFilter(event.target.value)}
@@ -464,11 +418,23 @@ export const Projects = () => {
           </select>
         </div>
         <p className="workstream-hint">
-          {t('Showing')} {filteredActiveProjects.length} {t('active')} · {filteredCancelledProjects.length} {t('cancelled')}
+          {t('Showing')} {filteredActiveProjects.length} {t('active count label')} · {filteredCancelledProjects.length} {t('cancelled count label')}
         </p>
       </div>
 
       <div className="projects-grid">
+        <button
+          className="project-card project-card-new"
+          onClick={() => setShowForm(true)}
+        >
+          <div className="project-card-new-inner">
+            <span className="project-card-new-icon">+</span>
+            <span className="project-card-new-label">
+              Nuevo proyecto
+            </span>
+          </div>
+        </button>
+
         {filteredActiveProjects.map((project) => {
           const economic = project.economic || {};
           const projectTasks = visibleTasks

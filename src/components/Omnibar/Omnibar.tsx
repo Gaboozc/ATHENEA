@@ -1078,8 +1078,12 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   }, []);
 
   const openBriefing = useCallback(() => {
-    window.dispatchEvent(new CustomEvent('athenea:openBriefing'));
-  }, []);
+    // Close Omnibar first so Briefing is not hidden behind its overlay.
+    closeOmnibar();
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new CustomEvent('athenea:openBriefing'));
+    });
+  }, [closeOmnibar]);
 
   /* OMNI-FIX-9: memoizar para evitar doble cálculo */
   const agentInfo = useMemo(

@@ -8,6 +8,7 @@ export interface DailyCheckin {
   sleepHours: number;
   note: string;
   createdAt: string;
+  source?: 'manual' | 'briefing';
 }
 
 interface CheckinsState {

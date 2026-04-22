@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
@@ -15,12 +15,14 @@ export const PersonalHub = () => {
   const { notes } = useSelector((state) => state.notes);
   const { todos } = useSelector((state) => state.todos);
   const { routines } = useSelector((state) => state.routines);
+  const checkins = useSelector((state) => state.checkins?.checkins || []);
   const [routineTitle, setRoutineTitle] = useState('');
   const [routineDays, setRoutineDays] = useState([1, 2, 3, 4, 5]);
   const routineInputRef = useRef(null);
   /* P-FIX-1: inline editing state for routines */
   const [editingRoutineId, setEditingRoutineId] = useState(null);
   const [editingRoutineTitle, setEditingRoutineTitle] = useState('');
+  const [showCheckinForm, setShowCheckinForm] = useState(false);
 
   const weekDays = [
     { value: 0, label: 'Sun' },
@@ -73,6 +75,29 @@ export const PersonalHub = () => {
   const todayKey = new Date().toISOString().split('T')[0];
   const todayIndex = new Date().getDay();
 
+  const todayCheckin = useMemo(() => {
+    const todayDateString = new Date().toDateString();
+    return checkins.find((checkin) => {
+      const rawDate = checkin?.createdAt || checkin?.date;
+      if (!rawDate) return false;
+      return new Date(rawDate).toDateString() === todayDateString;
+    });
+  }, [checkins]);
+
+  useEffect(() => {
+    if (!todayCheckin) {
+      setShowCheckinForm(true);
+    }
+  }, [todayCheckin]);
+
+  const moodText = {
+    1: t('Very low'),
+    2: t('Low'),
+    3: t('Stable'),
+    4: t('Good'),
+    5: t('Excellent'),
+  };
+
   const routinesToday = useMemo(() => {
     return (routines || []).filter((routine) =>
       (routine.daysOfWeek || []).includes(todayIndex)
@@ -107,7 +132,28 @@ export const PersonalHub = () => {
       </section>
 
       {/* Block 3: Daily check-in before the grid */}
-      <DailyCheckin />
+      {todayCheckin && !showCheckinForm ? (
+        <div className="checkin-already-done">
+          <h3>{t('Check-in already completed today')}</h3>
+          <div className="checkin-summary">
+            <p>{t('Mood')}: {moodText[todayCheckin.mood] || t('Stable')}</p>
+            <p>{t('Energy')}: {todayCheckin.energy}/5</p>
+            <p>{t('Sleep')}: {todayCheckin.sleepHours}h</p>
+            {todayCheckin.source === 'briefing' && (
+              <p>{t('Source')}: Daily Briefing</p>
+            )}
+          </div>
+          <button
+            type="button"
+            className="checkin-update-btn"
+            onClick={() => setShowCheckinForm(true)}
+          >
+            {t('Update check-in')}
+          </button>
+        </div>
+      ) : (
+        <DailyCheckin onSaved={() => setShowCheckinForm(false)} />
+      )}
 
       <section className="personalhub-grid">
         <div className="personalhub-card">

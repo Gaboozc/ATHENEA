@@ -12,6 +12,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setAutoLaunch: (enable) => ipcRenderer.invoke('set-auto-launch', enable),
   getAutoLaunch: () => ipcRenderer.invoke('get-auto-launch'),
 
+  // Sync desktop-mobile por red local
+  startSyncServer: (data) => ipcRenderer.invoke('start-sync-server', data),
+  stopSyncServer: () => ipcRenderer.invoke('stop-sync-server'),
+
   // Detectar si estamos en Electron
   isElectron: true,
 

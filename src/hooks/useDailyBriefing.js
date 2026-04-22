@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { llmClient } from '../services/LLMClient';
 import { DailyBriefingService } from '../services/DailyBriefingService';
+import { addCheckin } from '../store/slices/checkinsSlice';
 
 const STEP = {
   IDLE: 'idle',
@@ -60,6 +61,7 @@ export function useDailyBriefing() {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const stepRef = useRef(STEP.IDLE);
+  const reportedMoodRef = useRef(3);
 
   useEffect(() => {
     stepRef.current = step;
@@ -134,6 +136,66 @@ export function useDailyBriefing() {
   const appendAssistant = useCallback((agent, content) => {
     addMessage('agent', content, agent);
   }, [addMessage]);
+
+  const inferMood = useCallback((userMessage) => {
+    const text = String(userMessage || '').toLowerCase();
+    if (!text.trim()) return 3;
+
+    if (/(fatal|horrible|devastado|destrozad|deprimid|muy mal|terrible)/i.test(text)) return 1;
+    if (/(mal|agotad|cansad|ansios|estresad|triste|bajo)/i.test(text)) return 2;
+    if (/(excelente|genial|increible|motiv|perfect|muy bien)/i.test(text)) return 5;
+    if (/(bien|estable|ok|okay|normal|tranquil)/i.test(text)) return 4;
+    return 3;
+  }, []);
+
+  const extractCheckinData = useCallback((userMessage) => {
+    const message = String(userMessage || '');
+    const sleepMatch = message.match(/(\d+(?:\.\d+)?)\s*(?:horas?|hours?|hrs?)/i);
+    const energyLabeledMatch = message.match(/(?:nivel|energy|energía|energia)\s*(\d+(?:\.\d+)?)/i);
+    const energyFractionMatch = message.match(/(\d+(?:\.\d+)?)\s*\/\s*5/i);
+    const combinedMatch = message.match(/(\d+)\s*horas?\s*(?:nivel|energy)?\s*(\d+(?:\.\d+)?)/i);
+
+    let sleepHours = null;
+    let energy = null;
+
+    if (combinedMatch) {
+      sleepHours = parseFloat(combinedMatch[1]);
+      energy = parseFloat(combinedMatch[2]);
+    } else {
+      if (sleepMatch) sleepHours = parseFloat(sleepMatch[1]);
+      if (energyLabeledMatch) energy = parseFloat(energyLabeledMatch[1]);
+      else if (energyFractionMatch) energy = parseFloat(energyFractionMatch[1]);
+    }
+
+    return { sleepHours, energy };
+  }, []);
+
+  const normalize1To5 = useCallback((value) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return 3;
+    return Math.min(5, Math.max(1, Math.round(parsed)));
+  }, []);
+
+  const saveCheckinFromBriefing = useCallback((userMessage, mood) => {
+    const { sleepHours, energy } = extractCheckinData(userMessage);
+    if (sleepHours === null && energy === null) return;
+
+    const nowIso = new Date().toISOString();
+    const today = nowIso.split('T')[0];
+
+    dispatch(
+      addCheckin({
+        id: `checkin-briefing-${Date.now()}`,
+        date: today,
+        mood: normalize1To5(mood),
+        energy: normalize1To5(energy),
+        sleepHours: sleepHours ?? 0,
+        note: 'Check-in automático del Daily Briefing',
+        createdAt: nowIso,
+        source: 'briefing',
+      })
+    );
+  }, [dispatch, extractCheckinData, normalize1To5]);
 
   const isClosingSignal = useCallback((text) => {
     const value = String(text || '').trim();
@@ -424,19 +486,6 @@ RESPONDE EN ESPANOL.`,
 
         DailyBriefingService.markCompletedToday();
 
-        dispatch({
-          type: 'checkins/addCheckin',
-          payload: {
-            id: `briefing-${Date.now()}`,
-            date: new Date().toISOString().split('T')[0],
-            mood: 3,
-            energy: 3,
-            sleepHours: 7,
-            note: 'Daily Briefing completed',
-            createdAt: new Date().toISOString(),
-          },
-        });
-
         setStep(STEP.DONE);
       } finally {
         setIsLoading(false);
@@ -447,7 +496,6 @@ RESPONDE EN ESPANOL.`,
       cortanaCallsMe,
       cortanaName,
       detectTargetAgent,
-      dispatch,
       jarvisCallsMe,
       jarvisName,
       shodanCallsMe,
@@ -472,6 +520,7 @@ RESPONDE EN ESPANOL.`,
       setIsLoading(true);
       try {
         if (step === STEP.CORTANA_1) {
+          reportedMoodRef.current = inferMood(trimmed);
           const shodanReply = await generateFromShodan(trimmed);
           appendAssistant(shodanName, shodanReply);
           setStep(STEP.SHODAN);
@@ -479,6 +528,7 @@ RESPONDE EN ESPANOL.`,
         }
 
         if (step === STEP.SHODAN) {
+          saveCheckinFromBriefing(trimmed, reportedMoodRef.current);
           const jarvisReply = await generateFromJarvis(trimmed);
           appendAssistant(jarvisName, jarvisReply);
           setStep(STEP.JARVIS);
@@ -501,9 +551,11 @@ RESPONDE EN ESPANOL.`,
       generateFromJarvis,
       generateFromShodan,
       handleClosingStep,
+      inferMood,
       isClosingSignal,
       isLoading,
       jarvisName,
+      saveCheckinFromBriefing,
       shodanName,
       step,
       cortanaName,
@@ -514,21 +566,8 @@ RESPONDE EN ESPANOL.`,
   const completeBriefing = useCallback(() => {
     DailyBriefingService.markCompletedToday();
 
-    dispatch({
-      type: 'checkins/addCheckin',
-      payload: {
-        id: `briefing-${Date.now()}`,
-        date: new Date().toISOString().split('T')[0],
-        mood: 3,
-        energy: 3,
-        sleepHours: 7,
-        note: 'Daily Briefing completed',
-        createdAt: new Date().toISOString(),
-      },
-    });
-
     setStep(STEP.DONE);
-  }, [dispatch]);
+  }, []);
 
   const resetConversation = useCallback(() => {
     setMessages([]);

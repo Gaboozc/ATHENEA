@@ -36,3 +36,17 @@ export const onOpenBriefing = (callback) => {
   }
   return () => {};
 };
+
+export const startSyncServer = async (data) => {
+  if (isElectron() && window.electronAPI?.startSyncServer) {
+    return window.electronAPI.startSyncServer(data);
+  }
+  return null;
+};
+
+export const stopSyncServer = async () => {
+  if (isElectron() && window.electronAPI?.stopSyncServer) {
+    return window.electronAPI.stopSyncServer();
+  }
+  return true;
+};

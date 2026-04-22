@@ -163,6 +163,45 @@
   color: var(--text-secondary);
 }
 
+.checkin-already-done {
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  background: var(--bg-surface);
+}
+
+.checkin-already-done h3 {
+  margin: 0 0 0.75rem;
+  color: var(--accent-gold);
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.checkin-summary {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.checkin-summary p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.checkin-update-btn {
+  border: 1px solid var(--accent-cyan);
+  background: transparent;
+  color: var(--accent-cyan);
+  border-radius: var(--radius-pill);
+  padding: 0.35rem 0.9rem;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
 /* P-FIX-1: Routine inline editing & delete */
 .personalhub-routine-title {
   cursor: text;

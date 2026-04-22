@@ -8,7 +8,7 @@ import './DailyCheckin.css';
 const MOOD_LABELS = ['😞', '😕', '😐', '🙂', '😄'];
 const ENERGY_LABELS = ['💤', '😴', '⚡', '🔋', '🚀'];
 
-export default function DailyCheckin() {
+export default function DailyCheckin({ onSaved }) {
   const dispatch = useDispatch();
   const { t } = useLanguage();
   const today = new Date().toISOString().split('T')[0];
@@ -32,9 +32,11 @@ export default function DailyCheckin() {
       sleepHours: Number(sleepHours),
       note,
       createdAt: existing?.createdAt || new Date().toISOString(),
+      source: existing?.source || 'manual',
     };
     dispatch(addCheckin(checkin));
     dispatch(setHealthData({ sleepHours: Number(sleepHours) }));
+    onSaved?.(checkin);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }

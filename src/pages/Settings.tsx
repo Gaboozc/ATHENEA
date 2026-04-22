@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLanguage } from "../context/LanguageContext";
 import { updateUserSettings } from "../store/slices/userSettingsSlice";
 import { isElectron } from "../services/ElectronService";
+import { SyncQRModal } from "../components/Sync/SyncQRModal";
+import { SyncImportModal } from "../components/Sync/SyncImportModal";
 import { resetAllData, exportDataBeforeReset } from "../services/ResetService";
 import { showToast } from "../components/Toast";
 import "./Settings.css";
@@ -42,6 +44,8 @@ export const Settings = () => {
   const [theme, setTheme] = useState(settings.theme || "neon");
   const [autoLaunch, setAutoLaunch] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(null);
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     if (isElectron() && (window as any).electronAPI?.getAutoLaunch) {
@@ -235,6 +239,30 @@ export const Settings = () => {
         </div>
       )}
 
+      {isElectron() && (
+        <div className="settings-section">
+          <h2 className="settings-section-title">{t("Synchronization")}</h2>
+          <p className="settings-section-desc">
+            {t("Transfer your data to your mobile over local WiFi. Both devices must be on the same network.")}
+          </p>
+          <button className="settings-btn primary" onClick={() => setShowSyncModal(true)}>
+            {t("Sync with mobile")}
+          </button>
+        </div>
+      )}
+
+      {!isElectron() && (
+        <div className="settings-section">
+          <h2 className="settings-section-title">{t("Synchronization")}</h2>
+          <p className="settings-section-desc">
+            {t("Import your data from desktop by scanning the QR code.")}
+          </p>
+          <button className="settings-btn primary" onClick={() => setShowImportModal(true)}>
+            {t("Scan desktop QR")}
+          </button>
+        </div>
+      )}
+
       <div className="settings-section danger">
         <h2 className="settings-section-title danger">{t("Data & Privacy")}</h2>
         <p className="settings-section-desc">
@@ -258,6 +286,9 @@ export const Settings = () => {
           </button>
         </div>
       </div>
+
+      {showSyncModal && <SyncQRModal onClose={() => setShowSyncModal(false)} />}
+      {showImportModal && <SyncImportModal onClose={() => setShowImportModal(false)} />}
     </div>
   );
 };

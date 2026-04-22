@@ -6,6 +6,18 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-04-21
+
+### Fixed
+
+- Fixed Omnibar "Briefing" launch so the Daily Briefing modal opens reliably from the quick action.
+- Ensured Daily Briefing visibility above Omnibar overlays.
+
+### Changed
+
+- Updated app version to `1.0.4`.
+- Updated Android `versionCode` to `4` and `versionName` to `1.0.4`.
+
 ## [1.0.2] - 2026-04-18
 
 ### Changed
