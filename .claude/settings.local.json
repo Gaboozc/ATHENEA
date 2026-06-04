@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"API_KEY\\\\|SECRET\\\\|TOKEN\\\\|PASSWORD\" c:/Users/gazav/OneDrive/Desktop/Athenea/scope/src --include=*.ts --include=*.tsx --include=*.js --include=*.jsx)",
+      "Bash(grep -r \"TODO\\\\|FIXME\\\\|BUG\\\\|HACK\" c:/Users/gazav/OneDrive/Desktop/Athenea/scope/src --include=*.ts --include=*.tsx --include=*.js --include=*.jsx)",
+      "Bash(npx skills:*)",
+      "Bash(xargs wc:*)"
+    ]
+  }
+}
